@@ -1,0 +1,21 @@
+# ── Banco de dados (Supabase) ─────────────────────────────────
+DATABASE_URL=postgresql://postgres.rstwkptsfdptkfuuunaa:Rezende%402025@aws-1-sa-east-1.pooler.supabase.com:6543/postgres
+
+# ── JWT ────────────────────────────────────────────────────────
+SECRET_KEY=RezEnErgia_PortaL_2025_Secret_Key_XYZ_ABCDEF
+
+# ── Porta ──────────────────────────────────────────────────────
+PORT=8080
+
+# ── E-mail via Microsoft Graph API ────────────────────────────
+EMAIL_ENABLED=true
+MS_TENANT_ID=56a8eefc-c653-4efd-a3db-db881ffbde6e
+MS_CLIENT_ID=aac7ce36-bf33-4a43-afe4-b7625b00d6a1
+MS_CLIENT_SECRET=30f4ca91-d82a-4829-a6ef-28bd9a569c75
+MS_SENDER_EMAIL=rh@rezendeenergia.com.br
+
+# ── URL base do sistema (para links nos e-mails) ───────────────
+BASE_URL=https://newrh.onrender.com
+
+# ── SharePoint ─────────────────────────────────────────────────
+SP_SITE_URL=https://rezendeenergia.sharepoint.com/sites/Intranet
