@@ -11,6 +11,10 @@ import threading
 
 load_dotenv()
 
+# Inicia scheduler de alertas automáticos
+from alertas import iniciar_scheduler
+iniciar_scheduler()
+
 # Inicializa o DB de forma lazy (não bloqueia o startup)
 _db_initialized = False
 
@@ -76,6 +80,14 @@ def rate_limit_handler(e):
     return jsonify({
         "message": "Muitas tentativas. Aguarde alguns minutos e tente novamente.",
     }), 429
+
+
+@app.route("/api/alertas/testar")
+def testar_alerta():
+    """Dispara a verificação de candidatos parados imediatamente (para teste)."""
+    from alertas import verificar_candidatos_parados
+    verificar_candidatos_parados()
+    return jsonify({"message": "Verificação executada — veja os logs do servidor."})
 
 
 @app.route("/api/email-test")
