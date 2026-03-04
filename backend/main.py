@@ -83,13 +83,53 @@ def email_test():
     """Diagnóstico — verifica configuração de e-mail sem enviar nada."""
     import email_service as es
     return jsonify({
-        "email_enabled":  es.EMAIL_ENABLED,
-        "sender":         es.SENDER_EMAIL,
-        "tenant_id_ok":   bool(es.TENANT_ID),
-        "client_id_ok":   bool(es.CLIENT_ID),
+        "email_enabled":    es.EMAIL_ENABLED,
+        "sender":           es.SENDER_EMAIL,
+        "tenant_id_ok":     bool(es.TENANT_ID),
+        "client_id_ok":     bool(es.CLIENT_ID),
         "client_secret_ok": bool(es.CLIENT_SECRET),
-        "token_url":      es.TOKEN_URL,
+        "token_url":        es.TOKEN_URL,
     })
+
+
+@app.route("/api/email-test-send")
+def email_test_send():
+    """Diagnóstico — tenta buscar token OAuth e envia e-mail real de teste."""
+    import email_service as es
+
+    result = {
+        "email_enabled":    es.EMAIL_ENABLED,
+        "sender":           es.SENDER_EMAIL,
+        "token_status":     None,
+        "token_error":      None,
+        "send_status":      None,
+        "send_error":       None,
+    }
+
+    if not es.EMAIL_ENABLED:
+        result["send_error"] = "EMAIL_ENABLED=false"
+        return jsonify(result)
+
+    try:
+        token = es._get_token()
+        result["token_status"] = "OK"
+    except Exception as e:
+        result["token_status"] = "ERRO"
+        result["token_error"]  = str(e)
+        return jsonify(result)
+
+    try:
+        ok = es.send_email(
+            es.SENDER_EMAIL,
+            "Teste de E-mail — NewRH Rezende Energia",
+            "<h2>E-mail de teste funcionando!</h2>"
+        )
+        result["send_status"] = "OK" if ok else "FALHOU (status != 202)"
+    except Exception as e:
+        result["send_status"] = "ERRO"
+        result["send_error"]  = str(e)
+
+    return jsonify(result)
 
 from routers import auth, jobs, candidaturas, processos, solicitacoes
 app.register_blueprint(auth.bp)
