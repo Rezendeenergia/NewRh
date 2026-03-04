@@ -896,9 +896,10 @@ const Manager = {
       const blob = await r.blob();
       const a = document.createElement('a');
       a.href     = URL.createObjectURL(blob);
-      a.download = `candidaturas_rezende_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.csv`;
+      const hoje = new Date().toISOString().slice(0,10).replace(/-/g,'');
+      a.download = `candidaturas_rezende_${hoje}.xlsx`;
       a.click();
-      showToast('CSV exportado!', '', 'success');
+      showToast('Excel exportado!', 'Arquivo com abas por etapa do funil', 'success');
     } catch (err) { showToast('Erro', err.message, 'error'); }
   },
 };
