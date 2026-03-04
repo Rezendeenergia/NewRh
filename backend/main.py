@@ -11,9 +11,16 @@ import threading
 
 load_dotenv()
 
-# Inicia scheduler de alertas automáticos
-from alertas import iniciar_scheduler
-iniciar_scheduler()
+# Inicia scheduler de alertas automáticos (lazy — não bloqueia startup)
+def _start_scheduler():
+    try:
+        from alertas import iniciar_scheduler
+        iniciar_scheduler()
+    except Exception as e:
+        print(f"[ALERTA] Falha ao iniciar scheduler: {e}")
+
+import threading as _threading
+_threading.Thread(target=_start_scheduler, daemon=True).start()
 
 # Inicializa o DB de forma lazy (não bloqueia o startup)
 _db_initialized = False
