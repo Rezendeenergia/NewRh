@@ -107,21 +107,32 @@ def listar_solicitacoes():
 
         items = q.order_by(SolicitacaoVaga.created_at.desc()).all()
 
-        return jsonify([{
-            "id":               s.id,
-            "position":         s.position,
-            "location":         s.location,
-            "tipo":             s.tipo,
-            "numVagas":         s.num_vagas,
-            "justificativa":    s.justificativa,
-            "solicitanteNome":  s.solicitante_nome,
-            "solicitanteEmail": s.solicitante_email,
-            "status":           s.status,
-            "motivoRejeicao":   s.motivo_rejeicao,
-            "jobId":            s.job_id,
-            "decididoEm":       s.decidido_em.isoformat() if s.decidido_em else None,
-            "createdAt":        s.created_at.isoformat() if s.created_at else None,
-        } for s in items])
+        result = []
+        for s in items:
+            try:
+                result.append({
+                    "id":               s.id,
+                    "position":         s.position,
+                    "location":         s.location,
+                    "tipo":             s.tipo,
+                    "numVagas":         s.num_vagas,
+                    "justificativa":    s.justificativa,
+                    "solicitanteNome":  s.solicitante_nome,
+                    "solicitanteEmail": s.solicitante_email,
+                    "status":           s.status,
+                    "motivoRejeicao":   s.motivo_rejeicao,
+                    "jobId":            s.job_id,
+                    "decididoEm":       s.decidido_em.isoformat() if s.decidido_em else None,
+                    "createdAt":        s.created_at.isoformat() if s.created_at else None,
+                })
+            except Exception as ex:
+                print(f"[SOL] Erro ao serializar solicitacao {s.id}: {ex}")
+
+        return jsonify(result)
+    except Exception as e:
+        print(f"[SOL] Erro ao listar solicitacoes: {e}")
+        import traceback; traceback.print_exc()
+        return jsonify({"message": str(e)}), 500
     finally:
         db.close()
 
