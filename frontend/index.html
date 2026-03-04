@@ -8,6 +8,29 @@
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+<style>
+.adf-opt {
+  padding: 7px 14px;
+  font-size: .8rem;
+  color: #F4F5F7;
+  cursor: pointer;
+  transition: background .12s;
+}
+.adf-opt:hover { background: rgba(255,106,0,.15); color: #FF6A00; }
+.adf-grp {
+  padding: 6px 14px 3px;
+  font-size: .7rem;
+  font-weight: 700;
+  color: #FF6A00;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-top: 1px solid rgba(255,255,255,.06);
+  margin-top: 2px;
+  cursor: default;
+}
+.adf-opt.adf-selected { color: #FF6A00; background: rgba(255,106,0,.08); }
+</style>
 </head>
 <body>
 
@@ -408,39 +431,48 @@
               <input id="audit-user-filter" type="text" class="form-field__input"
                      placeholder="Filtrar usuário" style="width:140px;padding:6px 10px;font-size:.8rem;"
                      oninput="Manager.loadAudit(1)">
-              <select id="audit-action-filter" class="form-field__select"
-                      style="width:200px;padding:6px 10px;font-size:.8rem;
-                             background:#1A1F2E;color:#F4F5F7;border:1px solid rgba(255,255,255,.12);"
-                      onchange="Manager.loadAudit(1)">
-                <option value="" style="background:#1A1F2E;color:#F4F5F7;">Todas as ações</option>
-                <optgroup label="── Autenticação" style="background:#1A1F2E;color:#FF6A00;font-weight:700;">
-                  <option value="LOGIN"          style="background:#1A1F2E;color:#F4F5F7;">🔑 Login</option>
-                  <option value="LOGIN_FAILED"   style="background:#1A1F2E;color:#F4F5F7;">⚠️ Login Falho</option>
-                  <option value="INVITE_USER"    style="background:#1A1F2E;color:#F4F5F7;">✉️ Convidar Gestor</option>
-                  <option value="ACTIVATE_USER"  style="background:#1A1F2E;color:#F4F5F7;">✅ Ativar Conta</option>
-                  <option value="RESET_PASSWORD" style="background:#1A1F2E;color:#F4F5F7;">🔑 Redefinir Senha</option>
-                </optgroup>
-                <optgroup label="── Vagas" style="background:#1A1F2E;color:#FF6A00;font-weight:700;">
-                  <option value="CREATE_JOB" style="background:#1A1F2E;color:#F4F5F7;">➕ Criar Vaga</option>
-                  <option value="UPDATE_JOB" style="background:#1A1F2E;color:#F4F5F7;">✏️ Editar Vaga</option>
-                  <option value="DELETE_JOB" style="background:#1A1F2E;color:#F4F5F7;">🗑 Excluir Vaga</option>
-                  <option value="TOGGLE_JOB" style="background:#1A1F2E;color:#F4F5F7;">🔄 Abrir/Fechar Vaga</option>
-                </optgroup>
-                <optgroup label="── Solicitações" style="background:#1A1F2E;color:#FF6A00;font-weight:700;">
-                  <option value="CREATE_SOLICITACAO"    style="background:#1A1F2E;color:#F4F5F7;">📋 Solicitação Criada</option>
-                  <option value="SOLICITACAO_APROVADA"  style="background:#1A1F2E;color:#F4F5F7;">✅ Solicitação Aprovada</option>
-                  <option value="SOLICITACAO_REJEITADA" style="background:#1A1F2E;color:#F4F5F7;">❌ Solicitação Rejeitada</option>
-                </optgroup>
-                <optgroup label="── Candidaturas" style="background:#1A1F2E;color:#FF6A00;font-weight:700;">
-                  <option value="NEW_APPLICATION"  style="background:#1A1F2E;color:#F4F5F7;">📥 Nova Candidatura</option>
-                  <option value="UPDATE_STATUS"    style="background:#1A1F2E;color:#F4F5F7;">📋 Mudar Status</option>
-                  <option value="FUNNEL_ADVANCE"   style="background:#1A1F2E;color:#F4F5F7;">⏩ Avançou no Funil</option>
-                  <option value="FUNNEL_REJECTED"  style="background:#1A1F2E;color:#F4F5F7;">⏹ Reprovado no Funil</option>
-                  <option value="AUTO_ADMISSION"   style="background:#1A1F2E;color:#F4F5F7;">🏢 Admissão Iniciada</option>
-                  <option value="DOWNLOAD_RESUME"  style="background:#1A1F2E;color:#F4F5F7;">⬇ Download Currículo</option>
-                  <option value="EXPORT_CSV"       style="background:#1A1F2E;color:#F4F5F7;">📤 Exportar Excel</option>
-                </optgroup>
-              </select>
+<!-- Dropdown customizado de filtro de ação (substitui select nativo) -->
+              <div id="audit-action-dropdown" style="position:relative;width:210px;user-select:none;">
+                <div id="audit-action-btn"
+                     onclick="toggleAuditDropdown()"
+                     style="display:flex;justify-content:space-between;align-items:center;
+                            background:#1A1F2E;border:1px solid rgba(255,255,255,.12);border-radius:6px;
+                            padding:6px 10px;font-size:.8rem;color:#F4F5F7;cursor:pointer;gap:8px;">
+                  <span id="audit-action-label">Todas as ações</span>
+                  <span style="color:#FF6A00;font-size:10px;">▼</span>
+                </div>
+                <input type="hidden" id="audit-action-filter" value="">
+                <div id="audit-action-list"
+                     style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;
+                            background:#1A1F2E;border:1px solid rgba(255,106,0,.3);border-radius:8px;
+                            z-index:9999;max-height:320px;overflow-y:auto;
+                            box-shadow:0 8px 32px rgba(0,0,0,.5);">
+                  <div class="adf-opt" data-val="" onclick="selectAuditAction(this)">Todas as ações</div>
+                  <div class="adf-grp">── Autenticação</div>
+                  <div class="adf-opt" data-val="LOGIN"          onclick="selectAuditAction(this)">🔑 Login</div>
+                  <div class="adf-opt" data-val="LOGIN_FAILED"   onclick="selectAuditAction(this)">⚠️ Login Falho</div>
+                  <div class="adf-opt" data-val="INVITE_USER"    onclick="selectAuditAction(this)">✉️ Convidar Gestor</div>
+                  <div class="adf-opt" data-val="ACTIVATE_USER"  onclick="selectAuditAction(this)">✅ Ativar Conta</div>
+                  <div class="adf-opt" data-val="RESET_PASSWORD" onclick="selectAuditAction(this)">🔑 Redefinir Senha</div>
+                  <div class="adf-grp">── Vagas</div>
+                  <div class="adf-opt" data-val="CREATE_JOB" onclick="selectAuditAction(this)">➕ Criar Vaga</div>
+                  <div class="adf-opt" data-val="UPDATE_JOB" onclick="selectAuditAction(this)">✏️ Editar Vaga</div>
+                  <div class="adf-opt" data-val="DELETE_JOB" onclick="selectAuditAction(this)">🗑 Excluir Vaga</div>
+                  <div class="adf-opt" data-val="TOGGLE_JOB" onclick="selectAuditAction(this)">🔄 Abrir/Fechar Vaga</div>
+                  <div class="adf-grp">── Solicitações</div>
+                  <div class="adf-opt" data-val="CREATE_SOLICITACAO"    onclick="selectAuditAction(this)">📋 Solicitação Criada</div>
+                  <div class="adf-opt" data-val="SOLICITACAO_APROVADA"  onclick="selectAuditAction(this)">✅ Solicitação Aprovada</div>
+                  <div class="adf-opt" data-val="SOLICITACAO_REJEITADA" onclick="selectAuditAction(this)">❌ Solicitação Rejeitada</div>
+                  <div class="adf-grp">── Candidaturas</div>
+                  <div class="adf-opt" data-val="NEW_APPLICATION"  onclick="selectAuditAction(this)">📥 Nova Candidatura</div>
+                  <div class="adf-opt" data-val="UPDATE_STATUS"    onclick="selectAuditAction(this)">📋 Mudar Status</div>
+                  <div class="adf-opt" data-val="FUNNEL_ADVANCE"   onclick="selectAuditAction(this)">⏩ Avançou no Funil</div>
+                  <div class="adf-opt" data-val="FUNNEL_REJECTED"  onclick="selectAuditAction(this)">⏹ Reprovado no Funil</div>
+                  <div class="adf-opt" data-val="AUTO_ADMISSION"   onclick="selectAuditAction(this)">🏢 Admissão Iniciada</div>
+                  <div class="adf-opt" data-val="DOWNLOAD_RESUME"  onclick="selectAuditAction(this)">⬇ Download Currículo</div>
+                  <div class="adf-opt" data-val="EXPORT_CSV"       onclick="selectAuditAction(this)">📤 Exportar Excel</div>
+                </div>
+              </div>
             </div>
           </div>
           <div class="card__body" style="padding:0;">
