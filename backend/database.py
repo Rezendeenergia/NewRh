@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from dotenv import load_dotenv
+import ssl
 import os
 
 load_dotenv()
@@ -10,49 +11,54 @@ raw_url = os.getenv("DATABASE_URL", "")
 
 def _parse_db_url(url: str) -> str:
     """
-    Monta a URL corretamente mesmo com @ na senha (ex: Rezende@2025).
-    Usa rfind para localizar o @ REAL que separa credenciais do host.
+    Converte a URL para pg8000 e resolve o @ na senha (ex: Rezende@2025).
+    Usa rfind para pegar o @ real que separa credenciais do host.
     """
     if not url:
         return url
 
-    # Normaliza o prefixo do driver para psycopg2
-    for prefix in ("postgresql+pg8000://", "postgresql+psycopg2://", "postgres://"):
+    # Força driver pg8000
+    for prefix in ("postgresql+psycopg2://", "postgresql://", "postgres://", "postgresql+pg8000://"):
         if url.startswith(prefix):
-            url = "postgresql://" + url[len(prefix):]
+            url = "postgresql+pg8000://" + url[len(prefix):]
             break
 
     # Remove querystring existente
     url = url.split("?")[0]
 
-    # Localiza o @ mais à direita — esse é o separador real de credenciais/host
-    # Exemplo: postgresql://user:Rezende@2025@host:5432/db
-    #                                          ^--- este é o certo (rfind)
-    scheme_end = url.index("://") + 3          # após "postgresql://"
-    at_pos = url.rfind("@")                    # último @
+    # Localiza o @ mais à direita (separador real de credenciais/host)
+    scheme_end = url.index("://") + 3
+    at_pos = url.rfind("@")
 
     if at_pos > scheme_end:
-        credentials = url[scheme_end:at_pos]   # user:Rezende@2025
-        hostpart    = url[at_pos + 1:]          # host:5432/db
+        credentials = url[scheme_end:at_pos]
+        hostpart    = url[at_pos + 1:]
 
-        # URL-encode o @ dentro das credenciais (na parte da senha)
+        # URL-encode o @ dentro da senha
         colon_pos = credentials.find(":")
         if colon_pos != -1:
             user     = credentials[:colon_pos]
             password = credentials[colon_pos + 1:].replace("@", "%40")
             credentials = f"{user}:{password}"
 
-        url = f"postgresql://{credentials}@{hostpart}"
+        url = f"postgresql+pg8000://{credentials}@{hostpart}"
 
-    return url + "?sslmode=require&connect_timeout=10"
+    return url
 
 
 database_url = _parse_db_url(raw_url)
 
-print(f"[DB] Conectando em: {database_url.split('@')[1] if '@' in database_url else database_url}")
+# pg8000 requer SSL como objeto de contexto, não como string
+ssl_ctx = ssl.create_default_context()
+ssl_ctx.check_hostname = False
+ssl_ctx.verify_mode = ssl.CERT_NONE
+
+host = database_url.split("@")[1].split("/")[0] if "@" in database_url else "?"
+print(f"[DB] Conectando em: {host}")
 
 engine = create_engine(
     database_url,
+    connect_args={"ssl_context": ssl_ctx},
     pool_pre_ping=True,
     pool_timeout=20,
     pool_recycle=300,
