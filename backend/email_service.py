@@ -36,10 +36,9 @@ def _get_token() -> str:
 
 
 # ── Envio ─────────────────────────────────────────────────────
-def send_email(to: str, subject: str, html: str, cc: list[str] = None) -> bool:
+def send_email(to: str, subject: str, html: str, cc: list = None) -> bool:
     if not EMAIL_ENABLED:
-        cc_str = f" | cc: {', '.join(cc)}" if cc else ""
-        print(f"[EMAIL] Desabilitado — para: {to}{cc_str} | assunto: {subject}")
+        print(f"[EMAIL] Desabilitado — para: {to} | assunto: {subject}")
         return False
 
     if not all([TENANT_ID, CLIENT_ID, CLIENT_SECRET]):
@@ -56,13 +55,15 @@ def send_email(to: str, subject: str, html: str, cc: list[str] = None) -> bool:
             "from": {"emailAddress": {"address": SENDER_EMAIL,
                                       "name": "Rezende Energia — RH"}},
         }
-
         if cc:
             message["ccRecipients"] = [
                 {"emailAddress": {"address": addr}} for addr in cc if addr
             ]
 
-        payload = {"message": message, "saveToSentItems": False}
+        payload = {
+            "message": message,
+            "saveToSentItems": False,
+        }
 
         resp = requests.post(
             f"{GRAPH_URL}/users/{SENDER_EMAIL}/sendMail",
@@ -488,45 +489,40 @@ EMAIL_RH = "rh@rezendeenergia.com.br"
 def notify_solicitacao_rafael(sol, rafael_email: str, base_url: str):
     """Envia pedido de aprovação ao Rafael (TO) e cópia informativa ao TI (CC: Ingrid)."""
     token   = sol.approval_token
+    revisar = f"{base_url}/revisar-solicitacao?token={token}"
     link_ap = f"{base_url}/api/solicitacoes/revisar?token={token}&decision=APROVADA"
     link_rj = f"{base_url}/api/solicitacoes/revisar?token={token}&decision=REJEITADA"
-    revisar = f"{base_url}/revisar-solicitacao?token={token}"
 
     subject = f"📋 Aprovação necessária: Solicitação de Vaga — {sol.position} ({sol.location})"
+
+    rows = "".join(f"""  <tr>
+    <td style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);
+               border-radius:8px;padding:10px 16px;width:38%;font-size:11px;
+               color:rgba(255,106,0,0.8);font-weight:700;text-transform:uppercase;letter-spacing:1.5px;">{lbl}</td>
+    <td style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);
+               border-radius:8px;padding:10px 16px;color:#F4F5F7;font-size:14px;">{val or "—"}</td>
+  </tr>""" for lbl, val in [
+        ("Cargo", sol.position),
+        ("Localização", sol.location),
+        ("Tipo de Vaga", sol.tipo),
+        ("Nº de Vagas", str(sol.num_vagas)),
+        ("Justificativa", sol.justificativa),
+    ])
 
     content = f"""
 <h2 style="margin:0 0 6px;font-size:22px;font-weight:800;color:#fff;">Nova Solicitação de Vaga</h2>
 <p style="margin:0 0 20px;font-size:13px;color:rgba(255,106,0,0.8);text-transform:uppercase;letter-spacing:2px;font-weight:600;">
   Aguardando sua aprovação</p>
-
 <div style="background:rgba(255,106,0,0.06);border:1px solid rgba(255,106,0,0.18);
             border-left:3px solid {BRAND_COLOR};border-radius:12px;padding:18px 22px;margin-bottom:20px;">
   <p style="margin:0 0 4px;font-size:11px;color:{BRAND_COLOR};font-weight:700;text-transform:uppercase;letter-spacing:2px;">Solicitante</p>
   <p style="margin:0;font-size:17px;font-weight:800;color:#fff;">{sol.solicitante_nome}</p>
   <p style="margin:4px 0 0;font-size:13px;color:#A8A8B8;">✉️ {sol.solicitante_email}</p>
 </div>
-
 <table cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate;border-spacing:0 8px;">
-{"".join(f'''  <tr>
-    <td style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);
-               border-radius:8px;padding:10px 16px;width:38%;font-size:11px;
-               color:rgba(255,106,0,0.8);font-weight:700;text-transform:uppercase;letter-spacing:1.5px;">{lbl}</td>
-    <td style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);
-               border-radius:8px;padding:10px 16px;color:#F4F5F7;font-size:14px;">{val or "—"}</td>
-  </tr>''' for lbl, val in [
-    ("Cargo", sol.position),
-    ("Localização", sol.location),
-    ("Tipo de Vaga", sol.tipo),
-    ("Nº de Vagas", str(sol.num_vagas)),
-    ("Justificativa", sol.justificativa),
-])}
+  {rows}
 </table>
-
 <div style="border-top:1px solid rgba(255,255,255,0.06);margin:28px 0;"></div>
-
-<p style="color:#A8A8B8;font-size:14px;margin:0 0 20px;text-align:center;">
-  Clique em um dos botões abaixo para decidir, ou acesse a página completa de revisão:</p>
-
 <div style="text-align:center;margin:0 0 16px;">
   <a href="{revisar}"
      style="display:inline-block;background:linear-gradient(135deg,#FF8C2A,#FF6A00,#E55A00);
@@ -535,39 +531,32 @@ def notify_solicitacao_rafael(sol, rafael_email: str, base_url: str):
     📋 Ver Detalhes e Decidir
   </a>
 </div>
-
 <table cellpadding="0" cellspacing="0" width="100%" style="margin-top:12px;">
   <tr>
     <td style="padding:0 6px 0 0;">
       <a href="{link_ap}"
          style="display:block;text-align:center;background:#0D2E1A;border:2px solid #2ECC71;
                 color:#2ECC71;font-weight:700;font-size:14px;text-decoration:none;
-                padding:12px;border-radius:10px;">
-        ✅ Aprovar Diretamente
-      </a>
+                padding:12px;border-radius:10px;">✅ Aprovar Diretamente</a>
     </td>
     <td style="padding:0 0 0 6px;">
       <a href="{link_rj}"
          style="display:block;text-align:center;background:#2E0D0D;border:2px solid #FF5252;
                 color:#FF5252;font-weight:700;font-size:14px;text-decoration:none;
-                padding:12px;border-radius:10px;">
-        ❌ Rejeitar Diretamente
-      </a>
+                padding:12px;border-radius:10px;">❌ Rejeitar Diretamente</a>
     </td>
   </tr>
 </table>
-
 <div style="border-top:1px solid rgba(255,255,255,0.06);margin:24px 0;"></div>
 <p style="color:#5A6478;font-size:12px;text-align:center;margin:0;">
   ℹ️ TI foi copiado neste e-mail apenas para acompanhamento.</p>"""
 
     html = _base_template(subject, content)
-    # Envia para Rafael com CC para TI (apenas informativo)
     send_email(rafael_email, subject, html, cc=[EMAIL_TI])
 
 
 def notify_resultado_solicitacao(sol, base_url: str):
-    """Notifica o gestor sobre o resultado da solicitação, com CC obrigatório para RH."""
+    """Notifica o gestor sobre o resultado, com CC obrigatório para RH."""
     aprovada  = sol.status == "APROVADA"
     icon      = "✅" if aprovada else "❌"
     status_pt = "Aprovada" if aprovada else "Rejeitada"
@@ -576,9 +565,10 @@ def notify_resultado_solicitacao(sol, base_url: str):
 
     mensagem = (
         f"Sua solicitação para a vaga de <strong style='color:#fff;'>{sol.position}</strong> "
-        f"em <strong style='color:#fff;'>{sol.location}</strong> foi <strong style='color:{cor};'>{status_pt.lower()}</strong>. "
-        + ("A vaga já está publicada no portal e candidaturas podem ser recebidas." if aprovada
-           else "Entre em contato com Rafael caso queira mais informações.")
+        f"em <strong style='color:#fff;'>{sol.location}</strong> foi "
+        f"<strong style='color:{cor};'>{status_pt.lower()}</strong>. "
+        + ("A vaga já está publicada no portal." if aprovada
+           else "Entre em contato com Rafael para mais informações.")
     )
 
     motivo_html = ""
@@ -590,25 +580,17 @@ def notify_resultado_solicitacao(sol, base_url: str):
 </div>"""
 
     subject = f"{icon} Solicitação de Vaga {status_pt} — {sol.position} ({sol.location})"
-
     content = f"""
-<h2 style="margin:0 0 6px;font-size:22px;font-weight:800;color:#fff;">
-  {icon} Solicitação {status_pt}</h2>
+<h2 style="margin:0 0 6px;font-size:22px;font-weight:800;color:#fff;">{icon} Solicitação {status_pt}</h2>
 <p style="margin:0 0 20px;font-size:13px;color:rgba(255,106,0,0.8);text-transform:uppercase;letter-spacing:2px;font-weight:600;">
   Resultado da análise</p>
-
 <div style="background:{bg_cor};border:1px solid {cor};border-radius:12px;padding:18px 22px;margin:20px 0;text-align:center;">
   <span style="color:{cor};font-weight:800;font-size:18px;">{icon} Solicitação {status_pt}</span>
 </div>
-
 <p style="color:#A8A8B8;font-size:15px;line-height:1.7;margin:0 0 8px;">
-  Olá, <strong style="color:#fff;">{sol.solicitante_nome}</strong>!
-</p>
-<p style="color:#A8A8B8;font-size:15px;line-height:1.7;margin:0;">
-  {mensagem}
-</p>
+  Olá, <strong style="color:#fff;">{sol.solicitante_nome}</strong>!</p>
+<p style="color:#A8A8B8;font-size:15px;line-height:1.7;margin:0;">{mensagem}</p>
 {motivo_html}
-
 <div style="border-top:1px solid rgba(255,255,255,0.06);margin:24px 0;"></div>
 <table cellpadding="0" cellspacing="0" width="100%">
   <tr><td style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);
@@ -620,5 +602,4 @@ def notify_resultado_solicitacao(sol, base_url: str):
 </table>"""
 
     html = _base_template(subject, content)
-    # Envia para o gestor com CC obrigatório para RH
     send_email(sol.solicitante_email, subject, html, cc=[EMAIL_RH])
