@@ -9,40 +9,32 @@ load_dotenv()
 raw_url = os.getenv("DATABASE_URL", "")
 
 def _build_url(url: str) -> str:
-    """
-    Normaliza a DATABASE_URL para psycopg2:
-    - Garante o driver postgresql+psycopg2://
-    - Codifica caracteres especiais na senha (ex: @, #, %)
-    - Adiciona sslmode=require
-    """
     if not url:
         return url
 
-    # Troca drivers alternativos
-    for prefix in ("postgresql+pg8000://", "postgres://"):
+    # Normaliza prefixo
+    for prefix in ("postgresql+psycopg2://", "postgresql+pg8000://", "postgres://"):
         if url.startswith(prefix):
             url = "postgresql://" + url[len(prefix):]
 
-    # Faz parse da URL para codificar a senha corretamente
+    # Parse para codificar senha com caracteres especiais
     parsed = urlparse(url)
     password = parsed.password or ""
     username = parsed.username or ""
-
-    # Reconstrói netloc com senha codificada
     host_part = parsed.hostname or ""
     if parsed.port:
         host_part += f":{parsed.port}"
+
     netloc = f"{quote(username, safe='')}:{quote(password, safe='')}@{host_part}"
 
     clean_url = urlunparse((
-        "postgresql+psycopg2",
+        "postgresql+pg8000",
         netloc,
         parsed.path,
         "", "", ""
     ))
 
-    # Adiciona sslmode
-    clean_url += "?sslmode=require&connect_timeout=10"
+    clean_url += "?ssl_context=True"
     return clean_url
 
 
