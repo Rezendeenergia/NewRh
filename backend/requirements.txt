@@ -1,7 +1,7 @@
 flask==3.1.0
 flask-cors==5.0.0
 sqlalchemy==2.0.36
-psycopg2-binary==2.9.9
+pg8000==1.31.2
 pyjwt==2.10.1
 passlib[bcrypt]==1.7.4
 python-dotenv==1.0.0
