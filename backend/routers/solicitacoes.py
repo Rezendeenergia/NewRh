@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from database import SessionLocal
 from models import SolicitacaoVaga, Job, User
 from security import decode_token
-from audit import log_action
+import audit
 from email_service import notify_solicitacao_rafael, notify_resultado_solicitacao
 
 bp = Blueprint("solicitacoes", __name__, url_prefix="/api/solicitacoes")
@@ -78,8 +78,7 @@ def criar_solicitacao():
         db.commit()
         db.refresh(sol)
 
-        log_action(db, user["sub"], "CREATE_SOLICITACAO", "solicitacao_vaga", sol.id,
-                   f"{position} — {location}")
+        audit.log(user["sub"], "CREATE_SOLICITACAO", "solicitacao_vaga", sol.id, f"{position} — {location}")
 
         # Notifica Rafael (CC: TI)
         try:
@@ -289,8 +288,7 @@ def _processar_decisao(db, sol, decision: str, motivo: str, decidido_por: str):
     db.commit()
     db.refresh(sol)
 
-    log_action(db, decidido_por, f"SOLICITACAO_{decision}", "solicitacao_vaga", sol.id,
-               f"{sol.position} — {sol.location}")
+    audit.log(decidido_por, f"SOLICITACAO_{decision}", "solicitacao_vaga", sol.id, f"{sol.position} — {sol.location}")
 
     # Notifica gestor (CC: RH)
     try:
