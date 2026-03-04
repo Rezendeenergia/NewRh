@@ -306,26 +306,41 @@
         <div class="card">
           <div class="card__header">
             <span class="card__title">🔍 Log de Auditoria</span>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
               <input id="audit-user-filter" type="text" class="form-field__input"
                      placeholder="Filtrar usuário" style="width:140px;padding:6px 10px;font-size:.8rem;"
                      oninput="Manager.loadAudit(1)">
               <select id="audit-action-filter" class="form-field__select"
-                      style="width:170px;padding:6px 10px;font-size:.8rem;"
+                      style="width:200px;padding:6px 10px;font-size:.8rem;"
                       onchange="Manager.loadAudit(1)">
                 <option value="">Todas as ações</option>
-                <option value="LOGIN">Login</option>
-                <option value="LOGIN_FAILED">Login Falho</option>
-                <option value="CREATE_JOB">Criar Vaga</option>
-                <option value="UPDATE_JOB">Editar Vaga</option>
-                <option value="DELETE_JOB">Excluir Vaga</option>
-                <option value="TOGGLE_JOB">Abrir/Fechar Vaga</option>
-                <option value="UPDATE_STATUS">Mudar Status</option>
-                <option value="INVITE_USER">Convidar Gestor</option>
-                <option value="NEW_APPLICATION">Nova Candidatura</option>
-                <option value="DOWNLOAD_RESUME">Download Currículo</option>
-                <option value="EXPORT_CSV">Exportar CSV</option>
-                <option value="RESET_PASSWORD">Redefinir Senha</option>
+                <optgroup label="── Autenticação">
+                  <option value="LOGIN">🔑 Login</option>
+                  <option value="LOGIN_FAILED">⚠️ Login Falho</option>
+                  <option value="INVITE_USER">✉️ Convidar Gestor</option>
+                  <option value="ACTIVATE_USER">✅ Ativar Conta</option>
+                  <option value="RESET_PASSWORD">🔑 Redefinir Senha</option>
+                </optgroup>
+                <optgroup label="── Vagas">
+                  <option value="CREATE_JOB">➕ Criar Vaga</option>
+                  <option value="UPDATE_JOB">✏️ Editar Vaga</option>
+                  <option value="DELETE_JOB">🗑 Excluir Vaga</option>
+                  <option value="TOGGLE_JOB">🔄 Abrir/Fechar Vaga</option>
+                </optgroup>
+                <optgroup label="── Solicitações">
+                  <option value="CREATE_SOLICITACAO">📋 Solicitação Criada</option>
+                  <option value="SOLICITACAO_APROVADA">✅ Solicitação Aprovada</option>
+                  <option value="SOLICITACAO_REJEITADA">❌ Solicitação Rejeitada</option>
+                </optgroup>
+                <optgroup label="── Candidaturas">
+                  <option value="NEW_APPLICATION">📥 Nova Candidatura</option>
+                  <option value="UPDATE_STATUS">📋 Mudar Status</option>
+                  <option value="FUNNEL_ADVANCE">⏩ Avançou no Funil</option>
+                  <option value="FUNNEL_REJECTED">⏹ Reprovado no Funil</option>
+                  <option value="AUTO_ADMISSION">🏢 Admissão Iniciada</option>
+                  <option value="DOWNLOAD_RESUME">⬇ Download Currículo</option>
+                  <option value="EXPORT_CSV">📤 Exportar CSV</option>
+                </optgroup>
               </select>
             </div>
           </div>
@@ -337,16 +352,17 @@
                     <th style="padding:10px 16px;text-align:left;color:var(--ink-3);font-weight:600;white-space:nowrap;">Data/Hora</th>
                     <th style="padding:10px 16px;text-align:left;color:var(--ink-3);font-weight:600;">Usuário</th>
                     <th style="padding:10px 16px;text-align:left;color:var(--ink-3);font-weight:600;">Ação</th>
+                    <th style="padding:10px 16px;text-align:left;color:var(--ink-3);font-weight:600;">Entidade</th>
                     <th style="padding:10px 16px;text-align:left;color:var(--ink-3);font-weight:600;">Detalhe</th>
                     <th style="padding:10px 16px;text-align:left;color:var(--ink-3);font-weight:600;">IP</th>
                   </tr>
                 </thead>
                 <tbody id="audit-tbody">
-                  <tr><td colspan="5" style="padding:24px;text-align:center;color:var(--ink-3);">Carregando...</td></tr>
+                  <tr><td colspan="6" style="padding:24px;text-align:center;color:var(--ink-3);">Carregando...</td></tr>
                 </tbody>
               </table>
             </div>
-            <div id="audit-pagination" style="padding:14px 16px;border-top:1px solid rgba(255,255,255,.06);display:flex;gap:8px;justify-content:center;"></div>
+            <div id="audit-pagination" style="padding:14px 16px;border-top:1px solid rgba(255,255,255,.06);display:flex;gap:8px;justify-content:center;flex-wrap:wrap;"></div>
           </div>
         </div>
       </div><!-- end audit subtab -->
