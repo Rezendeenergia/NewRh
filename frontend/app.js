@@ -14,6 +14,36 @@ let allJobs         = [];   // cache para busca local
 // Estado global do usuário logado
 const AppState = { role: null, username: null };
 
+
+// ── Dropdown customizado de filtro de auditoria ───────────────
+function toggleAuditDropdown() {
+  const list = document.getElementById('audit-action-list');
+  if (!list) return;
+  const open = list.style.display === 'block';
+  list.style.display = open ? 'none' : 'block';
+}
+
+function selectAuditAction(el) {
+  const val   = el.dataset.val;
+  const label = el.textContent.trim();
+  document.getElementById('audit-action-filter').value = val;
+  document.getElementById('audit-action-label').textContent = label || 'Todas as ações';
+  document.getElementById('audit-action-list').style.display = 'none';
+  // Marca selecionado
+  document.querySelectorAll('.adf-opt').forEach(o => o.classList.remove('adf-selected'));
+  el.classList.add('adf-selected');
+  Manager.loadAudit(1);
+}
+
+// Fecha dropdown ao clicar fora
+document.addEventListener('click', function(e) {
+  const dd = document.getElementById('audit-action-dropdown');
+  if (dd && !dd.contains(e.target)) {
+    const list = document.getElementById('audit-action-list');
+    if (list) list.style.display = 'none';
+  }
+});
+
 // ─── API helper (com detecção de 401) ────────────────────────
 
 async function request(path, options = {}) {
