@@ -11,6 +11,9 @@ let currentPage     = 1;
 let chartInstances  = {};
 let allJobs         = [];   // cache para busca local
 
+// Estado global do usuário logado
+const AppState = { role: null, username: null };
+
 // ─── API helper (com detecção de 401) ────────────────────────
 
 async function request(path, options = {}) {
@@ -1001,6 +1004,7 @@ document.getElementById('login-form').addEventListener('submit', async function(
       password: document.getElementById('login-password').value,
     })});
     sessionToken = r.token; sessionUsername = r.username;
+    AppState.role = r.role; AppState.username = r.username;
     showToast('Bem-vindo!', `Logado como ${r.username}`, 'success');
     Manager.showDashboard();
   } catch (err) { showAlert('login-alert', '❌ ' + err.message); }
