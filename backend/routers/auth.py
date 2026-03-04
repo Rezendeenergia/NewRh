@@ -30,7 +30,7 @@ def login():
         audit.log(user.username, audit.LOGIN, entity="user", entity_id=user.id,
                   detail=f"Login bem-sucedido")
         return jsonify({
-            "token":    create_token(user.username),
+            "token":    create_token(user.username, user.role),
             "username": user.username,
             "role":     user.role,
         })
