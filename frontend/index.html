@@ -409,35 +409,36 @@
                      placeholder="Filtrar usuário" style="width:140px;padding:6px 10px;font-size:.8rem;"
                      oninput="Manager.loadAudit(1)">
               <select id="audit-action-filter" class="form-field__select"
-                      style="width:200px;padding:6px 10px;font-size:.8rem;"
+                      style="width:200px;padding:6px 10px;font-size:.8rem;
+                             background:#1A1F2E;color:#F4F5F7;border:1px solid rgba(255,255,255,.12);"
                       onchange="Manager.loadAudit(1)">
-                <option value="">Todas as ações</option>
-                <optgroup label="── Autenticação">
-                  <option value="LOGIN">🔑 Login</option>
-                  <option value="LOGIN_FAILED">⚠️ Login Falho</option>
-                  <option value="INVITE_USER">✉️ Convidar Gestor</option>
-                  <option value="ACTIVATE_USER">✅ Ativar Conta</option>
-                  <option value="RESET_PASSWORD">🔑 Redefinir Senha</option>
+                <option value="" style="background:#1A1F2E;color:#F4F5F7;">Todas as ações</option>
+                <optgroup label="── Autenticação" style="background:#1A1F2E;color:#FF6A00;font-weight:700;">
+                  <option value="LOGIN"          style="background:#1A1F2E;color:#F4F5F7;">🔑 Login</option>
+                  <option value="LOGIN_FAILED"   style="background:#1A1F2E;color:#F4F5F7;">⚠️ Login Falho</option>
+                  <option value="INVITE_USER"    style="background:#1A1F2E;color:#F4F5F7;">✉️ Convidar Gestor</option>
+                  <option value="ACTIVATE_USER"  style="background:#1A1F2E;color:#F4F5F7;">✅ Ativar Conta</option>
+                  <option value="RESET_PASSWORD" style="background:#1A1F2E;color:#F4F5F7;">🔑 Redefinir Senha</option>
                 </optgroup>
-                <optgroup label="── Vagas">
-                  <option value="CREATE_JOB">➕ Criar Vaga</option>
-                  <option value="UPDATE_JOB">✏️ Editar Vaga</option>
-                  <option value="DELETE_JOB">🗑 Excluir Vaga</option>
-                  <option value="TOGGLE_JOB">🔄 Abrir/Fechar Vaga</option>
+                <optgroup label="── Vagas" style="background:#1A1F2E;color:#FF6A00;font-weight:700;">
+                  <option value="CREATE_JOB" style="background:#1A1F2E;color:#F4F5F7;">➕ Criar Vaga</option>
+                  <option value="UPDATE_JOB" style="background:#1A1F2E;color:#F4F5F7;">✏️ Editar Vaga</option>
+                  <option value="DELETE_JOB" style="background:#1A1F2E;color:#F4F5F7;">🗑 Excluir Vaga</option>
+                  <option value="TOGGLE_JOB" style="background:#1A1F2E;color:#F4F5F7;">🔄 Abrir/Fechar Vaga</option>
                 </optgroup>
-                <optgroup label="── Solicitações">
-                  <option value="CREATE_SOLICITACAO">📋 Solicitação Criada</option>
-                  <option value="SOLICITACAO_APROVADA">✅ Solicitação Aprovada</option>
-                  <option value="SOLICITACAO_REJEITADA">❌ Solicitação Rejeitada</option>
+                <optgroup label="── Solicitações" style="background:#1A1F2E;color:#FF6A00;font-weight:700;">
+                  <option value="CREATE_SOLICITACAO"    style="background:#1A1F2E;color:#F4F5F7;">📋 Solicitação Criada</option>
+                  <option value="SOLICITACAO_APROVADA"  style="background:#1A1F2E;color:#F4F5F7;">✅ Solicitação Aprovada</option>
+                  <option value="SOLICITACAO_REJEITADA" style="background:#1A1F2E;color:#F4F5F7;">❌ Solicitação Rejeitada</option>
                 </optgroup>
-                <optgroup label="── Candidaturas">
-                  <option value="NEW_APPLICATION">📥 Nova Candidatura</option>
-                  <option value="UPDATE_STATUS">📋 Mudar Status</option>
-                  <option value="FUNNEL_ADVANCE">⏩ Avançou no Funil</option>
-                  <option value="FUNNEL_REJECTED">⏹ Reprovado no Funil</option>
-                  <option value="AUTO_ADMISSION">🏢 Admissão Iniciada</option>
-                  <option value="DOWNLOAD_RESUME">⬇ Download Currículo</option>
-                  <option value="EXPORT_CSV">📤 Exportar CSV</option>
+                <optgroup label="── Candidaturas" style="background:#1A1F2E;color:#FF6A00;font-weight:700;">
+                  <option value="NEW_APPLICATION"  style="background:#1A1F2E;color:#F4F5F7;">📥 Nova Candidatura</option>
+                  <option value="UPDATE_STATUS"    style="background:#1A1F2E;color:#F4F5F7;">📋 Mudar Status</option>
+                  <option value="FUNNEL_ADVANCE"   style="background:#1A1F2E;color:#F4F5F7;">⏩ Avançou no Funil</option>
+                  <option value="FUNNEL_REJECTED"  style="background:#1A1F2E;color:#F4F5F7;">⏹ Reprovado no Funil</option>
+                  <option value="AUTO_ADMISSION"   style="background:#1A1F2E;color:#F4F5F7;">🏢 Admissão Iniciada</option>
+                  <option value="DOWNLOAD_RESUME"  style="background:#1A1F2E;color:#F4F5F7;">⬇ Download Currículo</option>
+                  <option value="EXPORT_CSV"       style="background:#1A1F2E;color:#F4F5F7;">📤 Exportar Excel</option>
                 </optgroup>
               </select>
             </div>
