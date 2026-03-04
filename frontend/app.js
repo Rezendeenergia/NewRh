@@ -996,7 +996,7 @@ async function loadAudit(page = 1) {
 
     const tbody = document.getElementById('audit-tbody');
     if (!tbody) return;
-    if (data.items.length === 0) {
+    if (!data || !data.items || data.items.length === 0) {
       tbody.innerHTML = '<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--ink-3);">Nenhum registro encontrado.</td></tr>';
     } else {
       tbody.innerHTML = data.items.map(r => {
