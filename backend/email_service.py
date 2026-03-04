@@ -603,3 +603,38 @@ def notify_resultado_solicitacao(sol, base_url: str):
 
     html = _base_template(subject, content)
     send_email(sol.solicitante_email, subject, html, cc=[EMAIL_RH])
+
+
+def notify_solicitacao_gestor(sol, base_url: str):
+    """Confirma para o gestor que sua solicitação foi recebida e está pendente de aprovação."""
+    subject = f"📋 Solicitação Recebida — {sol.position} ({sol.location})"
+    content = f"""
+<h2 style="margin:0 0 6px;font-size:22px;font-weight:800;color:#fff;">Solicitação Enviada com Sucesso</h2>
+<p style="margin:0 0 20px;font-size:13px;color:rgba(255,106,0,0.8);text-transform:uppercase;letter-spacing:2px;font-weight:600;">
+  Aguardando aprovação da diretoria</p>
+<p style="color:#A8A8B8;font-size:15px;line-height:1.7;margin:0 0 16px;">
+  Olá, <strong style="color:#fff;">{sol.solicitante_nome}</strong>! Sua solicitação foi recebida
+  e encaminhada para aprovação. Você será notificado assim que houver uma decisão.</p>
+<table cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate;border-spacing:0 8px;margin-bottom:20px;">
+{"".join(f"""  <tr>
+    <td style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;
+               padding:10px 16px;width:38%;font-size:11px;color:rgba(255,106,0,0.8);font-weight:700;
+               text-transform:uppercase;letter-spacing:1.5px;">{lbl}</td>
+    <td style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:8px;
+               padding:10px 16px;color:#F4F5F7;font-size:14px;">{val or "—"}</td>
+  </tr>""" for lbl, val in [
+    ("Cargo", sol.position),
+    ("Localização", sol.location),
+    ("Tipo", sol.tipo),
+    ("Nº de Vagas", str(sol.num_vagas)),
+    ("Justificativa", sol.justificativa),
+])}
+</table>
+<div style="background:rgba(255,184,48,0.08);border:1px solid rgba(255,184,48,0.25);border-left:3px solid #FFB830;
+            border-radius:10px;padding:14px 18px;text-align:center;">
+  <span style="color:#FFB830;font-weight:700;font-size:14px;">⏳ Status: Pendente de Aprovação</span>
+</div>"""
+
+    html = _base_template(subject, content)
+    # Gestor recebe, RH recebe CC para acompanhamento
+    send_email(sol.solicitante_email, subject, html, cc=[EMAIL_RH])
