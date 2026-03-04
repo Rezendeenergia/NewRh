@@ -532,39 +532,181 @@ def update_observacoes(candidatura_id):
         db.close()
 
 
-# ── Exportar CSV ──────────────────────────────────────────────
+# ── Exportar Excel (.xlsx) com abas por etapa ─────────────────
 
 @bp.get("/export")
 @require_auth
 def export_csv():
+    """
+    Gera um Excel com uma aba por etapa do funil:
+    Todas | Triagem | Triagem OK | Entrevista | Entrevista OK |
+    Aprovação Final | Aprovados | Reprovados
+    """
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
+
+    COLUNAS = [
+        ("ID",               lambda r: r.id),
+        ("Cargo",            lambda r: r.job.position if r.job else ""),
+        ("Localização",      lambda r: r.job.location if r.job else ""),
+        ("Nome",             lambda r: r.full_name),
+        ("CPF",              lambda r: r.cpf),
+        ("RG",               lambda r: r.rg),
+        ("Nascimento",       lambda r: str(r.data_nascimento) if r.data_nascimento else ""),
+        ("Tipo Sanguíneo",   lambda r: r.tipo_sanguineo or ""),
+        ("Nome da Mãe",      lambda r: r.nome_mae or ""),
+        ("Cidade Natal",     lambda r: r.cidade_natal or ""),
+        ("Cidade Atual",     lambda r: r.cidade_atual or ""),
+        ("Telefone",         lambda r: r.phone),
+        ("E-mail",           lambda r: r.email),
+        ("LinkedIn",         lambda r: r.linkedin or ""),
+        ("Formação",         lambda r: r.education or ""),
+        ("Experiência",      lambda r: r.experience or ""),
+        ("Disponib. Viagem", lambda r: r.disponibilidade_viagem or ""),
+        ("Calça",            lambda r: r.tamanho_calca or ""),
+        ("Camisa",           lambda r: r.tamanho_camisa or ""),
+        ("Bota",             lambda r: r.tamanho_bota or ""),
+        ("CNH",              lambda r: r.carteira_motorista or ""),
+        ("NRs",              lambda r: r.nrs or ""),
+        ("Escolas",          lambda r: r.escolas or ""),
+        ("Motivação",        lambda r: r.motivation or ""),
+        ("Observações RH",   lambda r: r.observacoes or ""),
+        ("Etapa Funil",      lambda r: r.funnel_stage or ""),
+        ("Status",           lambda r: r.status),
+        ("Data Candidatura", lambda r: r.applied_at.strftime("%d/%m/%Y %H:%M") if r.applied_at else ""),
+    ]
+
+    # Abas: (nome_aba, filtro, cor_header_hex)
+    ABAS = [
+        ("📋 Todas",           None,                "#FF6A00"),
+        ("🔍 Triagem",         "TRIAGEM",           "#5B8DEF"),
+        ("✅ Triagem OK",      "TRIAGEM_OK",        "#2980B9"),
+        ("🎤 Entrevista",      "ENTREVISTA",        "#9B59B6"),
+        ("✅ Entrevista OK",   "ENTREVISTA_OK",     "#8E44AD"),
+        ("🏆 Aprovação Final", "APROVACAO_FINAL",   "#F39C12"),
+        ("✅ Aprovados",       "APPROVED",          "#27AE60"),
+        ("❌ Reprovados",      "REJECTED",          "#E74C3C"),
+    ]
+
+    # Estilos
+    def mk_header_fill(hex_color):
+        c = hex_color.lstrip("#")
+        return PatternFill("solid", fgColor=c)
+
+    header_font  = Font(bold=True, color="FFFFFF", size=10)
+    body_font    = Font(size=10)
+    center_align = Alignment(horizontal="center", vertical="center", wrap_text=False)
+    left_align   = Alignment(horizontal="left",   vertical="center", wrap_text=False)
+    thin_border  = Border(
+        bottom=Side(style="thin", color="DDDDDD"),
+    )
+    alt_fill = PatternFill("solid", fgColor="1E2330")
+
     db = get_db()
     try:
-        rows = db.query(models.Candidatura).order_by(models.Candidatura.applied_at.desc()).all()
-        output = io.StringIO()
-        output.write("\ufeff")
-        writer = csv.writer(output)
-        writer.writerow([
-            "ID","Cargo","Localização","Nome","CPF","RG","Nascimento",
-            "TipoSang","MãeNome","CidadeNatal","CidadeAtual","Telefone",
-            "Email","LinkedIn","Formação","Experiência","Viagem",
-            "Calça","Camisa","Bota","CNH","NRs","Escolas",
-            "Currículo","Motivação","Observações RH","Status","DataCandidatura",
-        ])
-        for row in rows:
-            writer.writerow([
-                row.id, row.job.position, row.job.location,
-                row.full_name, row.cpf, row.rg, row.data_nascimento,
-                row.tipo_sanguineo, row.nome_mae, row.cidade_natal, row.cidade_atual,
-                row.phone, row.email, row.linkedin, row.education, row.experience,
-                row.disponibilidade_viagem, row.tamanho_calca, row.tamanho_camisa, row.tamanho_bota,
-                row.carteira_motorista, row.nrs, row.escolas,
-                row.resume_name, row.motivation, row.observacoes, row.status, row.applied_at,
-            ])
-        audit.log(request.username, audit.EXPORT_CSV, detail="Exportação de candidaturas CSV")
+        todas = (
+            db.query(models.Candidatura)
+            .order_by(models.Candidatura.applied_at.desc())
+            .all()
+        )
+
+        wb = openpyxl.Workbook()
+        wb.remove(wb.active)   # remove aba padrão
+
+        for nome_aba, filtro, cor in ABAS:
+            if filtro is None:
+                rows = todas
+            else:
+                rows = [r for r in todas
+                        if (r.funnel_stage == filtro or r.status == filtro)]
+
+            ws = wb.create_sheet(title=nome_aba)
+
+            # ── Cabeçalho ──────────────────────────────────────
+            fill = mk_header_fill(cor)
+            for col_idx, (col_name, _) in enumerate(COLUNAS, start=1):
+                cell = ws.cell(row=1, column=col_idx, value=col_name)
+                cell.font      = header_font
+                cell.fill      = fill
+                cell.alignment = center_align
+
+            ws.row_dimensions[1].height = 22
+
+            # ── Dados ──────────────────────────────────────────
+            for row_idx, cand in enumerate(rows, start=2):
+                bg = PatternFill("solid", fgColor="161B27") if row_idx % 2 == 0 else alt_fill
+                for col_idx, (_, getter) in enumerate(COLUNAS, start=1):
+                    try:
+                        val = getter(cand)
+                    except Exception:
+                        val = ""
+                    cell = ws.cell(row=row_idx, column=col_idx, value=val)
+                    cell.font      = body_font
+                    cell.fill      = bg
+                    cell.border    = thin_border
+                    cell.alignment = center_align if col_idx == 1 else left_align
+
+            # ── Largura das colunas ─────────────────────────────
+            col_widths = [6, 22, 18, 28, 16, 14, 14, 10, 28, 18, 18, 16,
+                          30, 28, 18, 16, 16, 8, 8, 8, 20, 20, 24, 40, 40, 18, 14, 18]
+            for i, w in enumerate(col_widths, start=1):
+                ws.column_dimensions[get_column_letter(i)].width = w
+
+            # ── Linha de resumo no rodapé ───────────────────────
+            if rows:
+                rodape_row = len(rows) + 3
+                ws.cell(row=rodape_row, column=1,
+                        value=f"Total: {len(rows)} candidato(s)").font = Font(
+                    bold=True, color="FF6A00", size=10)
+
+            # ── Congela primeira linha ──────────────────────────
+            ws.freeze_panes = "A2"
+
+        # ── Aba de Resumo Geral ─────────────────────────────────
+        ws_res = wb.create_sheet(title="📊 Resumo", index=0)
+        res_fill = mk_header_fill("#FF6A00")
+        for col_idx, titulo in enumerate(["Etapa", "Total", "% do Total"], start=1):
+            cell = ws_res.cell(row=1, column=col_idx, value=titulo)
+            cell.font = header_font; cell.fill = res_fill
+            cell.alignment = center_align
+        ws_res.column_dimensions["A"].width = 28
+        ws_res.column_dimensions["B"].width = 12
+        ws_res.column_dimensions["C"].width = 14
+
+        contagens = [
+            ("Total Geral",     len(todas)),
+            ("Triagem",         len([r for r in todas if (r.funnel_stage or r.status) == "TRIAGEM"])),
+            ("Triagem OK",      len([r for r in todas if (r.funnel_stage or r.status) == "TRIAGEM_OK"])),
+            ("Entrevista",      len([r for r in todas if (r.funnel_stage or r.status) == "ENTREVISTA"])),
+            ("Entrevista OK",   len([r for r in todas if (r.funnel_stage or r.status) == "ENTREVISTA_OK"])),
+            ("Aprovação Final", len([r for r in todas if (r.funnel_stage or r.status) == "APROVACAO_FINAL"])),
+            ("Aprovados",       len([r for r in todas if r.status == "APPROVED"])),
+            ("Reprovados",      len([r for r in todas if r.status == "REJECTED"])),
+        ]
+        total_geral = len(todas) or 1
+        for i, (etapa, qtd) in enumerate(contagens, start=2):
+            pct = f"{qtd/total_geral*100:.1f}%" if i > 2 else "100%"
+            ws_res.cell(row=i, column=1, value=etapa).alignment = left_align
+            ws_res.cell(row=i, column=2, value=qtd).alignment   = center_align
+            ws_res.cell(row=i, column=3, value=pct).alignment   = center_align
+
+        ws_res.freeze_panes = "A2"
+
+        # ── Gera bytes e retorna ────────────────────────────────
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+
+        from datetime import date
+        nome_arquivo = f"candidaturas_rezende_{date.today().strftime('%Y%m%d')}.xlsx"
+        audit.log(request.username, audit.EXPORT_CSV,
+                  detail=f"Exportação Excel — {len(todas)} candidaturas")
+
         return Response(
             output.getvalue(),
-            mimetype="text/csv; charset=utf-8",
-            headers={"Content-Disposition": "attachment; filename=candidaturas_rezende.csv"},
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f"attachment; filename={nome_arquivo}"},
         )
     finally:
         db.close()
