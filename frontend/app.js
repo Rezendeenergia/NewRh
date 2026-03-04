@@ -918,40 +918,95 @@ async function loadAudit(page = 1) {
     if (userF)   params.set('username', userF);
     if (actionF) params.set('action', actionF);
     const data = await request(`/api/auth/audit?${params}`);
-    const ACTION_LABEL = {
-      LOGIN:'🔑 Login', LOGIN_FAILED:'⚠️ Login Falho',
-      CREATE_JOB:'➕ Criar Vaga', UPDATE_JOB:'✏️ Editar Vaga',
-      DELETE_JOB:'🗑 Excluir Vaga', TOGGLE_JOB:'🔄 Abrir/Fechar Vaga',
-      UPDATE_STATUS:'📋 Mudar Status', INVITE_USER:'✉️ Convidar Gestor',
-      NEW_APPLICATION:'📥 Nova Candidatura', DOWNLOAD_RESUME:'⬇ Download Currículo',
-      EXPORT_CSV:'📤 Exportar CSV', RESET_PASSWORD:'🔑 Redefinir Senha',
-      ACTIVATE_USER:'✅ Ativar Conta', FORGOT_PASSWORD:'📧 Esqueceu Senha',
+
+    // Mapeamento completo de ações → label legível + cor da categoria
+    const ACTION_MAP = {
+      // Autenticação
+      LOGIN:                { label: '🔑 Login',                   color: '#5B8DEF' },
+      LOGIN_FAILED:         { label: '⚠️ Login Falho',             color: '#FFB830' },
+      LOGOUT:               { label: '🚪 Logout',                  color: '#9AA3B2' },
+      FORGOT_PASSWORD:      { label: '📧 Esqueceu Senha',          color: '#9AA3B2' },
+      RESET_PASSWORD:       { label: '🔑 Redefinir Senha',         color: '#9AA3B2' },
+      INVITE_USER:          { label: '✉️ Convidar Gestor',         color: '#A78BFA' },
+      ACTIVATE_USER:        { label: '✅ Ativar Conta',            color: '#2ECC71' },
+      // Vagas
+      CREATE_JOB:           { label: '➕ Vaga Criada',             color: '#2ECC71' },
+      UPDATE_JOB:           { label: '✏️ Vaga Editada',           color: '#5B8DEF' },
+      DELETE_JOB:           { label: '🗑 Vaga Excluída',          color: '#FF5252' },
+      TOGGLE_JOB:           { label: '🔄 Abrir/Fechar Vaga',       color: '#FFB830' },
+      // Candidaturas
+      NEW_APPLICATION:      { label: '📥 Nova Candidatura',        color: '#2ECC71' },
+      UPDATE_STATUS:        { label: '📋 Status Candidatura',      color: '#5B8DEF' },
+      FUNNEL_ADVANCE:       { label: '⏩ Avançou no Funil',        color: '#2ECC71' },
+      FUNNEL_REJECTED:      { label: '⏹ Reprovado no Funil',      color: '#FF5252' },
+      DOWNLOAD_RESUME:      { label: '⬇ Download Currículo',       color: '#9AA3B2' },
+      EXPORT_CSV:           { label: '📤 Exportar CSV',            color: '#9AA3B2' },
+      AUTO_ADMISSION:       { label: '🏢 Admissão Iniciada',       color: '#A78BFA' },
+      // Solicitações de vaga
+      CREATE_SOLICITACAO:   { label: '📋 Solicitação Criada',      color: '#FFB830' },
+      SOLICITACAO_APROVADA: { label: '✅ Solicitação Aprovada',    color: '#2ECC71' },
+      SOLICITACAO_REJEITADA:{ label: '❌ Solicitação Rejeitada',   color: '#FF5252' },
     };
+
+    const ENTITY_LABEL = {
+      job: 'Vaga', candidatura: 'Candidatura', user: 'Usuário',
+      solicitacao_vaga: 'Solicitação', admission: 'Admissão',
+    };
+
     const tbody = document.getElementById('audit-tbody');
     if (!tbody) return;
     if (data.items.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="padding:24px;text-align:center;color:var(--ink-3);">Nenhum registro</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--ink-3);">Nenhum registro encontrado.</td></tr>';
     } else {
-      tbody.innerHTML = data.items.map(r => `
-        <tr style="border-bottom:1px solid rgba(255,255,255,.04);">
+      tbody.innerHTML = data.items.map(r => {
+        const map   = ACTION_MAP[r.action] || { label: r.action, color: '#9AA3B2' };
+        const entLabel = r.entity ? (ENTITY_LABEL[r.entity] || r.entity) : '—';
+        const entId    = r.entityId ? ` #${r.entityId}` : '';
+        return `
+        <tr style="border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s;"
+            onmouseover="this.style.background='rgba(255,255,255,.03)'"
+            onmouseout="this.style.background=''">
           <td style="padding:9px 16px;color:var(--ink-3);white-space:nowrap;font-size:.75rem;">
             ${r.createdAt ? new Date(r.createdAt).toLocaleString('pt-BR') : '—'}
           </td>
-          <td style="padding:9px 16px;color:#fff;font-weight:600;">${r.username}</td>
-          <td style="padding:9px 16px;white-space:nowrap;">${ACTION_LABEL[r.action] || r.action}</td>
-          <td style="padding:9px 16px;color:var(--ink-2);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.detail || ''}">${r.detail || '—'}</td>
+          <td style="padding:9px 16px;color:#fff;font-weight:700;">${r.username}</td>
+          <td style="padding:9px 16px;white-space:nowrap;">
+            <span style="background:${map.color}18;border:1px solid ${map.color}44;color:${map.color};
+                         border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;white-space:nowrap;">
+              ${map.label}
+            </span>
+          </td>
+          <td style="padding:9px 16px;white-space:nowrap;">
+            <span style="font-size:12px;color:var(--ink-2);">${entLabel}${entId}</span>
+          </td>
+          <td style="padding:9px 16px;color:var(--ink-2);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+              title="${r.detail || ''}">${r.detail || '—'}</td>
           <td style="padding:9px 16px;color:var(--ink-3);font-size:.75rem;">${r.ip || '—'}</td>
-        </tr>`).join('');
+        </tr>`;
+      }).join('');
     }
+
+    // Atualiza o select de filtro de ações se ainda vazio
+    const actionSel = document.getElementById('audit-action-filter');
+    if (actionSel && actionSel.options.length <= 1) {
+      Object.entries(ACTION_MAP).forEach(([key, val]) => {
+        const opt = document.createElement('option');
+        opt.value = key; opt.textContent = val.label;
+        actionSel.appendChild(opt);
+      });
+    }
+
     const pgDiv = document.getElementById('audit-pagination');
     if (pgDiv && data.totalPages > 1) {
-      pgDiv.innerHTML = Array.from({length:data.totalPages},(_,i)=>
+      pgDiv.innerHTML = Array.from({length: Math.min(data.totalPages, 10)}, (_, i) =>
         `<button class="btn btn--ghost btn--small${i+1===page?' btn--primary':''}" onclick="loadAudit(${i+1})">${i+1}</button>`
       ).join('');
+      if (data.totalPages > 10) pgDiv.innerHTML += `<span style="color:var(--ink-3);padding:0 8px;font-size:12px;">... ${data.totalPages} páginas</span>`;
     } else if (pgDiv) pgDiv.innerHTML = '';
+
   } catch(e) {
     const tbody = document.getElementById('audit-tbody');
-    if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="padding:24px;text-align:center;color:#FF5252;">${e.message}</td></tr>`;
+    if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="padding:24px;text-align:center;color:#FF5252;">${e.message}</td></tr>`;
   }
 }
 
