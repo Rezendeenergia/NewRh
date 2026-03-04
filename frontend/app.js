@@ -817,18 +817,28 @@ const Manager = {
       const tbody = document.getElementById('oldest-pending-tbody');
       if (tbody) {
         if (t.oldestPending && t.oldestPending.length > 0) {
-          tbody.innerHTML = t.oldestPending.map(p => `
-            <tr style="border-bottom:1px solid rgba(255,255,255,.05);">
-              <td style="padding:10px 16px;color:#fff;">${p.name}</td>
+          tbody.innerHTML = t.oldestPending.map(p => {
+            const cor   = p.days >= 7 ? '#FF5252' : p.days >= 3 ? '#FFB830' : '#2ECC71';
+            const icon  = p.days >= 7 ? '🚨' : p.days >= 3 ? '⚠️' : '✅';
+            const label = p.days >= 7 ? 'Crítico' : p.days >= 3 ? 'Atenção' : 'OK';
+            return `
+            <tr style="border-bottom:1px solid rgba(255,255,255,.05);transition:background .15s;"
+                onmouseover="this.style.background='rgba(255,255,255,.03)'"
+                onmouseout="this.style.background=''">
+              <td style="padding:10px 16px;color:#fff;font-weight:600;">${p.name}</td>
               <td style="padding:10px 16px;color:var(--ink-2);">${p.position}</td>
               <td style="padding:10px 16px;">
-                <span style="color:${p.days > 7 ? '#FF5252' : p.days > 3 ? '#FFB830' : '#2ECC71'};font-weight:700;">
-                  ${p.days} dia${p.days !== 1 ? 's' : ''}
-                </span>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="background:${cor}18;border:1px solid ${cor}44;color:${cor};
+                               border-radius:20px;padding:3px 10px;font-size:12px;font-weight:800;white-space:nowrap;">
+                    ${icon} ${p.days}d — ${label}
+                  </span>
+                </div>
               </td>
-            </tr>`).join('');
+            </tr>`;
+          }).join('');
         } else {
-          tbody.innerHTML = '<tr><td colspan="3" style="padding:20px;text-align:center;color:var(--ink-3);">Nenhuma candidatura pendente</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="3" style="padding:20px;text-align:center;color:var(--ink-3);">✅ Nenhuma candidatura pendente</td></tr>';
         }
       }
     }
