@@ -19,12 +19,21 @@ def verify_password(plain: str, hashed: str) -> bool:
     return bcrypt.checkpw(plain.encode(), hashed.encode())
 
 
-def create_token(username: str) -> str:
+def create_token(username: str, role: str = "ROLE_ADMIN") -> str:
     payload = {
-        "sub": username,
-        "exp": datetime.now(timezone.utc) + timedelta(hours=24),
+        "sub":  username,
+        "role": role,
+        "exp":  datetime.now(timezone.utc) + timedelta(hours=24),
     }
     return jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+
+
+def decode_token(token: str) -> dict | None:
+    """Decodifica o JWT e retorna o payload ou None se inválido."""
+    try:
+        return jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+    except Exception:
+        return None
 
 
 def require_auth(f):
@@ -34,12 +43,10 @@ def require_auth(f):
         if not auth_header.startswith("Bearer "):
             return jsonify({"message": "Token não fornecido"}), 401
         token = auth_header[7:]
-        try:
-            payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-            request.username = payload["sub"]
-        except jwt.ExpiredSignatureError:
-            return jsonify({"message": "Token expirado"}), 401
-        except jwt.InvalidTokenError:
-            return jsonify({"message": "Token inválido"}), 401
+        payload = decode_token(token)
+        if not payload:
+            return jsonify({"message": "Token inválido ou expirado"}), 401
+        request.username = payload["sub"]
+        request.role     = payload.get("role", "ROLE_ADMIN")
         return f(*args, **kwargs)
     return decorated
