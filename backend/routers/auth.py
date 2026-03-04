@@ -2,7 +2,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from flask import Blueprint, request, jsonify
 from database import get_db
-from security import hash_password, verify_password, create_token, require_auth
+from security import hash_password, verify_password, create_token, decode_token, require_auth
 import models
 import audit
 
