@@ -29,7 +29,7 @@ def create_token(username: str, role: str = "ROLE_ADMIN") -> str:
 
 
 def decode_token(token: str) -> dict | None:
-    """Decodifica o JWT e retorna o payload ou None se inválido."""
+    """Decodifica JWT e retorna payload ou None se inválido."""
     try:
         return jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
     except Exception:
