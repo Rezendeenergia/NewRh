@@ -77,6 +77,20 @@ def rate_limit_handler(e):
         "message": "Muitas tentativas. Aguarde alguns minutos e tente novamente.",
     }), 429
 
+
+@app.route("/api/email-test")
+def email_test():
+    """Diagnóstico — verifica configuração de e-mail sem enviar nada."""
+    import email_service as es
+    return jsonify({
+        "email_enabled":  es.EMAIL_ENABLED,
+        "sender":         es.SENDER_EMAIL,
+        "tenant_id_ok":   bool(es.TENANT_ID),
+        "client_id_ok":   bool(es.CLIENT_ID),
+        "client_secret_ok": bool(es.CLIENT_SECRET),
+        "token_url":      es.TOKEN_URL,
+    })
+
 from routers import auth, jobs, candidaturas, processos, solicitacoes
 app.register_blueprint(auth.bp)
 app.register_blueprint(jobs.bp)
