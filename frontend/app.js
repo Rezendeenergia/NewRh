@@ -1027,16 +1027,6 @@ async function loadAudit(page = 1) {
       }).join('');
     }
 
-    // Atualiza o select de filtro de ações se ainda vazio
-    const actionSel = document.getElementById('audit-action-filter');
-    if (actionSel && actionSel.options.length <= 1) {
-      Object.entries(ACTION_MAP).forEach(([key, val]) => {
-        const opt = document.createElement('option');
-        opt.value = key; opt.textContent = val.label;
-        actionSel.appendChild(opt);
-      });
-    }
-
     const pgDiv = document.getElementById('audit-pagination');
     if (pgDiv && data.totalPages > 1) {
       pgDiv.innerHTML = Array.from({length: Math.min(data.totalPages, 10)}, (_, i) =>
