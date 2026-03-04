@@ -2,22 +2,23 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from dotenv import load_dotenv
 from urllib.parse import urlparse, urlunparse, quote
+import ssl
 import os
 
 load_dotenv()
 
 raw_url = os.getenv("DATABASE_URL", "")
 
-def _build_url(url: str) -> str:
+def _build_url(url: str):
     if not url:
-        return url
+        return url, {}
 
     # Normaliza prefixo
     for prefix in ("postgresql+psycopg2://", "postgresql+pg8000://", "postgres://"):
         if url.startswith(prefix):
             url = "postgresql://" + url[len(prefix):]
 
-    # Parse para codificar senha com caracteres especiais
+    # Parse para codificar senha com caracteres especiais (@, #, etc)
     parsed = urlparse(url)
     password = parsed.password or ""
     username = parsed.username or ""
@@ -34,14 +35,21 @@ def _build_url(url: str) -> str:
         "", "", ""
     ))
 
-    clean_url += "?ssl_context=True"
-    return clean_url
+    # SSL context real para pg8000
+    ssl_ctx = ssl.create_default_context()
+    ssl_ctx.check_hostname = False
+    ssl_ctx.verify_mode = ssl.CERT_NONE
+
+    connect_args = {"ssl_context": ssl_ctx}
+
+    return clean_url, connect_args
 
 
-database_url = _build_url(raw_url)
+database_url, connect_args = _build_url(raw_url)
 
 engine = create_engine(
     database_url,
+    connect_args=connect_args,
     pool_pre_ping=True,
     pool_timeout=20,
     pool_recycle=300,
