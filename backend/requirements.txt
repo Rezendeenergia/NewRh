@@ -9,3 +9,4 @@ flask-limiter==3.9.0
 msal==1.31.0
 requests==2.32.3
 gunicorn
+apscheduler==3.10.4
