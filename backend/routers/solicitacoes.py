@@ -14,7 +14,7 @@ from database import SessionLocal
 from models import SolicitacaoVaga, Job, User
 from security import decode_token
 import audit
-from email_service import notify_solicitacao_rafael, notify_resultado_solicitacao
+from email_service import notify_solicitacao_rafael, notify_resultado_solicitacao, notify_solicitacao_gestor
 
 bp = Blueprint("solicitacoes", __name__, url_prefix="/api/solicitacoes")
 
@@ -85,6 +85,12 @@ def criar_solicitacao():
             notify_solicitacao_rafael(sol, RAFAEL_EMAIL, _base_url())
         except Exception as e:
             print(f"[EMAIL] Erro ao notificar Rafael: {e}")
+
+        # Confirma para o gestor que a solicitação foi recebida (CC: RH)
+        try:
+            notify_solicitacao_gestor(sol, _base_url())
+        except Exception as e:
+            print(f"[EMAIL] Erro ao notificar gestor (confirmação): {e}")
 
         return jsonify({"id": sol.id, "status": sol.status}), 201
     finally:
