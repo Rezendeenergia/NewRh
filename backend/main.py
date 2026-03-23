@@ -152,6 +152,14 @@ def email_test_send():
 
 from routers import auth, jobs, candidaturas, processos, solicitacoes
 app.register_blueprint(auth.bp)
+
+# Microsoft SSO
+from auth_microsoft import bp_ms
+app.register_blueprint(bp_ms, url_prefix="/api/auth/microsoft")
+
+# Portal do Candidato
+from candidato_auth import bp_cand
+app.register_blueprint(bp_cand, url_prefix="/api/candidato")
 app.register_blueprint(jobs.bp)
 app.register_blueprint(candidaturas.bp)
 app.register_blueprint(processos.bp)
