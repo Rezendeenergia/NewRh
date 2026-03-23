@@ -59,9 +59,13 @@ print(f"[DB] Conectando em: {host}")
 engine = create_engine(
     database_url,
     connect_args={"ssl_context": ssl_ctx},
-    pool_pre_ping=True,
-    pool_timeout=20,
-    pool_recycle=300,
+
+    # Pool otimizado para Supabase Transaction Pooler
+    pool_size=10,          # conexões mantidas abertas (era padrão 5)
+    max_overflow=20,       # conexões extras sob carga
+    pool_pre_ping=True,    # valida conexão antes de usar
+    pool_recycle=300,      # recicla a cada 5 min (evita timeout do Supabase)
+    pool_timeout=15,       # desiste de esperar conexão após 15s
 )
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
