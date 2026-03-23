@@ -69,7 +69,9 @@
         <h1 class="page-header__title">Vagas <span>Disponíveis</span></h1>
         <p class="page-header__description">Faça parte do time que move a energia do futuro. Candidate-se diretamente pelo portal.
         <div style="margin-top:14px;">
-          <a href="/acompanhar" style="color:rgba(255,106,0,0.7);font-size:.85rem;text-decoration:none;border-bottom:1px solid rgba(255,106,0,0.3);padding-bottom:2px;" onmouseover="this.style.color='var(--fire)'" onmouseout="this.style.color='rgba(255,106,0,0.7)'">
+          <a href="#" onclick="CandidatoPortal.abrir();return false;"
+             style="color:rgba(255,106,0,0.7);font-size:.85rem;text-decoration:none;border-bottom:1px solid rgba(255,106,0,0.3);padding-bottom:2px;"
+             onmouseover="this.style.color='var(--fire)'" onmouseout="this.style.color='rgba(255,106,0,0.7)'">
             🔍 Já se candidatou? Acompanhe aqui →
           </a>
         </div></p>
@@ -315,10 +317,35 @@
               <textarea id="apply-motivation" class="form-field__textarea" placeholder="Conte um pouco sobre você e sua motivação..."></textarea>
             </div>
 
+            <!-- Termo LGPD -->
+            <div style="background:rgba(91,141,239,0.06);border:1px solid rgba(91,141,239,0.2);
+                        border-radius:10px;padding:16px 18px;margin-bottom:16px;">
+              <p style="font-size:12px;color:#9AA3B2;margin:0 0 10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">
+                📋 Termo de Consentimento — LGPD
+              </p>
+              <p style="font-size:12px;color:#A8A8B8;margin:0 0 12px;line-height:1.7;">
+                Ao enviar esta candidatura, você autoriza a <strong style="color:#fff;">Rezende Construção e Manutenção Ltda.</strong>
+                a coletar, armazenar e processar seus dados pessoais exclusivamente para fins de
+                <strong style="color:#fff;">seleção e contratação</strong>, conforme a
+                <strong style="color:#fff;">Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018)</strong>.
+                Seus dados serão mantidos em sigilo e não serão compartilhados com terceiros sem seu consentimento.
+              </p>
+              <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
+                <input type="checkbox" id="lgpd-consent" required
+                       style="margin-top:3px;width:16px;height:16px;accent-color:#FF6A00;flex-shrink:0;">
+                <span style="font-size:12px;color:#F4F5F7;line-height:1.6;">
+                  Li e <strong>concordo</strong> com o uso dos meus dados pessoais para fins de processo seletivo.
+                  Entendo que posso solicitar a exclusão dos meus dados a qualquer momento pelo e-mail
+                  <strong style="color:#FF6A00;">rh@rezendeenergia.com.br</strong>.
+                </span>
+              </label>
+            </div>
+
             <div id="apply-form-alert" class="alert" style="display:none;"></div>
             <div class="form-actions">
               <button type="button" class="btn btn--outline" onclick="Portal.backToJobList()">← Voltar</button>
-              <button type="submit" id="apply-submit-btn" class="btn btn--primary btn--large">Enviar Candidatura</button>
+              <button type="submit" id="apply-submit-btn" class="btn btn--primary btn--large" disabled
+                      style="opacity:.5;cursor:not-allowed;">Enviar Candidatura</button>
             </div>
           </form>
         </div>
@@ -336,28 +363,61 @@
       <div class="login-container">
         <div class="card">
           <div class="card__body login-card">
-            <div class="login-card__icon">🔐</div>
-            <h2 class="login-card__title">Acesso do Gestor</h2>
-            <p class="login-card__description">Entre com suas credenciais para acessar o painel</p>
 
-            <form id="login-form" novalidate>
-              <div class="form-field">
-                <label class="form-field__label" for="login-username">Usuário</label>
-                <input id="login-username" type="text" class="form-field__input" placeholder="admin" required autocomplete="username">
-              </div>
-              <div class="form-field">
-                <label class="form-field__label" for="login-password">Senha</label>
-                <input id="login-password" type="password" class="form-field__input" placeholder="••••••••" required autocomplete="current-password">
-              </div>
-              <div id="login-alert" class="alert" style="display:none;"></div>
-              <button type="submit" class="btn btn--primary btn--full btn--large">Entrar</button>
-            <div style="text-align:center;margin-top:12px;">
-              <a href="/redefinir-senha" style="color:var(--ink-3);font-size:0.78rem;text-decoration:none;transition:color 0.2s;" onmouseover="this.style.color='var(--fire)'" onmouseout="this.style.color='var(--ink-3)'">Esqueceu sua senha?</a>
+            <!-- Logo Rezende -->
+            <div style="text-align:center;margin-bottom:8px;">
+              <img src="/logo-rezende.png" alt="Rezende Energia" style="height:64px;object-fit:contain;">
             </div>
-            </form>
+            <h2 class="login-card__title" style="margin-bottom:4px;">Rezende Energia</h2>
+            <p style="text-align:center;color:var(--ink-3);font-size:.8rem;margin-bottom:24px;letter-spacing:1px;text-transform:uppercase;">Gestão de RH — Acesso Restrito</p>
 
+            <!-- Info box -->
+            <div style="background:rgba(91,141,239,0.08);border:1px solid rgba(91,141,239,0.25);border-left:3px solid #5B8DEF;
+                        border-radius:10px;padding:12px 16px;margin-bottom:24px;font-size:13px;color:#A8A8B8;">
+              ℹ️ Use sua conta <strong style="color:#5B8DEF;">@rezendeenergia.com.br</strong> para entrar.
+              O acesso é controlado pelo administrador do sistema.
+            </div>
 
-            
+            <!-- Botão Microsoft -->
+            <a href="/api/auth/microsoft/login"
+               style="display:flex;align-items:center;justify-content:center;gap:12px;
+                      background:#fff;color:#1a1a2e;border:none;border-radius:10px;
+                      padding:14px 20px;font-size:15px;font-weight:600;text-decoration:none;
+                      box-shadow:0 2px 12px rgba(0,0,0,0.3);transition:all .2s;margin-bottom:16px;cursor:pointer;"
+               onmouseover="this.style.background='#f0f0f0'"
+               onmouseout="this.style.background='#fff'">
+              <!-- Microsoft logo SVG -->
+              <svg width="21" height="21" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg">
+                <rect x="1"  y="1"  width="9" height="9" fill="#F25022"/>
+                <rect x="11" y="1"  width="9" height="9" fill="#7FBA00"/>
+                <rect x="1"  y="11" width="9" height="9" fill="#00A4EF"/>
+                <rect x="11" y="11" width="9" height="9" fill="#FFB900"/>
+              </svg>
+              Entrar com Microsoft
+            </a>
+
+            <p style="text-align:center;color:var(--ink-3);font-size:11px;margin:0;">
+              Ao entrar, você concorda com as políticas internas<br>da Rezende Construção e Manutenção Ltda.
+            </p>
+
+            <div id="login-alert" class="alert" style="display:none;margin-top:16px;"></div>
+
+            <!-- Fallback login manual (admin emergência) -->
+            <details style="margin-top:20px;">
+              <summary style="color:var(--ink-3);font-size:11px;cursor:pointer;text-align:center;list-style:none;">
+                Acesso de emergência (admin local)
+              </summary>
+              <form id="login-form" novalidate style="margin-top:14px;">
+                <div class="form-field">
+                  <input id="login-username" type="text" class="form-field__input" placeholder="Usuário" required autocomplete="username">
+                </div>
+                <div class="form-field">
+                  <input id="login-password" type="password" class="form-field__input" placeholder="Senha" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn btn--ghost btn--full" style="font-size:13px;">Entrar</button>
+              </form>
+            </details>
+
           </div>
         </div>
       </div>
@@ -704,6 +764,79 @@
     </div>
   </section>
 
+
+<!-- ════ MODAL: Portal do Candidato ════ -->
+<div id="candidato-portal-overlay"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);
+            z-index:10000;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#161B27;border:1px solid rgba(255,255,255,.1);border-radius:16px;
+              width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.6);">
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;
+                padding:20px 24px;border-bottom:1px solid rgba(255,255,255,.07);">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:20px;">🔍</span>
+        <div>
+          <h3 style="margin:0;color:#fff;font-size:16px;font-weight:700;">Acompanhar Candidatura</h3>
+          <p style="margin:0;color:#9AA3B2;font-size:12px;">Acesse com CPF e data de nascimento</p>
+        </div>
+      </div>
+      <button onclick="CandidatoPortal.fechar()"
+              style="background:none;border:none;color:#9AA3B2;font-size:20px;cursor:pointer;line-height:1;">✕</button>
+    </div>
+
+    <!-- Login do candidato -->
+    <div id="cand-login-panel" style="padding:24px;">
+      <div class="form-field">
+        <label class="form-field__label">CPF</label>
+        <input id="cand-cpf" type="text" class="form-field__input" placeholder="000.000.000-00" maxlength="14"
+               oninput="this.value=this.value.replace(/\D/g,'').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4')">
+      </div>
+      <div class="form-field">
+        <label class="form-field__label">Data de Nascimento</label>
+        <input id="cand-nasc" type="date" class="form-field__input">
+      </div>
+      <div id="cand-login-alert" class="alert" style="display:none;margin-bottom:12px;"></div>
+      <button onclick="CandidatoPortal.login()"
+              style="width:100%;padding:14px;background:linear-gradient(135deg,#FF8C2A,#FF6A00);
+                     color:#000;font-weight:800;font-size:15px;border:none;border-radius:10px;cursor:pointer;">
+        Entrar
+      </button>
+      <p style="text-align:center;color:#5A6478;font-size:11px;margin-top:12px;">
+        Seus dados são protegidos pela LGPD e não serão compartilhados.
+      </p>
+    </div>
+
+    <!-- Dashboard do candidato (pós-login) -->
+    <div id="cand-dashboard-panel" style="display:none;padding:24px;">
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <p style="margin:0;color:#fff;font-weight:700;">Olá, <span id="cand-nome" style="color:#FF6A00;"></span>! 👋</p>
+        <button onclick="CandidatoPortal.logout()"
+                style="background:none;border:1px solid rgba(255,255,255,.15);color:#9AA3B2;
+                       border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">Sair</button>
+      </div>
+
+      <h4 style="color:#FF6A00;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin:0 0 12px;">
+        Minhas Candidaturas
+      </h4>
+
+      <div id="cand-lista" style="display:flex;flex-direction:column;gap:10px;">
+        <p style="color:#9AA3B2;text-align:center;padding:20px;">Carregando...</p>
+      </div>
+
+      <div style="border-top:1px solid rgba(255,255,255,.06);margin-top:20px;padding-top:16px;">
+        <p style="color:#5A6478;font-size:11px;text-align:center;margin:0;line-height:1.7;">
+          Para solicitar exclusão dos seus dados, envie um e-mail para<br>
+          <strong style="color:#FF6A00;">rh@rezendeenergia.com.br</strong> com o assunto
+          <em>"Exclusão de Dados - LGPD"</em>.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>
 </main>
 
 <!-- Modal de candidato -->
