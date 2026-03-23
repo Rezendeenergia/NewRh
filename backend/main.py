@@ -196,3 +196,23 @@ if __name__ == "__main__":
         threading.Timer(1.2, open_browser).start()
 
     app.run(host="0.0.0.0", port=port, debug=True)
+
+
+# ── Pasta Digital do Colaborador ──────────────────────────────
+@app.route("/pasta-colaborador")
+def pasta_colaborador_page():
+    return send_from_directory(FRONTEND_FOLDER, "pasta-colaborador.html")
+
+
+@app.route("/api/pasta-colaborador/estrutura")
+def pasta_estrutura():
+    """Retorna a estrutura oficial de pastas do colaborador."""
+    from pasta_colaborador import ESTRUTURA_PASTA_COLABORADOR
+    return jsonify(ESTRUTURA_PASTA_COLABORADOR)
+
+
+@app.route("/api/pasta-colaborador/flat")
+def pasta_flat():
+    """Retorna lista plana para uso em checklist de UI."""
+    from pasta_colaborador import get_estrutura_flat
+    return jsonify(get_estrutura_flat())
