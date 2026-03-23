@@ -25,10 +25,12 @@ BASE_URL      = os.getenv("BASE_URL", "https://newrh.onrender.com")
 # ROLE_VIEWER → Equipe DP/RH (acompanha e move candidatos, sem aprovar vagas)
 
 GESTORES = {
-    "leonardo@rezendeenergia.com.br":        "ROLE_ADMIN",
-    "gabrielle.lira@rezendeenergia.com.br":  "ROLE_ADMIN",
-    "pedrohueb@rezendeenergia.com.br":        "ROLE_ADMIN",
-    "rafael@rezendeenergia.com.br":           "ROLE_OWNER",
+    "leonardo@rezendeenergia.com.br":           "ROLE_ADMIN",
+    "gabrielle.lira@rezendeenergia.com.br":     "ROLE_ADMIN",
+    "pedrohueb@rezendeenergia.com.br":           "ROLE_ADMIN",
+    "pamella.macambira@rezendeenergia.com.br":   "ROLE_ADMIN",
+    "bruno@rezendeenergia.com.br":               "ROLE_ADMIN",
+    "rafael@rezendeenergia.com.br":              "ROLE_OWNER",
 }
 
 EQUIPE_DP_RH = {
