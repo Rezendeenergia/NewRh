@@ -482,8 +482,14 @@ def notify_etapa_candidato(candidatura, etapa_nome: str, status: str, nota: str 
 
 # ── Solicitações de Vaga ───────────────────────────────────────
 
-EMAIL_TI = "Ingrid.silva@rezendeenergia.com.br"
-EMAIL_RH = "rh@rezendeenergia.com.br"
+# Destinatários padrão de notificações
+EMAIL_TI  = "ti@rezendeenergia.com.br"           # TI — recebe primeiro (TO principal)
+EMAIL_RH  = "rh@rezendeenergia.com.br"            # RH individual
+EMAIL_GRP = [                                      # Grupos e RH — sempre em CC
+    "RezendeRH@rezendeenergia.com.br",
+    "RezendeDP@rezendeenergia.com.br",
+    "rh@rezendeenergia.com.br",
+]
 
 
 def notify_solicitacao_rafael(sol, rafael_email: str, base_url: str):
@@ -552,7 +558,7 @@ def notify_solicitacao_rafael(sol, rafael_email: str, base_url: str):
   ℹ️ TI foi copiado neste e-mail apenas para acompanhamento.</p>"""
 
     html = _base_template(subject, content)
-    send_email(rafael_email, subject, html, cc=[EMAIL_TI])
+    send_email(rafael_email, subject, html, cc=[EMAIL_TI] + EMAIL_GRP)
 
 
 def notify_resultado_solicitacao(sol, base_url: str):
@@ -602,7 +608,7 @@ def notify_resultado_solicitacao(sol, base_url: str):
 </table>"""
 
     html = _base_template(subject, content)
-    send_email(sol.solicitante_email, subject, html, cc=[EMAIL_RH])
+    send_email(sol.solicitante_email, subject, html, cc=EMAIL_GRP)
 
 
 def notify_solicitacao_gestor(sol, base_url: str):
@@ -648,4 +654,4 @@ def notify_solicitacao_gestor(sol, base_url: str):
     )
 
     html = _base_template(subject, content)
-    send_email(sol.solicitante_email, subject, html, cc=[EMAIL_RH])
+    send_email(sol.solicitante_email, subject, html, cc=EMAIL_GRP)
