@@ -84,7 +84,7 @@
 
 <script>
 // ── Token: pega do sessionStorage (mesmo usado pelo portal principal) ──
-let TOKEN = sessionStorage.getItem('token');
+let TOKEN = localStorage.getItem('rz_token');
 
 function showApp() {
   document.getElementById('app-screen').style.display = 'grid';
@@ -104,7 +104,7 @@ async function req(url, opts={}) {
   });
   if (r.status === 401) {
     // Token expirado — volta pro portal
-    sessionStorage.removeItem('token');
+    localStorage.removeItem('rz_token');
     window.location.href = '/';
     return;
   }
@@ -321,7 +321,7 @@ const Adm = {
 // ── Init: usa token do portal, sem tela de login ──────────────
 document.addEventListener('DOMContentLoaded', async () => {
   // Tenta pegar token do sessionStorage (gravado pelo portal principal)
-  TOKEN = sessionStorage.getItem('token');
+  TOKEN = localStorage.getItem('rz_token');
 
   if (!TOKEN) {
     showNoAccess();
