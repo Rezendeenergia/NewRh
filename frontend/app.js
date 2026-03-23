@@ -15,6 +15,163 @@ let allJobs         = [];   // cache para busca local
 const AppState = { role: null, username: null };
 
 
+
+// ── Microsoft SSO callback handler ───────────────────────────
+(function() {
+  const hash = window.location.hash;
+  if (!hash.includes('ms-token=')) return;
+  const params = new URLSearchParams(hash.slice(1));
+  const token  = params.get('ms-token');
+  const user   = params.get('ms-user');
+  const role   = params.get('ms-role');
+  const name   = params.get('ms-name');
+  const errMsg = params.get('ms-error');
+
+  // Limpa o hash da URL
+  history.replaceState(null, '', window.location.pathname);
+
+  if (errMsg) {
+    // Mostra erro no painel de login
+    setTimeout(() => {
+      const alert = document.getElementById('login-alert');
+      if (alert) { alert.textContent = decodeURIComponent(errMsg.replace(/\+/g,' ')); alert.style.display='block'; }
+      // Ativa aba do gestor
+      document.querySelectorAll('.nav__tab').forEach(t => t.classList.remove('nav__tab--active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('panel--active'));
+      document.querySelector('[data-panel="manager"]')?.classList.add('nav__tab--active');
+      document.getElementById('panel-manager')?.classList.add('panel--active');
+    }, 300);
+    return;
+  }
+
+  if (token && user) {
+    sessionToken    = token;
+    sessionUsername = user;
+    AppState.role   = role;
+    AppState.username = user;
+    // Ativa dashboard
+    setTimeout(() => {
+      document.getElementById('manager-login').style.display    = 'none';
+      document.getElementById('manager-dashboard').style.display = 'block';
+      document.getElementById('dashboard-greeting').textContent  = `Olá, ${name || user} 👋`;
+      document.querySelectorAll('.nav__tab').forEach(t => t.classList.remove('nav__tab--active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('panel--active'));
+      document.querySelector('[data-panel="manager"]')?.classList.add('nav__tab--active');
+      document.getElementById('panel-manager')?.classList.add('panel--active');
+      Manager.loadStats();
+      Manager.loadJobList();
+      Solicitacoes.loadBadge();
+    }, 100);
+  }
+})();
+
+// ── CandidatoPortal ──────────────────────────────────────────
+const CandidatoPortal = {
+  _token: null,
+
+  abrir() {
+    const overlay = document.getElementById('candidato-portal-overlay');
+    if (overlay) { overlay.style.display = 'flex'; }
+    // Se já logado, vai direto pro dashboard
+    if (this._token) { this._showDashboard(); }
+  },
+
+  fechar() {
+    const overlay = document.getElementById('candidato-portal-overlay');
+    if (overlay) overlay.style.display = 'none';
+  },
+
+  logout() {
+    this._token = null;
+    document.getElementById('cand-login-panel').style.display    = 'block';
+    document.getElementById('cand-dashboard-panel').style.display = 'none';
+  },
+
+  async login() {
+    const cpf  = document.getElementById('cand-cpf')?.value?.trim();
+    const nasc = document.getElementById('cand-nasc')?.value?.trim();
+    const alert = document.getElementById('cand-login-alert');
+
+    if (!cpf || !nasc) {
+      alert.textContent = '❌ Preencha CPF e data de nascimento.';
+      alert.style.display = 'block'; return;
+    }
+    alert.style.display = 'none';
+
+    try {
+      const r = await fetch('/api/candidato/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cpf, dataNascimento: nasc }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.message || 'Erro ao autenticar');
+
+      this._token = d.token;
+      document.getElementById('cand-nome').textContent = d.nome;
+      this._showDashboard();
+    } catch(e) {
+      alert.textContent = '❌ ' + e.message;
+      alert.style.display = 'block';
+    }
+  },
+
+  async _showDashboard() {
+    document.getElementById('cand-login-panel').style.display    = 'none';
+    document.getElementById('cand-dashboard-panel').style.display = 'block';
+    await this._loadCandidaturas();
+  },
+
+  async _loadCandidaturas() {
+    const lista = document.getElementById('cand-lista');
+    if (!lista) return;
+    lista.innerHTML = '<p style="color:#9AA3B2;text-align:center;padding:20px;">Carregando...</p>';
+
+    try {
+      const r = await fetch('/api/candidato/minhas-candidaturas', {
+        headers: { 'Authorization': 'Bearer ' + this._token },
+      });
+      const items = await r.json();
+      if (!r.ok) throw new Error(items.message || 'Erro');
+
+      if (!items.length) {
+        lista.innerHTML = '<p style="color:#9AA3B2;text-align:center;padding:20px;">Nenhuma candidatura encontrada.</p>';
+        return;
+      }
+
+      const COR = {
+        PENDING:'#FFB830', TRIAGEM:'#5B8DEF', TRIAGEM_OK:'#2ECC71',
+        ENTREVISTA:'#A78BFA', ENTREVISTA_OK:'#2ECC71',
+        APROVACAO_FINAL:'#F39C12', APPROVED:'#2ECC71', REJECTED:'#FF5252',
+      };
+
+      lista.innerHTML = items.map(c => {
+        const cor   = COR[c.statusKey] || '#9AA3B2';
+        return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);
+                            border-radius:10px;padding:14px 16px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
+            <div>
+              <p style="margin:0 0 2px;font-size:15px;font-weight:700;color:#fff;">${c.vaga}</p>
+              <p style="margin:0;font-size:12px;color:#9AA3B2;">📍 ${c.local} · Inscrito em ${c.appliedAt}</p>
+            </div>
+            <span style="background:${cor}18;border:1px solid ${cor}44;color:${cor};
+                         border-radius:20px;padding:3px 12px;font-size:12px;font-weight:700;white-space:nowrap;">
+              ${c.status}
+            </span>
+          </div>
+        </div>`;
+      }).join('');
+    } catch(e) {
+      lista.innerHTML = `<p style="color:#FF5252;text-align:center;">${e.message}</p>`;
+    }
+  },
+};
+
+// Fecha modal ao clicar fora
+document.getElementById('candidato-portal-overlay')?.addEventListener('click', function(e) {
+  if (e.target === this) CandidatoPortal.fechar();
+});
+
 // ── Dropdown customizado de filtro de auditoria ───────────────
 function toggleAuditDropdown() {
   const list = document.getElementById('audit-action-list');
@@ -1044,6 +1201,19 @@ async function loadAudit(page = 1) {
 // expose to Manager namespace
 Manager.loadAudit = loadAudit;
 
+// LGPD checkbox — habilita botão de envio
+document.addEventListener('change', function(e) {
+  if (e.target && e.target.id === 'lgpd-consent') {
+    const btn = document.getElementById('apply-submit-btn');
+    if (btn) {
+      btn.disabled = !e.target.checked;
+      btn.style.opacity = e.target.checked ? '1' : '.5';
+      btn.style.cursor  = e.target.checked ? 'pointer' : 'not-allowed';
+    }
+  }
+});
+
+
 document.querySelectorAll('.subtab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.subtab').forEach(t => t.classList.remove('subtab--active'));
@@ -1184,7 +1354,7 @@ document.getElementById('create-job-form').addEventListener('submit', async func
   btn.disabled = true; btn.textContent = 'Enviando...';
   try {
     await request('/api/solicitacoes', { method: 'POST', body: JSON.stringify({
-      position, location, tipo,
+      position, location, tipo, lgpdConsent: true,
       numVagas:     parseInt(document.getElementById('job-num-vagas').value) || 1,
       finalidade:   document.getElementById('job-description').value.trim() || null,
       responsavel:  name,
