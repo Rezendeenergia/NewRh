@@ -212,6 +212,7 @@ async function request(path, options = {}) {
   // Sessão expirada → logout automático com aviso
   if (response.status === 401 && sessionToken) {
     sessionToken = sessionUsername = null;
+    sessionStorage.removeItem('token');
     showToast('Sessão expirada', 'Faça login novamente.', 'warning');
     document.getElementById('manager-dashboard').style.display = 'none';
     document.getElementById('manager-login').style.display     = 'block';
@@ -1261,6 +1262,7 @@ document.getElementById('login-form').addEventListener('submit', async function(
     })});
     sessionToken = r.token; sessionUsername = r.username;
     AppState.role = r.role; AppState.username = r.username;
+    sessionStorage.setItem('token', r.token);  // compartilha com admissao/admissoes
     showToast('Bem-vindo!', `Logado como ${r.username}`, 'success');
     Manager.showDashboard();
   } catch (err) { showAlert('login-alert', '❌ ' + err.message); }
