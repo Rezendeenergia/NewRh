@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pasta Digital do Colaborador — Rezende Energia</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    body { background:#0E1117; color:#F4F5F7; font-family:'Inter',sans-serif; margin:0; padding:0; }
+    .top-bar { background:#161B27; border-bottom:1px solid rgba(255,255,255,.07); padding:14px 32px; display:flex; align-items:center; justify-content:space-between; }
+    .top-bar__logo { display:flex; align-items:center; gap:12px; }
+    .top-bar__logo img { height:36px; }
+    .top-bar__title { font-size:15px; font-weight:700; color:#fff; }
+    .top-bar__sub { font-size:11px; color:#5A6478; text-transform:uppercase; letter-spacing:1px; }
+    .container { max-width:960px; margin:0 auto; padding:32px 24px; }
+    .page-title { font-size:24px; font-weight:800; color:#fff; margin:0 0 4px; }
+    .page-sub { font-size:13px; color:#9AA3B2; margin:0 0 28px; }
+    .search-bar { background:#1A1F2E; border:1px solid rgba(255,255,255,.1); border-radius:10px; padding:10px 16px; display:flex; align-items:center; gap:10px; margin-bottom:24px; }
+    .search-bar input { background:none; border:none; outline:none; color:#F4F5F7; font-size:14px; flex:1; }
+    .search-bar input::placeholder { color:#5A6478; }
+    .progress-bar { background:#1A1F2E; border:1px solid rgba(255,255,255,.07); border-radius:12px; padding:16px 20px; margin-bottom:24px; display:flex; align-items:center; gap:16px; }
+    .progress-track { flex:1; background:rgba(255,255,255,.08); border-radius:20px; height:8px; overflow:hidden; }
+    .progress-fill { height:100%; background:linear-gradient(90deg,#FF6A00,#FF8C2A); border-radius:20px; transition:width .4s; }
+    .progress-label { font-size:13px; color:#9AA3B2; white-space:nowrap; }
+    .progress-count { font-size:18px; font-weight:800; color:#FF6A00; }
+    .pasta-raiz { margin-bottom:20px; }
+    .pasta-raiz__header { background:#1A1F2E; border:1px solid rgba(255,106,0,.2); border-left:3px solid #FF6A00; border-radius:10px 10px 0 0; padding:12px 18px; cursor:pointer; display:flex; align-items:center; justify-content:space-between; user-select:none; }
+    .pasta-raiz__header:hover { background:#1E2438; }
+    .pasta-raiz__title { font-size:14px; font-weight:700; color:#FF6A00; }
+    .pasta-raiz__stats { font-size:12px; color:#5A6478; }
+    .pasta-raiz__body { border:1px solid rgba(255,255,255,.06); border-top:none; border-radius:0 0 10px 10px; overflow:hidden; }
+    .subpasta { border-bottom:1px solid rgba(255,255,255,.05); }
+    .subpasta:last-child { border-bottom:none; }
+    .subpasta__header { background:rgba(255,255,255,.02); padding:10px 18px 10px 28px; cursor:pointer; display:flex; align-items:center; justify-content:space-between; }
+    .subpasta__header:hover { background:rgba(255,255,255,.04); }
+    .subpasta__title { font-size:13px; font-weight:600; color:#A8A8B8; display:flex; align-items:center; gap:8px; }
+    .subpasta__obs { font-size:11px; color:#5A6478; font-weight:400; }
+    .subpasta__body { padding:4px 0 8px 44px; }
+    .doc-item { display:flex; align-items:center; gap:10px; padding:6px 18px 6px 0; }
+    .doc-item label { display:flex; align-items:center; gap:10px; cursor:pointer; font-size:13px; color:#9AA3B2; flex:1; line-height:1.4; }
+    .doc-item input[type=checkbox] { width:16px; height:16px; accent-color:#FF6A00; flex-shrink:0; cursor:pointer; }
+    .doc-item.checked label { color:#2ECC71; text-decoration:line-through; opacity:.7; }
+    .doc-item:hover label { color:#F4F5F7; }
+    .badge { background:rgba(255,106,0,.12); border:1px solid rgba(255,106,0,.3); color:#FF6A00; border-radius:20px; padding:2px 8px; font-size:11px; font-weight:700; }
+    .badge.done { background:rgba(46,204,113,.12); border-color:rgba(46,204,113,.3); color:#2ECC71; }
+    .chevron { font-size:12px; color:#5A6478; transition:transform .2s; }
+    .chevron.open { transform:rotate(90deg); }
+    .hidden { display:none; }
+    .btn-reset { background:rgba(255,82,82,.1); border:1px solid rgba(255,82,82,.3); color:#FF5252; border-radius:8px; padding:6px 14px; font-size:12px; cursor:pointer; }
+    .btn-reset:hover { background:rgba(255,82,82,.2); }
+    .empty-search { text-align:center; padding:40px; color:#5A6478; font-size:14px; }
+  </style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="top-bar__logo">
+    <img src="/logo-rezende.png" alt="Rezende Energia">
+    <div>
+      <div class="top-bar__title">Pasta Digital do Colaborador</div>
+      <div class="top-bar__sub">Estrutura Oficial — Rezende Energia</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;">
+    <button class="btn-reset" onclick="resetChecklist()">↺ Reiniciar</button>
+    <a href="/" style="color:#9AA3B2;font-size:13px;text-decoration:none;">← Voltar ao Portal</a>
+  </div>
+</div>
+
+<div class="container">
+  <h1 class="page-title">📂 Estrutura Oficial da Pasta Digital</h1>
+  <p class="page-sub">Marque os documentos já recebidos. O progresso é salvo automaticamente neste navegador.</p>
+
+  <div class="progress-bar">
+    <div>
+      <div class="progress-count" id="prog-count">0 / 0</div>
+      <div style="font-size:12px;color:#5A6478;">documentos conferidos</div>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="prog-fill" style="width:0%"></div>
+    </div>
+    <div class="progress-label" id="prog-pct">0%</div>
+  </div>
+
+  <div class="search-bar">
+    <span style="color:#5A6478;">🔍</span>
+    <input type="text" id="search-input" placeholder="Buscar documento..." oninput="filtrar(this.value)">
+    <button onclick="document.getElementById('search-input').value='';filtrar('')" style="background:none;border:none;color:#5A6478;cursor:pointer;font-size:16px;">✕</button>
+  </div>
+
+  <div id="lista-pastas"></div>
+</div>
+
+<script>
+const ESTRUTURA = {
+  "01_DOCUMENTOS_PESSOAIS": {
+    "label": "📁 01. DOCUMENTOS PESSOAIS",
+    "subpastas": {
+      "01_PESSOAL": {
+        "label": "📁 01 — Pessoal",
+        "documentos": [
+          "Currículo",
+          "2 Fotos 3x4",
+          "CTPS + Relatório Digital",
+          "CPF",
+          "Comprovante de Regularização do CPF",
+          "RG",
+          "PIS",
+          "Cartão SUS",
+          "Cartão de Vacina Atualizado",
+          "Comprovante de Residência",
+          "Certificado de Alistamento Militar",
+          "CNH (quando exigido)",
+          "Título de Eleitor",
+          "Histórico ou Declaração Escolar",
+          "Certidão de Nascimento ou Casamento",
+          "Documentos do Cônjuge (CPF, RG, SUS)",
+          "Fator RH",
+          "Certificações da Área",
+          "Contato de Emergência"
+        ]
+      },
+      "02_DEPENDENTES": {
+        "label": "📁 02 — Dependentes (0 a 14 anos)",
+        "obs": "Criar uma subpasta para cada dependente",
+        "documentos": [
+          "CPF",
+          "Certidão de Nascimento ou RG",
+          "Frequência Escolar (acima de 7 anos)",
+          "Carteira de Vacinação (abaixo de 7 anos)",
+          "Cartão SUS"
+        ]
+      },
+      "03_DADOS_BANCARIOS_E_PIX": {
+        "label": "📁 03 — Dados Bancários e PIX",
+        "documentos": [
+          "Comprovante de Chave PIX"
+        ]
+      }
+    }
+  },
+  "02_ADMISSAO": {
+    "label": "📁 02. ADMISSÃO",
+    "subpastas": {
+      "01_DOCUMENTO_DA_CONTABILIDADE": {
+        "label": "📁 01 — Documento da Contabilidade",
+        "documentos": [
+          "Ficha Registro",
+          "Contrato",
+          "Declaração de Vale-Transporte",
+          "Registro no eSocial"
+        ]
+      },
+      "02_DOCUMENTOS_ASSINADOS": {
+        "label": "📁 02 — Documentos Assinados",
+        "documentos": [
+          "Ficha de Registro Assinada",
+          "Contrato de Trabalho Assinado",
+          "Declaração de Vale-Transporte",
+          "eSocial",
+          "Declaração Étnico-Racial"
+        ]
+      },
+      "03_SAUDE_OCUPACIONAL": {
+        "label": "📁 03 — Saúde Ocupacional",
+        "documentos": [
+          "ASO Admissional",
+          "ASO Periódico",
+          "ASO Retorno ao Trabalho",
+          "ASO Mudança de Função",
+          "ASO Demissional",
+          "Atestados Médicos",
+          "Documentação de Afastamento INSS"
+        ]
+      }
+    }
+  },
+  "04_MOBILIZACAO": {
+    "label": "📁 04. MOBILIZAÇÃO",
+    "subpastas": {
+      "01_TREINAMENTOS": {
+        "label": "📁 01 — Treinamentos",
+        "documentos": [
+          "NR-10 Básico — Certificado de Formação",
+          "NR-10 SEP — Certificado de Formação",
+          "NR-35 — Certificado de Formação",
+          "Curso Rede de Distribuição",
+          "Certificados Reconhecidos (MEC quando aplicável)",
+          "NR-10 Básico — RECICLAGEM",
+          "NR-10 SEP — RECICLAGEM",
+          "NR-35 — RECICLAGEM",
+          "Ordem de Serviço",
+          "Ordem de Serviço Assinada",
+          "Integração",
+          "POP da Função",
+          "Carta de Autorização"
+        ]
+      },
+      "03_EPI_E_CAUTELAS": {
+        "label": "📁 03 — EPI e Cautelas",
+        "documentos": [
+          "Ficha de Entrega de EPI",
+          "Termo de Responsabilidade (Cautela)",
+          "Controle de Substituição de EPI",
+          "Cautela de Ferramentas",
+          "Cautela de Equipamentos"
+        ]
+      },
+      "04_OCORRENCIAS": {
+        "label": "📁 04 — Ocorrências",
+        "documentos": [
+          "CAT",
+          "Relatório de Acidente",
+          "Investigação de Incidente"
+        ]
+      }
+    }
+  },
+  "05_TRABALHISTA_FINANCEIRO": {
+    "label": "📁 05. TRABALHISTA / FINANCEIRO",
+    "subpastas": {
+      "01_CARTAO_PONTO_DIGITAL": {
+        "label": "📁 01 — Cartão/Ponto Digital",
+        "documentos": []
+      },
+      "02_HOLERITES": {
+        "label": "📁 02 — Holerites / Contra-Cheque",
+        "documentos": []
+      },
+      "03_COMPROVANTES_PAGAMENTO": {
+        "label": "📁 03 — Comprovantes de Pagamento",
+        "documentos": []
+      },
+      "04_FERIAS": {
+        "label": "📁 04 — Férias",
+        "documentos": []
+      }
+    }
+  },
+  "06_DISCIPLINAR": {
+    "label": "📁 06. DISCIPLINAR",
+    "subpastas": {
+      "06_DISCIPLINAR": {
+        "label": "📁 06 — Disciplinar",
+        "documentos": [
+          "Advertências",
+          "Suspensões",
+          "Termos de Ciência",
+          "Relatórios Internos"
+        ]
+      }
+    }
+  }
+};
+
+let totalDocs = 0;
+let checkState = JSON.parse(localStorage.getItem('pasta_colaborador') || '{}');
+
+function salvarEstado() {
+  localStorage.setItem('pasta_colaborador', JSON.stringify(checkState));
+  atualizarProgresso();
+}
+
+function atualizarProgresso() {
+  const marcados = Object.values(checkState).filter(Boolean).length;
+  document.getElementById('prog-count').textContent = `${marcados} / ${totalDocs}`;
+  const pct = totalDocs > 0 ? Math.round(marcados / totalDocs * 100) : 0;
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('prog-pct').textContent = pct + '%';
+}
+
+function resetChecklist() {
+  if (!confirm('Reiniciar todo o checklist?')) return;
+  checkState = {};
+  salvarEstado();
+  renderizar('');
+}
+
+function docId(pastaKey, subKey, docNome) {
+  return `${pastaKey}__${subKey}__${docNome}`.replace(/\s/g, '_');
+}
+
+function renderizar(filtro) {
+  const container = document.getElementById('lista-pastas');
+  container.innerHTML = '';
+  totalDocs = 0;
+  let algumResultado = false;
+
+  for (const [pastaKey, pasta] of Object.entries(ESTRUTURA)) {
+    const subpastas = pasta.subpastas || {};
+    let pastaHtml = '';
+    let pastaTotal = 0, pastaMarcado = 0;
+
+    for (const [subKey, sub] of Object.entries(subpastas)) {
+      const docs = sub.documentos || [];
+      const docsFiltrados = filtro
+        ? docs.filter(d => d.toLowerCase().includes(filtro.toLowerCase()))
+        : docs;
+      if (docsFiltrados.length === 0 && filtro) continue;
+
+      let subMarcado = 0;
+      let docsHtml = '';
+
+      for (const doc of docsFiltrados) {
+        const id = docId(pastaKey, subKey, doc);
+        const checked = checkState[id] || false;
+        if (checked) subMarcado++;
+        totalDocs++;
+        pastaTotal++;
+        algumResultado = true;
+        docsHtml += `
+          <div class="doc-item${checked ? ' checked' : ''}" id="item-${id}">
+            <label>
+              <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleDoc('${id}', this.checked)">
+              📄 ${doc}
+            </label>
+          </div>`;
+      }
+
+      pastaMarcado += subMarcado;
+      const subDone = docsFiltrados.length > 0 && subMarcado === docsFiltrados.length;
+      pastaHtml += `
+        <div class="subpasta">
+          <div class="subpasta__header" onclick="toggleSub('sub-${subKey}', this)">
+            <div class="subpasta__title">
+              ${sub.label}
+              ${sub.obs ? `<span class="subpasta__obs">(${sub.obs})</span>` : ''}
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="badge${subDone ? ' done' : ''}">${subMarcado}/${docsFiltrados.length}</span>
+              <span class="chevron">›</span>
+            </div>
+          </div>
+          <div class="subpasta__body" id="sub-${subKey}">${docsHtml}</div>
+        </div>`;
+    }
+
+    if (!pastaHtml) continue;
+    const pastaDone = pastaTotal > 0 && pastaMarcado === pastaTotal;
+
+    container.innerHTML += `
+      <div class="pasta-raiz">
+        <div class="pasta-raiz__header" onclick="togglePasta('pasta-${pastaKey}', this)">
+          <span class="pasta-raiz__title">${pasta.label}</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="badge${pastaDone ? ' done' : ''}">${pastaMarcado}/${pastaTotal}</span>
+            <span class="chevron open">›</span>
+          </div>
+        </div>
+        <div class="pasta-raiz__body" id="pasta-${pastaKey}">${pastaHtml}</div>
+      </div>`;
+  }
+
+  if (!algumResultado) {
+    container.innerHTML = `<div class="empty-search">Nenhum documento encontrado para "<strong>${filtro}</strong>"</div>`;
+  }
+  atualizarProgresso();
+}
+
+function toggleDoc(id, checked) {
+  checkState[id] = checked;
+  const item = document.getElementById('item-' + id);
+  if (item) item.className = 'doc-item' + (checked ? ' checked' : '');
+  salvarEstado();
+}
+
+function togglePasta(id, header) {
+  const el = document.getElementById(id);
+  const chev = header.querySelector('.chevron');
+  if (el.classList.contains('hidden')) {
+    el.classList.remove('hidden'); chev.classList.add('open');
+  } else {
+    el.classList.add('hidden'); chev.classList.remove('open');
+  }
+}
+
+function toggleSub(id, header) {
+  const el = document.getElementById(id);
+  const chev = header.querySelector('.chevron');
+  if (el.classList.contains('hidden')) {
+    el.classList.remove('hidden'); chev.classList.add('open');
+  } else {
+    el.classList.add('hidden'); chev.classList.remove('open');
+  }
+}
+
+let filtroTimer;
+function filtrar(val) {
+  clearTimeout(filtroTimer);
+  filtroTimer = setTimeout(() => renderizar(val.trim()), 200);
+}
+
+renderizar('');
+</script>
+</body>
+</html>
