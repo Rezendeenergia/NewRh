@@ -3,7 +3,7 @@ from database import get_db
 from security import require_auth
 from extensions import limiter
 from dotenv import load_dotenv
-from sqlalchemy import func
+from sqlalchemy import text, func
 from datetime import datetime, timedelta, timezone
 from email_service import notify_status_changed, notify_new_application, notify_application_confirmation
 import models
