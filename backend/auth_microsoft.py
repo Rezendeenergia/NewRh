@@ -25,21 +25,25 @@ BASE_URL      = os.getenv("BASE_URL", "https://newrh.onrender.com")
 # ROLE_VIEWER → Equipe DP/RH (acompanha e move candidatos, sem aprovar vagas)
 
 GESTORES = {
-    "leonardo@rezendeenergia.com.br":    "ROLE_ADMIN",
-    "gabrielle.lira@rezendeenergia.com.br": "ROLE_ADMIN",
-    "pedrohueb@rezendeenergia.com.br":   "ROLE_ADMIN",
-    "rafael@rezendeenergia.com.br":      "ROLE_OWNER",  # Rafael — aprovação de vagas
+    "leonardo@rezendeenergia.com.br":        "ROLE_ADMIN",
+    "gabrielle.lira@rezendeenergia.com.br":  "ROLE_ADMIN",
+    "pedrohueb@rezendeenergia.com.br":        "ROLE_ADMIN",
+    "rafael@rezendeenergia.com.br":           "ROLE_OWNER",
 }
 
 EQUIPE_DP_RH = {
-    "mariane.froz@rezendeenergia.com.br":   "ROLE_VIEWER",
+    "mariane.froz@rezendeenergia.com.br":     "ROLE_VIEWER",
     "kailany.castanha@rezendeenergia.com.br": "ROLE_VIEWER",
-    "andreiaazevedo@rezendeenergia.com.br":  "ROLE_VIEWER",
-    "davyd.reis@rezendeenergia.com.br":      "ROLE_VIEWER",
-    "ana.tapajos@rezendeenergia.com.br":     "ROLE_VIEWER",
+    "andreiaazevedo@rezendeenergia.com.br":   "ROLE_VIEWER",
+    "davyd.reis@rezendeenergia.com.br":        "ROLE_VIEWER",
+    "ana.tapajos@rezendeenergia.com.br":       "ROLE_VIEWER",
 }
 
-USUARIOS_AUTORIZADOS = {**GESTORES, **EQUIPE_DP_RH}
+EQUIPE_TI = {
+    "ti@rezendeenergia.com.br": "ROLE_ADMIN",
+}
+
+USUARIOS_AUTORIZADOS = {**GESTORES, **EQUIPE_DP_RH, **EQUIPE_TI}
 
 REDIRECT_URI   = f"{BASE_URL}/api/auth/microsoft/callback"
 AUTH_URL       = f"https://login.microsoftonline.com/{TENANT_ID}/oauth2/v2.0/authorize"
@@ -98,7 +102,8 @@ def ms_callback():
     # Valida se o e-mail está na lista autorizada
     email_lower = email.lower()
     if email_lower not in USUARIOS_AUTORIZADOS:
-        return redirect("/#ms-error=Acesso+não+autorizado.+Fale+com+o+TI.")
+        print(f"[MS_AUTH] Bloqueado: {email_lower} não está na whitelist")
+        return redirect("/#ms-error=Acesso+não+autorizado.+Email+não+está+na+lista+de+permissões.+Fale+com+o+TI.")
 
     role_correto = USUARIOS_AUTORIZADOS[email_lower]
 
