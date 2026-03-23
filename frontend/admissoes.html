@@ -205,7 +205,7 @@
 
 <script>
 const API = '/api';
-let token = sessionStorage.getItem('token');
+let token = localStorage.getItem('rz_token');
 let allProcessos = [];
 
 function showApp() {
@@ -225,7 +225,7 @@ async function loadData() {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (r.status === 401) {
-        sessionStorage.removeItem('token');
+        localStorage.removeItem('rz_token');
         window.location.href = '/';
         return;
       }
@@ -342,7 +342,7 @@ function renderTable() {
 
 // ── Init: usa token do portal, sem tela de login ──────────────
 document.addEventListener('DOMContentLoaded', () => {
-  token = sessionStorage.getItem('token');
+  token = localStorage.getItem('rz_token');
 
   if (!token) {
     showNoAccess();
