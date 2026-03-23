@@ -1,6 +1,8 @@
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify, send_from_directory, make_response
 from flask_cors import CORS
 from dotenv import load_dotenv
+from functools import wraps
+import time
 from database import engine, SessionLocal, Base
 from security import hash_password
 from extensions import limiter
@@ -10,6 +12,18 @@ import webbrowser
 import threading
 
 load_dotenv()
+
+# ── Cache helper ──────────────────────────────────────────────
+def cache_for(seconds):
+    """Adiciona Cache-Control aos endpoints mais chamados."""
+    def decorator(f):
+        @wraps(f)
+        def decorated(*args, **kwargs):
+            resp = make_response(f(*args, **kwargs))
+            resp.headers["Cache-Control"] = f"public, max-age={seconds}"
+            return resp
+        return decorated
+    return decorator
 
 # Inicia scheduler de alertas automáticos (lazy — não bloqueia startup)
 def _start_scheduler():
@@ -40,6 +54,16 @@ FRONTEND_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..",
 
 app = Flask(__name__, static_folder=FRONTEND_FOLDER, static_url_path="")
 CORS(app)
+
+# Compressão gzip automática em todas as respostas (reduz ~70% no tamanho)
+from flask_compress import Compress
+Compress(app)
+app.config["COMPRESS_MIMETYPES"] = [
+    "application/json", "text/html", "text/css",
+    "application/javascript", "text/javascript",
+]
+app.config["COMPRESS_LEVEL"] = 6
+app.config["COMPRESS_MIN_SIZE"] = 500
 
 @app.before_request
 def init_db_once():
