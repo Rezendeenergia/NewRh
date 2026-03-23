@@ -47,7 +47,7 @@ TOKEN_URL      = f"https://login.microsoftonline.com/{TENANT_ID}/oauth2/v2.0/tok
 GRAPH_ME_URL   = "https://graph.microsoft.com/v1.0/me"
 
 
-@bp_ms.get("/microsoft/login")
+@bp_ms.get("/login")
 def ms_login():
     """Redireciona para o login Microsoft."""
     params = {
@@ -62,7 +62,7 @@ def ms_login():
     return redirect(f"{AUTH_URL}?{qs}")
 
 
-@bp_ms.get("/microsoft/callback")
+@bp_ms.get("/callback")
 def ms_callback():
     """Recebe o código do Microsoft, troca por token, valida domínio e cria sessão."""
     code  = request.args.get("code")
