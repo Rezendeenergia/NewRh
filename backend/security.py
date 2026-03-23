@@ -29,7 +29,7 @@ def create_token(username: str, role: str = "ROLE_ADMIN") -> str:
 
 
 def decode_token(token: str) -> dict | None:
-    """Decodifica JWT e retorna payload ou None se inválido."""
+    """Decodifica o JWT e retorna o payload ou None se inválido."""
     try:
         return jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
     except Exception:
@@ -48,5 +48,25 @@ def require_auth(f):
             return jsonify({"message": "Token inválido ou expirado"}), 401
         request.username = payload["sub"]
         request.role     = payload.get("role", "ROLE_ADMIN")
+        return f(*args, **kwargs)
+    return decorated
+
+
+def require_admin(f):
+    """Apenas ROLE_ADMIN e ROLE_OWNER. ROLE_VIEWER é bloqueado."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth_header = request.headers.get("Authorization", "")
+        if not auth_header.startswith("Bearer "):
+            return jsonify({"message": "Token não fornecido"}), 401
+        token = auth_header[7:]
+        payload = decode_token(token)
+        if not payload:
+            return jsonify({"message": "Token inválido ou expirado"}), 401
+        role = payload.get("role", "ROLE_ADMIN")
+        if role == "ROLE_VIEWER":
+            return jsonify({"message": "Acesso restrito — sem permissão para esta ação"}), 403
+        request.username = payload["sub"]
+        request.role     = role
         return f(*args, **kwargs)
     return decorated
