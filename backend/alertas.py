@@ -10,7 +10,13 @@ import os
 
 BRASILIA    = ZoneInfo("America/Manaus")
 LIMITE_DIAS = int(os.getenv("ALERTA_DIAS_PARADO", "3"))
-EMAIL_RH    = os.getenv("MS_SENDER_EMAIL", "rh@rezendeenergia.com.br")
+EMAIL_TI  = "ti@rezendeenergia.com.br"
+EMAIL_RH  = os.getenv("MS_SENDER_EMAIL", "rh@rezendeenergia.com.br")
+EMAIL_GRP = [
+    "RezendeRH@rezendeenergia.com.br",
+    "RezendeDP@rezendeenergia.com.br",
+    "rh@rezendeenergia.com.br",
+]
 
 
 def verificar_candidatos_parados():
@@ -126,7 +132,7 @@ def _enviar_alerta_rh(parados):
             "</tr></thead><tbody>" + linhas + "</tbody></table>"
         )
         html = _base_template(subject, content)
-        ok   = send_email(EMAIL_RH, subject, html)
+        ok   = send_email(EMAIL_TI, subject, html, cc=EMAIL_GRP)
         print(f"[ALERTA] E-mail {'enviado' if ok else 'FALHOU'} → {EMAIL_RH}")
     except Exception as e:
         import traceback
