@@ -29,7 +29,6 @@
 
     .page-body { padding:28px 32px; max-width:1400px; margin:0 auto; }
 
-    /* Stats row */
     .stats-row { display:flex; gap:16px; margin-bottom:28px; flex-wrap:wrap; }
     .stat-card {
       background:var(--surface); border:1px solid rgba(255,255,255,.06);
@@ -38,7 +37,6 @@
     .stat-card__n { font-family:Sora,sans-serif; font-size:2rem; font-weight:900; color:var(--brand); }
     .stat-card__l { font-size:.75rem; color:var(--ink-3); text-transform:uppercase; letter-spacing:.06em; margin-top:4px; }
 
-    /* Filters */
     .filters-bar {
       display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; align-items:center;
     }
@@ -50,7 +48,6 @@
     .filters-bar input { flex:1; min-width:200px; }
     .filters-bar input::placeholder { color:var(--ink-3); }
 
-    /* Table */
     .table-wrap {
       background:var(--surface); border:1px solid rgba(255,255,255,.06);
       border-radius:16px; overflow:hidden;
@@ -112,21 +109,13 @@
 </head>
 <body>
 
-<!-- Login Screen -->
-<div id="login-screen" style="display:none;min-height:100vh;align-items:center;justify-content:center;background:var(--void);">
-  <div style="background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:28px;padding:40px 36px;width:100%;max-width:380px;box-shadow:0 32px 80px rgba(0,0,0,.6);">
-    <div style="text-align:center;margin-bottom:28px;">
-      <div style="font-size:2rem;margin-bottom:8px;">🔐</div>
-      <h2 style="font-family:Sora,sans-serif;font-size:1.4rem;font-weight:900;color:#fff;margin-bottom:6px;">Acesso Restrito</h2>
-      <p style="color:var(--ink-3);font-size:.85rem;">Painel de Admissões — Rezende Energia</p>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:12px;">
-      <input id="l-user" type="text" placeholder="Usuário" class="form-field__input" style="width:100%;" onkeydown="if(event.key==='Enter')document.getElementById('l-pass').focus()">
-      <input id="l-pass" type="password" placeholder="Senha" class="form-field__input" style="width:100%;" onkeydown="if(event.key==='Enter')doLogin()">
-      <div id="l-err" style="display:none;background:rgba(255,82,82,.1);color:#FF5252;border:1px solid rgba(255,82,82,.3);border-radius:8px;padding:10px 14px;font-size:.83rem;"></div>
-      <button id="l-btn" class="btn btn--primary btn--full" onclick="doLogin()">Entrar</button>
-      <a href="/" style="text-align:center;color:var(--ink-3);font-size:.78rem;text-decoration:none;margin-top:4px;">← Voltar ao Portal</a>
-    </div>
+<!-- Sem acesso -->
+<div id="no-access" style="display:none;min-height:100vh;align-items:center;justify-content:center;background:var(--void);">
+  <div style="text-align:center;padding:40px;">
+    <div style="font-size:3rem;margin-bottom:16px;">🔐</div>
+    <h2 style="color:#fff;margin-bottom:8px;">Acesso Restrito</h2>
+    <p style="color:var(--ink-3);margin-bottom:24px;">Faça login pelo portal principal para acessar esta área.</p>
+    <a href="/" class="btn btn--primary">← Ir para o Portal</a>
   </div>
 </div>
 
@@ -150,7 +139,6 @@
 
   <div class="page-body">
 
-    <!-- Stats -->
     <div class="stats-row">
       <div class="stat-card">
         <div class="stat-card__n" id="st-total">—</div>
@@ -174,7 +162,6 @@
       </div>
     </div>
 
-    <!-- Filters -->
     <div class="filters-bar">
       <input type="text" id="f-search" placeholder="🔍 Buscar por candidato ou cargo..." oninput="renderTable()">
       <select id="f-status" onchange="renderTable()">
@@ -193,7 +180,6 @@
       </select>
     </div>
 
-    <!-- Table -->
     <div class="table-wrap">
       <table>
         <thead>
@@ -219,55 +205,30 @@
 
 <script>
 const API = '/api';
-let token = sessionStorage.getItem('adm_token');
+let token = sessionStorage.getItem('token');
 let allProcessos = [];
 
-// ── Auth ─────────────────────────────────────────────────────
-function showLogin() {
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('app-screen').style.display   = 'none';
-}
 function showApp() {
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('app-screen').style.display   = 'block';
+  document.getElementById('no-access').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'block';
 }
-async function doLogin() {
-  const btn  = document.getElementById('l-btn');
-  const err  = document.getElementById('l-err');
-  const user = document.getElementById('l-user').value.trim();
-  const pass = document.getElementById('l-pass').value;
-  btn.textContent = 'Entrando...'; btn.disabled = true;
-  err.style.display = 'none';
-  try {
-    const r = await fetch(`${API}/auth/login`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({username:user, password:pass})
-    });
-    const d = await r.json();
-    if (r.ok && d.token) {
-      token = d.token;
-      sessionStorage.setItem('adm_token', token);
-      showApp();
-      loadData();
-    } else {
-      err.textContent = d.message || 'Credenciais inválidas';
-      err.style.display = 'block';
-    }
-  } catch(e) {
-    err.textContent = 'Erro de conexão';
-    err.style.display = 'block';
-  }
-  btn.textContent = 'Entrar'; btn.disabled = false;
+function showNoAccess() {
+  document.getElementById('no-access').style.display = 'flex';
+  document.getElementById('app-screen').style.display = 'none';
 }
 
-// ── Data ─────────────────────────────────────────────────────
 async function loadData() {
   try {
-    // Busca todas as páginas
     let page = 1, all = [];
     while (true) {
-      const r = await fetch(`${API}/processos?page=${page}`, { headers:{ Authorization:`Bearer ${token}` } });
-      if (r.status === 401) { token=null; sessionStorage.removeItem('adm_token'); showLogin(); return; }
+      const r = await fetch(`${API}/processos?page=${page}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (r.status === 401) {
+        sessionStorage.removeItem('token');
+        window.location.href = '/';
+        return;
+      }
       const data = await r.json();
       const items = data.items || [];
       all = all.concat(items);
@@ -279,7 +240,8 @@ async function loadData() {
     renderTable();
   } catch(e) {
     console.error(e);
-    document.getElementById('table-body').innerHTML = '<tr><td colspan="8" class="loading">Erro ao carregar dados</td></tr>';
+    document.getElementById('table-body').innerHTML =
+      '<tr><td colspan="8" class="loading">Erro ao carregar dados</td></tr>';
   }
 }
 
@@ -294,9 +256,7 @@ function updateStats() {
   allProcessos.forEach(p => {
     if (p.status !== 'EM_ANDAMENTO') return;
     const etapaAtual = (p.etapas || []).find(e => e.status === 'EM_ANDAMENTO' || e.status === 'PENDENTE');
-    if (etapaAtual?.prazo_data) {
-      if (new Date(etapaAtual.prazo_data) < hoje) atrasados++;
-    }
+    if (etapaAtual?.prazo_data && new Date(etapaAtual.prazo_data) < hoje) atrasados++;
   });
 
   document.getElementById('st-total').textContent     = total;
@@ -307,14 +267,14 @@ function updateStats() {
 }
 
 function renderTable() {
-  const search = document.getElementById('f-search').value.toLowerCase();
+  const search  = document.getElementById('f-search').value.toLowerCase();
   const fStatus = document.getElementById('f-status').value;
   const fDept   = document.getElementById('f-dept').value;
 
   let filtered = allProcessos.filter(p => {
-    const nome  = (p.candidatura?.nome || '').toLowerCase();
+    const nome  = (p.candidatura?.nome  || '').toLowerCase();
     const cargo = (p.candidatura?.cargo || '').toLowerCase();
-    if (search && !nome.includes(search) && !cargo.includes(search)) return false;
+    if (search  && !nome.includes(search) && !cargo.includes(search)) return false;
     if (fStatus && p.status !== fStatus) return false;
     if (fDept) {
       const etapaAtual = (p.etapas || []).find(e => e.status === 'EM_ANDAMENTO' || e.status === 'PENDENTE');
@@ -342,12 +302,11 @@ function renderTable() {
     const dept = etapaAtual?.departamento || '—';
     const deptLabel = { RH:'RH', DP:'Depto Pessoal', DP_EXTERNO:'DP Externo', SESMT:'SESMT', TI:'TI' }[dept] || dept;
 
-    // Prazo
     let prazoHtml = '<span style="color:var(--ink-3);">—</span>';
     if (etapaAtual?.prazo_data && p.status === 'EM_ANDAMENTO') {
       const prazo = new Date(etapaAtual.prazo_data);
       const diff  = Math.ceil((prazo - hoje) / (1000*60*60*24));
-      if (diff < 0)      prazoHtml = `<span class="prazo-late">⚠ ${Math.abs(diff)}d atraso</span>`;
+      if (diff < 0)       prazoHtml = `<span class="prazo-late">⚠ ${Math.abs(diff)}d atraso</span>`;
       else if (diff <= 2) prazoHtml = `<span class="prazo-warn">⏳ ${diff}d</span>`;
       else                prazoHtml = `<span class="prazo-ok">${diff}d</span>`;
     }
@@ -381,9 +340,18 @@ function renderTable() {
   }).join('');
 }
 
-// ── Init ─────────────────────────────────────────────────────
-if (token) { showApp(); loadData(); }
-else        { showLogin(); }
+// ── Init: usa token do portal, sem tela de login ──────────────
+document.addEventListener('DOMContentLoaded', () => {
+  token = sessionStorage.getItem('token');
+
+  if (!token) {
+    showNoAccess();
+    return;
+  }
+
+  showApp();
+  loadData();
+});
 </script>
 </body>
 </html>
