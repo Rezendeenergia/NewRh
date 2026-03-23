@@ -2,7 +2,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from flask import Blueprint, request, jsonify
 from database import get_db
-from security import hash_password, verify_password, create_token, decode_token, require_auth
+from security import hash_password, verify_password, create_token, require_auth
 import models
 import audit
 
@@ -39,7 +39,7 @@ def login():
 
 
 @bp.post("/invite")
-@require_auth
+@require_admin
 def invite():
     data     = request.get_json()
     username = (data.get("username") or "").strip()
