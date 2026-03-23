@@ -123,7 +123,7 @@ def ms_callback():
             user = models.User(
                 username=username,
                 email=email_lower,
-                password_hash=hash_password(secrets.token_hex(32)),
+                password=hash_password(secrets.token_hex(32)),
                 role=role_correto,
                 is_active=True,
             )
