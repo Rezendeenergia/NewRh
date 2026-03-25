@@ -321,7 +321,17 @@ const Adm = {
 // ── Init: usa token do portal, sem tela de login ──────────────
 document.addEventListener('DOMContentLoaded', async () => {
   // Tenta pegar token do sessionStorage (gravado pelo portal principal)
-  TOKEN = localStorage.getItem('rz_token') || sessionStorage.getItem('rz_token') || sessionStorage.getItem('token');
+  // Tenta todas as fontes possíveis do token
+  function getCookie(name) {
+    const v = document.cookie.match('(^|;)\s*' + name + '\s*=\s*([^;]+)');
+    return v ? v.pop() : null;
+  }
+  TOKEN = getCookie('rz_token')
+       || localStorage.getItem('rz_token')
+       || sessionStorage.getItem('rz_token')
+       || sessionStorage.getItem('token');
+  // Garante que está salvo no localStorage para próximas visitas
+  if (TOKEN) localStorage.setItem('rz_token', TOKEN);
 
   if (!TOKEN) {
     showNoAccess();
