@@ -17,7 +17,7 @@ bp_ms = Blueprint("auth_microsoft", __name__)
 TENANT_ID     = os.getenv("MS_TENANT_ID", "")
 CLIENT_ID     = os.getenv("MS_CLIENT_ID", "")
 CLIENT_SECRET = os.getenv("MS_CLIENT_SECRET", "")
-BASE_URL      = os.getenv("BASE_URL", "https://newrh.onrender.com")
+BASE_URL      = os.getenv("BASE_URL", "https://carreiras.rezendeenergia.com.br")
 
 # ── Lista de acesso autorizado ────────────────────────────────
 # ROLE_OWNER  → Rafael (aprovação de vagas)
@@ -144,8 +144,17 @@ def ms_callback():
         token = create_token(user.username, user.role)
         audit.log(user.username, "LOGIN_MS", detail=f"SSO Microsoft — {email}")
 
-        # Redireciona para o frontend com token na URL (capturado pelo JS)
-        return redirect(f"/#ms-token={token}&ms-user={user.username}&ms-role={user.role}&ms-name={display_name}")
+        # Redireciona com token no hash E seta cookie (cobre todos os cenários)
+        resp = redirect(f"/#ms-token={token}&ms-user={user.username}&ms-role={user.role}&ms-name={display_name}")
+        resp.set_cookie(
+            "rz_token", token,
+            max_age=86400,        # 24 horas
+            path="/",
+            samesite="Lax",
+            secure=False,         # True quando tiver HTTPS próprio
+            httponly=False,       # JS precisa ler
+        )
+        return resp
 
     finally:
         db.close()
