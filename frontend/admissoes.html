@@ -205,7 +205,7 @@
 
 <script>
 const API = '/api';
-let token = localStorage.getItem('rz_token');
+let token = localStorage.getItem('rz_token') || sessionStorage.getItem('rz_token') || sessionStorage.getItem('token');
 let allProcessos = [];
 
 function showApp() {
@@ -342,7 +342,7 @@ function renderTable() {
 
 // ── Init: usa token do portal, sem tela de login ──────────────
 document.addEventListener('DOMContentLoaded', () => {
-  token = localStorage.getItem('rz_token');
+  token = localStorage.getItem('rz_token') || sessionStorage.getItem('rz_token') || sessionStorage.getItem('token');
 
   if (!token) {
     showNoAccess();
