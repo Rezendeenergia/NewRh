@@ -10,7 +10,7 @@
 <body>
 
 <!-- App Screen -->
-<div id="app-screen" class="adm-layout" style="display:none;">
+<div id="app-screen" class="adm-layout">
 
   <!-- ── Sidebar ─────────────────────────────── -->
   <aside class="adm-sidebar">
@@ -60,16 +60,6 @@
 
 </div>
 
-<!-- Sem acesso -->
-<div id="no-access" style="display:none;min-height:100vh;align-items:center;justify-content:center;background:var(--void);">
-  <div style="text-align:center;padding:40px;">
-    <div style="font-size:3rem;margin-bottom:16px;">🔐</div>
-    <h2 style="color:#fff;margin-bottom:8px;">Acesso Restrito</h2>
-    <p style="color:var(--ink-3);margin-bottom:24px;">Faça login pelo portal principal para acessar esta área.</p>
-    <a href="/" class="btn btn--primary">← Ir para o Portal</a>
-  </div>
-</div>
-
 <!-- Modal de ação -->
 <div class="modal" id="action-modal" onclick="Adm.closeModal()">
   <div class="modal__box" onclick="event.stopPropagation()" style="max-width:480px;">
@@ -83,37 +73,21 @@
 </div>
 
 <script>
-// ── Token: pega do sessionStorage (mesmo usado pelo portal principal) ──
-let TOKEN = localStorage.getItem('rz_token');
-
-function showApp() {
-  document.getElementById('app-screen').style.display = 'grid';
-  document.getElementById('no-access').style.display  = 'none';
-}
-function showNoAccess() {
-  document.getElementById('app-screen').style.display = 'none';
-  document.getElementById('no-access').style.display  = 'flex';
-}
+// ── Removida autenticação Microsoft ──────────────────────────
 
 const API = '';
 
 async function req(url, opts={}) {
   const r = await fetch(API + url, {
     ...opts,
-    headers: { 'Authorization':'Bearer '+TOKEN, 'Content-Type':'application/json', ...(opts.headers||{}) }
+    headers: { 'Content-Type':'application/json', ...(opts.headers||{}) }
   });
-  if (r.status === 401) {
-    // Token expirado — volta pro portal
-    localStorage.removeItem('rz_token');
-    window.location.href = '/';
-    return;
-  }
   if (!r.ok) { const e = await r.json().catch(()=>({message:'Erro'})); throw new Error(e.message); }
   return r.json();
 }
 
 async function reqForm(url, fd) {
-  const r = await fetch(API + url, { method:'POST', headers:{'Authorization':'Bearer '+TOKEN}, body:fd });
+  const r = await fetch(API + url, { method:'POST', body:fd });
   if (!r.ok) { const e = await r.json().catch(()=>({message:'Erro'})); throw new Error(e.message); }
   return r.json();
 }
@@ -318,27 +292,9 @@ const Adm = {
   closeModal() { document.getElementById('action-modal').style.display = 'none'; },
 };
 
-// ── Init: usa token do portal, sem tela de login ──────────────
+// ── Init: sem autenticação ──────────────
 document.addEventListener('DOMContentLoaded', async () => {
-  // Tenta pegar token do sessionStorage (gravado pelo portal principal)
-  // Tenta todas as fontes possíveis do token
-  function getCookie(name) {
-    const v = document.cookie.match('(^|;)\s*' + name + '\s*=\s*([^;]+)');
-    return v ? v.pop() : null;
-  }
-  TOKEN = getCookie('rz_token')
-       || localStorage.getItem('rz_token')
-       || sessionStorage.getItem('rz_token')
-       || sessionStorage.getItem('token');
-  // Garante que está salvo no localStorage para próximas visitas
-  if (TOKEN) localStorage.setItem('rz_token', TOKEN);
-
-  if (!TOKEN) {
-    showNoAccess();
-    return;
-  }
-
-  showApp();
+  document.getElementById('app-screen').style.display = 'grid';
   await Promise.all([Adm.loadStats(), Adm.loadLista()]);
 });
 </script>
