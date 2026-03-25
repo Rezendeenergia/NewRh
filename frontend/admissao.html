@@ -321,7 +321,7 @@ const Adm = {
 // ── Init: usa token do portal, sem tela de login ──────────────
 document.addEventListener('DOMContentLoaded', async () => {
   // Tenta pegar token do sessionStorage (gravado pelo portal principal)
-  TOKEN = localStorage.getItem('rz_token');
+  TOKEN = localStorage.getItem('rz_token') || sessionStorage.getItem('rz_token') || sessionStorage.getItem('token');
 
   if (!TOKEN) {
     showNoAccess();
