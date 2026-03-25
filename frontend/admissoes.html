@@ -109,18 +109,8 @@
 </head>
 <body>
 
-<!-- Sem acesso -->
-<div id="no-access" style="display:none;min-height:100vh;align-items:center;justify-content:center;background:var(--void);">
-  <div style="text-align:center;padding:40px;">
-    <div style="font-size:3rem;margin-bottom:16px;">🔐</div>
-    <h2 style="color:#fff;margin-bottom:8px;">Acesso Restrito</h2>
-    <p style="color:var(--ink-3);margin-bottom:24px;">Faça login pelo portal principal para acessar esta área.</p>
-    <a href="/" class="btn btn--primary">← Ir para o Portal</a>
-  </div>
-</div>
-
 <!-- App Screen -->
-<div id="app-screen" style="display:none;">
+<div id="app-screen">
 
   <div class="page-header">
     <div class="page-header__brand">
@@ -204,39 +194,16 @@
 </div>
 
 <script>
-const API = '/api';
-function getCookie(name) {
-  const v = document.cookie.match('(^|;)\s*' + name + '\s*=\s*([^;]+)');
-  return v ? v.pop() : null;
-}
-let token = getCookie('rz_token')
-         || localStorage.getItem('rz_token')
-         || sessionStorage.getItem('rz_token')
-         || sessionStorage.getItem('token');
-if (token) localStorage.setItem('rz_token', token);
-let allProcessos = [];
+// ── Removida autenticação Microsoft ──────────────────────────
 
-function showApp() {
-  document.getElementById('no-access').style.display = 'none';
-  document.getElementById('app-screen').style.display = 'block';
-}
-function showNoAccess() {
-  document.getElementById('no-access').style.display = 'flex';
-  document.getElementById('app-screen').style.display = 'none';
-}
+const API = '/api';
+let allProcessos = [];
 
 async function loadData() {
   try {
     let page = 1, all = [];
     while (true) {
-      const r = await fetch(`${API}/processos?page=${page}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (r.status === 401) {
-        localStorage.removeItem('rz_token');
-        window.location.href = '/';
-        return;
-      }
+      const r = await fetch(`${API}/processos?page=${page}`);
       const data = await r.json();
       const items = data.items || [];
       all = all.concat(items);
@@ -348,20 +315,9 @@ function renderTable() {
   }).join('');
 }
 
-// ── Init: usa token do portal, sem tela de login ──────────────
+// ── Init: sem autenticação ──────────────
 document.addEventListener('DOMContentLoaded', () => {
-  token = getCookie('rz_token')
-       || localStorage.getItem('rz_token')
-       || sessionStorage.getItem('rz_token')
-       || sessionStorage.getItem('token');
-  if (token) localStorage.setItem('rz_token', token);
-
-  if (!token) {
-    showNoAccess();
-    return;
-  }
-
-  showApp();
+  document.getElementById('app-screen').style.display = 'block';
   loadData();
 });
 </script>
