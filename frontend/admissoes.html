@@ -205,7 +205,15 @@
 
 <script>
 const API = '/api';
-let token = localStorage.getItem('rz_token') || sessionStorage.getItem('rz_token') || sessionStorage.getItem('token');
+function getCookie(name) {
+  const v = document.cookie.match('(^|;)\s*' + name + '\s*=\s*([^;]+)');
+  return v ? v.pop() : null;
+}
+let token = getCookie('rz_token')
+         || localStorage.getItem('rz_token')
+         || sessionStorage.getItem('rz_token')
+         || sessionStorage.getItem('token');
+if (token) localStorage.setItem('rz_token', token);
 let allProcessos = [];
 
 function showApp() {
@@ -342,7 +350,11 @@ function renderTable() {
 
 // ── Init: usa token do portal, sem tela de login ──────────────
 document.addEventListener('DOMContentLoaded', () => {
-  token = localStorage.getItem('rz_token') || sessionStorage.getItem('rz_token') || sessionStorage.getItem('token');
+  token = getCookie('rz_token')
+       || localStorage.getItem('rz_token')
+       || sessionStorage.getItem('rz_token')
+       || sessionStorage.getItem('token');
+  if (token) localStorage.setItem('rz_token', token);
 
   if (!token) {
     showNoAccess();
