@@ -194,16 +194,32 @@
 </div>
 
 <script>
-// ── Removida autenticação Microsoft ──────────────────────────
-
 const API = '/api';
+function getCookie(name) {
+  const v = document.cookie.match('(^|;)\s*' + name + '\s*=\s*([^;]+)');
+  return v ? v.pop() : null;
+}
+let token = getCookie('rz_token')
+         || localStorage.getItem('rz_token')
+         || sessionStorage.getItem('rz_token')
+         || sessionStorage.getItem('token');
+if (token) localStorage.setItem('rz_token', token);
 let allProcessos = [];
+
+
 
 async function loadData() {
   try {
     let page = 1, all = [];
     while (true) {
-      const r = await fetch(`${API}/processos?page=${page}`);
+      const r = await fetch(`${API}/processos?page=${page}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (r.status === 401) {
+        localStorage.removeItem('rz_token');
+        window.location.href = '/';
+        return;
+      }
       const data = await r.json();
       const items = data.items || [];
       all = all.concat(items);
@@ -315,9 +331,12 @@ function renderTable() {
   }).join('');
 }
 
-// ── Init: sem autenticação ──────────────
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('app-screen').style.display = 'block';
+  token = getCookie('rz_token')
+       || localStorage.getItem('rz_token')
+       || sessionStorage.getItem('rz_token')
+       || sessionStorage.getItem('token')
+       || '';
   loadData();
 });
 </script>
