@@ -73,21 +73,30 @@
 </div>
 
 <script>
-// ── Removida autenticação Microsoft ──────────────────────────
+// ── Token: pega do sessionStorage (mesmo usado pelo portal principal) ──
+let TOKEN = localStorage.getItem('rz_token');
+
+
 
 const API = '';
 
 async function req(url, opts={}) {
   const r = await fetch(API + url, {
     ...opts,
-    headers: { 'Content-Type':'application/json', ...(opts.headers||{}) }
+    headers: { 'Authorization':'Bearer '+TOKEN, 'Content-Type':'application/json', ...(opts.headers||{}) }
   });
+  if (r.status === 401) {
+    // Token expirado — volta pro portal
+    localStorage.removeItem('rz_token');
+    window.location.href = '/';
+    return;
+  }
   if (!r.ok) { const e = await r.json().catch(()=>({message:'Erro'})); throw new Error(e.message); }
   return r.json();
 }
 
 async function reqForm(url, fd) {
-  const r = await fetch(API + url, { method:'POST', body:fd });
+  const r = await fetch(API + url, { method:'POST', headers:{'Authorization':'Bearer '+TOKEN}, body:fd });
   if (!r.ok) { const e = await r.json().catch(()=>({message:'Erro'})); throw new Error(e.message); }
   return r.json();
 }
@@ -292,10 +301,23 @@ const Adm = {
   closeModal() { document.getElementById('action-modal').style.display = 'none'; },
 };
 
-// ── Init: sem autenticação ──────────────
+// ── Init: usa token do portal, sem tela de login ──────────────
 document.addEventListener('DOMContentLoaded', async () => {
-  document.getElementById('app-screen').style.display = 'grid';
-  await Promise.all([Adm.loadStats(), Adm.loadLista()]);
+  // Tenta pegar token do sessionStorage (gravado pelo portal principal)
+  // Tenta todas as fontes possíveis do token
+  function getCookie(name) {
+    const v = document.cookie.match('(^|;)\s*' + name + '\s*=\s*([^;]+)');
+    return v ? v.pop() : null;
+  }
+  TOKEN = getCookie('rz_token')
+       || localStorage.getItem('rz_token')
+       || sessionStorage.getItem('rz_token')
+       || sessionStorage.getItem('token');
+  // Garante que está salvo no localStorage para próximas visitas
+  if (TOKEN) localStorage.setItem('rz_token', TOKEN);
+
+  if (!TOKEN) {
+    await Promise.all([Adm.loadStats(), Adm.loadLista()]);
 });
 </script>
 </body>
