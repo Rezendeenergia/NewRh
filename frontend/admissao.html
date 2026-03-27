@@ -6,6 +6,10 @@
   <title>Admissão — Rezende Energia</title>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+<style>
+@keyframes pulse { 0%,100%{opacity:.5} 50%{opacity:1} }
+.processo-item { transition: background .1s; }
+</style>
 </head>
 <body>
 
@@ -112,7 +116,7 @@ const Adm = {
 
   async loadStats() {
     try {
-      const s = await req('/api/processos/stats');
+      const s = await reqCached('/api/processos/stats', 30000);
       document.getElementById('stat-andamento').textContent  = s.andamento;
       document.getElementById('stat-concluidos').textContent = s.concluidos;
     } catch(e) { console.error(e); }
@@ -122,19 +126,26 @@ const Adm = {
     const status = document.getElementById('filter-status').value;
     const dept   = document.getElementById('filter-dept').value;
     const list   = document.getElementById('processo-list');
-    list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--ink-3);font-size:.83rem;">Carregando...</div>';
+    // Skeleton animado enquanto carrega
+    list.innerHTML = [1,2,3].map(() => `
+      <div style="padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.04);">
+        <div style="height:13px;width:70%;background:rgba(255,255,255,.07);border-radius:4px;margin-bottom:8px;animation:pulse 1.2s ease infinite;"></div>
+        <div style="height:11px;width:50%;background:rgba(255,255,255,.04);border-radius:4px;margin-bottom:10px;animation:pulse 1.2s ease infinite .2s;"></div>
+        <div style="height:4px;background:rgba(255,255,255,.06);border-radius:99px;animation:pulse 1.2s ease infinite .4s;"></div>
+      </div>`).join('');
     try {
       const params = new URLSearchParams();
       if (status) params.set('status', status);
       if (dept)   params.set('departamento', dept);
-      const data = await req(`/api/processos?${params}`);
+      // cache de 15s para não re-buscar ao trocar filtros rapidamente
+      const data = await reqCached(\`/api/processos?\${params}\`, 15000);
       if (data.items.length === 0) {
         list.innerHTML = '<div style="padding:24px;text-align:center;color:var(--ink-3);font-size:.83rem;">Nenhum processo encontrado</div>';
         return;
       }
       list.innerHTML = data.items.map(p => `
         <div class="processo-item ${p.id===currentProcessoId?'processo-item--active':''}"
-             onclick="Adm.loadProcesso(${p.id})">
+             onclick="Adm.loadProcesso(${p.id})" onmouseenter="Adm.prefetch(${p.id})">
           <p class="processo-item__nome">${p.candidatura.nome}</p>
           <p class="processo-item__cargo">${p.candidatura.cargo} · ${p.candidatura.local}</p>
           <div class="processo-item__bottom">
@@ -150,6 +161,11 @@ const Adm = {
     }
   },
 
+  async prefetch(id) {
+    // Pré-carrega no hover para resposta instantânea no clique
+    reqCached(`/api/processos/${id}`, 30000).catch(() => {});
+  },
+
   async loadProcesso(id) {
     currentProcessoId = id;
     document.querySelectorAll('.processo-item').forEach(el => el.classList.remove('processo-item--active'));
@@ -157,9 +173,13 @@ const Adm = {
       if(el.onclick.toString().includes(`(${id})`)) el.classList.add('processo-item--active');
     });
     const main = document.getElementById('adm-main');
-    main.innerHTML = '<div style="padding:60px;text-align:center;color:var(--ink-3);">Carregando...</div>';
+    // Se já está em cache (prefetch no hover), não mostra loading
+    const cached = _cache[`/api/processos/${id}`];
+    if (!cached) {
+      main.innerHTML = '<div style="padding:60px;text-align:center;color:var(--ink-3);">Carregando...</div>';
+    }
     try {
-      const p = await req(`/api/processos/${id}`);
+      const p = await reqCached(`/api/processos/${id}`, 30000);
       currentProcesso = p;
       main.innerHTML = Adm.renderProcesso(p);
     } catch(e) {
