@@ -303,21 +303,12 @@ const Adm = {
 
 // ── Init: usa token do portal, sem tela de login ──────────────
 document.addEventListener('DOMContentLoaded', async () => {
-  // Tenta pegar token do sessionStorage (gravado pelo portal principal)
-  // Tenta todas as fontes possíveis do token
-  function getCookie(name) {
-    const v = document.cookie.match('(^|;)\s*' + name + '\s*=\s*([^;]+)');
-    return v ? v.pop() : null;
-  }
-  TOKEN = getCookie('rz_token')
+  TOKEN = document.cookie.match('(^|;)\s*rz_token\s*=\s*([^;]+)')?.pop()
        || localStorage.getItem('rz_token')
        || sessionStorage.getItem('rz_token')
-       || sessionStorage.getItem('token');
-  // Garante que está salvo no localStorage para próximas visitas
-  if (TOKEN) localStorage.setItem('rz_token', TOKEN);
-
-  if (!TOKEN) {
-    await Promise.all([Adm.loadStats(), Adm.loadLista()]);
+       || sessionStorage.getItem('token')
+       || '';
+  await Promise.all([Adm.loadStats(), Adm.loadLista()]);
 });
 </script>
 </body>
