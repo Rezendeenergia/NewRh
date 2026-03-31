@@ -71,48 +71,129 @@ const CandidatoPortal = {
 
   abrir() {
     const overlay = document.getElementById('candidato-portal-overlay');
-    if (overlay) { overlay.style.display = 'flex'; }
-    // Se já logado, vai direto pro dashboard
-    if (this._token) { this._showDashboard(); }
+    if (overlay) overlay.style.display = 'flex';
+    if (this._token) this._showDashboard();
+    else this.setTab('login');
   },
 
   fechar() {
-    const overlay = document.getElementById('candidato-portal-overlay');
-    if (overlay) overlay.style.display = 'none';
+    const el = document.getElementById('candidato-portal-overlay');
+    if (el) el.style.display = 'none';
   },
 
   logout() {
     this._token = null;
     document.getElementById('cand-login-panel').style.display    = 'block';
     document.getElementById('cand-dashboard-panel').style.display = 'none';
+    this.setTab('login');
+  },
+
+  setTab(tab) {
+    // Esconde todos os forms
+    ['login','primeiro','recuperar'].forEach(t => {
+      const el = document.getElementById('cand-form-' + t);
+      if (el) el.style.display = 'none';
+    });
+    // Reseta abas visuais
+    const tabLogin   = document.getElementById('cand-tab-login');
+    const tabPrimeiro = document.getElementById('cand-tab-primeiro');
+    if (tabLogin)    { tabLogin.style.borderBottomColor = 'transparent'; tabLogin.style.color = '#9AA3B2'; }
+    if (tabPrimeiro) { tabPrimeiro.style.borderBottomColor = 'transparent'; tabPrimeiro.style.color = '#9AA3B2'; }
+
+    // Mostra form correto
+    const form = document.getElementById('cand-form-' + tab);
+    if (form) form.style.display = 'block';
+
+    if (tab === 'login' && tabLogin) {
+      tabLogin.style.borderBottomColor = '#FF6A00'; tabLogin.style.color = '#FF6A00';
+    } else if (tab === 'primeiro' && tabPrimeiro) {
+      tabPrimeiro.style.borderBottomColor = '#FF6A00'; tabPrimeiro.style.color = '#FF6A00';
+    }
   },
 
   async login() {
-    const cpf  = document.getElementById('cand-cpf')?.value?.trim();
-    const nasc = document.getElementById('cand-nasc')?.value?.trim();
-    const alert = document.getElementById('cand-login-alert');
-
-    if (!cpf || !nasc) {
-      alert.textContent = '❌ Preencha CPF e data de nascimento.';
-      alert.style.display = 'block'; return;
+    const email = document.getElementById('cand-email')?.value?.trim();
+    const senha = document.getElementById('cand-senha')?.value;
+    const alertEl = document.getElementById('cand-login-alert');
+    const btn     = document.getElementById('cand-btn-login');
+    if (!email || !senha) {
+      alertEl.textContent = '❌ Preencha e-mail e senha.';
+      alertEl.style.display = 'block'; return;
     }
-    alert.style.display = 'none';
-
+    alertEl.style.display = 'none';
+    btn.textContent = 'Entrando...'; btn.disabled = true;
     try {
       const r = await fetch('/api/candidato/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cpf, dataNascimento: nasc }),
+        body: JSON.stringify({ email, senha }),
       });
       const d = await r.json();
-      if (!r.ok) throw new Error(d.message || 'Erro ao autenticar');
-
+      if (!r.ok) {
+        if (d.primeiroAcesso) {
+          alertEl.innerHTML = '⚠️ ' + d.message + ' <a href="#" onclick="CandidatoPortal.setTab('primeiro');return false;" style="color:#FF6A00;">Clique aqui</a>';
+        } else {
+          alertEl.textContent = '❌ ' + (d.message || 'Erro ao autenticar');
+        }
+        alertEl.style.display = 'block'; return;
+      }
       this._token = d.token;
       document.getElementById('cand-nome').textContent = d.nome;
       this._showDashboard();
     } catch(e) {
-      alert.textContent = '❌ ' + e.message;
-      alert.style.display = 'block';
+      alertEl.textContent = '❌ Erro de conexão'; alertEl.style.display = 'block';
+    } finally {
+      btn.textContent = 'Entrar'; btn.disabled = false;
+    }
+  },
+
+  async solicitarAcesso() {
+    const email   = document.getElementById('cand-email-primeiro')?.value?.trim();
+    const alertEl = document.getElementById('cand-primeiro-alert');
+    const btn     = document.getElementById('cand-btn-primeiro');
+    if (!email) { alertEl.textContent = '❌ Informe seu e-mail.'; alertEl.style.display = 'block'; return; }
+    alertEl.style.display = 'none';
+    btn.textContent = 'Enviando...'; btn.disabled = true;
+    try {
+      const r = await fetch('/api/candidato/primeiro-acesso', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const d = await r.json();
+      alertEl.textContent = r.ok ? '✅ ' + d.message : '❌ ' + (d.message || 'Erro');
+      alertEl.style.display = 'block';
+      alertEl.style.background = r.ok ? 'rgba(46,204,113,.1)' : 'rgba(255,82,82,.1)';
+      alertEl.style.color = r.ok ? '#2ECC71' : '#FF5252';
+    } catch(e) {
+      alertEl.textContent = '❌ Erro de conexão'; alertEl.style.display = 'block';
+    } finally {
+      btn.textContent = 'Enviar Link de Acesso'; btn.disabled = false;
+    }
+  },
+
+  async recuperarSenha() {
+    const email   = document.getElementById('cand-email-recuperar')?.value?.trim();
+    const alertEl = document.getElementById('cand-recuperar-alert');
+    const btn     = document.getElementById('cand-btn-recuperar');
+    if (!email) { alertEl.textContent = '❌ Informe seu e-mail.'; alertEl.style.display = 'block'; return; }
+    alertEl.style.display = 'none';
+    btn.textContent = 'Enviando...'; btn.disabled = true;
+    try {
+      const r = await fetch('/api/candidato/recuperar-senha', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const d = await r.json();
+      alertEl.textContent = r.ok ? '✅ ' + d.message : '❌ ' + (d.message || 'Erro');
+      alertEl.style.display = 'block';
+      alertEl.style.background = r.ok ? 'rgba(46,204,113,.1)' : 'rgba(255,82,82,.1)';
+      alertEl.style.color = r.ok ? '#2ECC71' : '#FF5252';
+    } catch(e) {
+      alertEl.textContent = '❌ Erro de conexão'; alertEl.style.display = 'block';
+    } finally {
+      btn.textContent = 'Enviar Link'; btn.disabled = false;
     }
   },
 
@@ -126,38 +207,30 @@ const CandidatoPortal = {
     const lista = document.getElementById('cand-lista');
     if (!lista) return;
     lista.innerHTML = '<p style="color:#9AA3B2;text-align:center;padding:20px;">Carregando...</p>';
-
     try {
       const r = await fetch('/api/candidato/minhas-candidaturas', {
         headers: { 'Authorization': 'Bearer ' + this._token },
       });
       const items = await r.json();
       if (!r.ok) throw new Error(items.message || 'Erro');
-
       if (!items.length) {
         lista.innerHTML = '<p style="color:#9AA3B2;text-align:center;padding:20px;">Nenhuma candidatura encontrada.</p>';
         return;
       }
-
       const COR = {
         PENDING:'#FFB830', TRIAGEM:'#5B8DEF', TRIAGEM_OK:'#2ECC71',
         ENTREVISTA:'#A78BFA', ENTREVISTA_OK:'#2ECC71',
         APROVACAO_FINAL:'#F39C12', APPROVED:'#2ECC71', REJECTED:'#FF5252',
       };
-
       lista.innerHTML = items.map(c => {
-        const cor   = COR[c.statusKey] || '#9AA3B2';
-        return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);
-                            border-radius:10px;padding:14px 16px;">
+        const cor = COR[c.statusKey] || '#9AA3B2';
+        return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:14px 16px;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
             <div>
               <p style="margin:0 0 2px;font-size:15px;font-weight:700;color:#fff;">${c.vaga}</p>
-              <p style="margin:0;font-size:12px;color:#9AA3B2;">📍 ${c.local} · Inscrito em ${c.appliedAt}</p>
+              <p style="margin:0;font-size:12px;color:#9AA3B2;">📍 ${c.local} · ${c.appliedAt}</p>
             </div>
-            <span style="background:${cor}18;border:1px solid ${cor}44;color:${cor};
-                         border-radius:20px;padding:3px 12px;font-size:12px;font-weight:700;white-space:nowrap;">
-              ${c.status}
-            </span>
+            <span style="background:${cor}18;border:1px solid ${cor}44;color:${cor};border-radius:20px;padding:3px 12px;font-size:12px;font-weight:700;white-space:nowrap;">${c.status}</span>
           </div>
         </div>`;
       }).join('');
