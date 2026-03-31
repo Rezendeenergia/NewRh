@@ -286,3 +286,16 @@ class SolicitacaoVaga(Base):
     updated_at        = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     job = relationship("Job", foreign_keys=[job_id])
+
+
+# ── Conta do Candidato (login e-mail + senha) ────────────────
+class CandidatoConta(Base):
+    __tablename__ = "candidato_contas"
+
+    id             = Column(Integer, primary_key=True, index=True)
+    email          = Column(String(150), unique=True, nullable=False, index=True)
+    senha_hash     = Column(String(64), nullable=True)
+    reset_token    = Column(String(100), nullable=True)
+    reset_expiry   = Column(DateTime(timezone=True), nullable=True)
+    ultimo_acesso  = Column(DateTime(timezone=True), nullable=True)
+    created_at     = Column(DateTime(timezone=True), server_default=func.now())
