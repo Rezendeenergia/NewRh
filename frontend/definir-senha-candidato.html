@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Criar Senha — Portal de Carreiras Rezende Energia</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    body { background:var(--void); display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; }
+    .box { background:var(--surface); border:1px solid rgba(255,255,255,.07); border-radius:20px;
+           padding:40px 36px; width:100%; max-width:380px; box-shadow:0 32px 80px rgba(0,0,0,.6); }
+  </style>
+</head>
+<body>
+<div class="box">
+  <div style="text-align:center;margin-bottom:28px;">
+    <img src="/logo-rezende.png" alt="Rezende Energia" style="height:52px;margin-bottom:12px;">
+    <h2 style="font-size:1.3rem;font-weight:800;color:#fff;margin:0 0 6px;">Criar Senha</h2>
+    <p style="color:var(--ink-3);font-size:.85rem;margin:0;">Portal de Carreiras — Rezende Energia</p>
+  </div>
+
+  <div id="form-area">
+    <div class="form-field">
+      <label class="form-field__label">Nova senha</label>
+      <input id="senha1" type="password" class="form-field__input" placeholder="Mínimo 6 caracteres"
+             onkeydown="if(event.key==='Enter')document.getElementById('senha2').focus()">
+    </div>
+    <div class="form-field">
+      <label class="form-field__label">Confirmar senha</label>
+      <input id="senha2" type="password" class="form-field__input" placeholder="Repita a senha"
+             onkeydown="if(event.key==='Enter')definir()">
+    </div>
+    <div id="alert" class="alert" style="display:none;margin-bottom:12px;"></div>
+    <button id="btn" onclick="definir()" class="btn btn--primary btn--full btn--large">
+      Criar Senha
+    </button>
+  </div>
+
+  <div id="sucesso" style="display:none;text-align:center;padding:20px 0;">
+    <div style="font-size:3rem;margin-bottom:12px;">✅</div>
+    <p style="color:#2ECC71;font-weight:700;font-size:16px;margin:0 0 8px;">Senha criada com sucesso!</p>
+    <p style="color:var(--ink-3);font-size:13px;margin:0 0 20px;">Você já pode acessar o portal.</p>
+    <a href="/" class="btn btn--primary">← Ir para o Portal</a>
+  </div>
+</div>
+
+<script>
+const token = new URLSearchParams(window.location.search).get('token');
+if (!token) {
+  document.getElementById('form-area').innerHTML =
+    '<p style="color:#FF5252;text-align:center;">Link inválido. Solicite um novo link de acesso.</p>' +
+    '<a href="/" class="btn btn--ghost btn--full" style="margin-top:16px;">← Voltar ao Portal</a>';
+}
+
+async function definir() {
+  const senha1  = document.getElementById('senha1').value;
+  const senha2  = document.getElementById('senha2').value;
+  const alertEl = document.getElementById('alert');
+  const btn     = document.getElementById('btn');
+
+  if (!senha1 || !senha2) {
+    alertEl.textContent = '❌ Preencha os dois campos.';
+    alertEl.style.display = 'block'; return;
+  }
+  if (senha1.length < 6) {
+    alertEl.textContent = '❌ A senha deve ter pelo menos 6 caracteres.';
+    alertEl.style.display = 'block'; return;
+  }
+  if (senha1 !== senha2) {
+    alertEl.textContent = '❌ As senhas não conferem.';
+    alertEl.style.display = 'block'; return;
+  }
+
+  alertEl.style.display = 'none';
+  btn.textContent = 'Salvando...'; btn.disabled = true;
+
+  try {
+    const r = await fetch('/api/candidato/definir-senha', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, senha: senha1 }),
+    });
+    const d = await r.json();
+    if (!r.ok) {
+      alertEl.textContent = '❌ ' + (d.message || 'Erro');
+      alertEl.style.display = 'block';
+      btn.textContent = 'Criar Senha'; btn.disabled = false;
+      return;
+    }
+    document.getElementById('form-area').style.display = 'none';
+    document.getElementById('sucesso').style.display   = 'block';
+  } catch(e) {
+    alertEl.textContent = '❌ Erro de conexão.';
+    alertEl.style.display = 'block';
+    btn.textContent = 'Criar Senha'; btn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>
