@@ -223,6 +223,12 @@ if __name__ == "__main__":
 
 
 # ── Pasta Digital do Colaborador ──────────────────────────────
+@app.route("/candidato/definir-senha")
+def candidato_definir_senha():
+    """Página para o candidato definir sua senha via token do e-mail."""
+    return send_from_directory(FRONTEND_FOLDER, "definir-senha-candidato.html")
+
+
 @app.route("/pasta-colaborador")
 def pasta_colaborador_page():
     return send_from_directory(FRONTEND_FOLDER, "pasta-colaborador.html")
