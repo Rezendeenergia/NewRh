@@ -55,6 +55,16 @@ FRONTEND_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..",
 app = Flask(__name__, static_folder=FRONTEND_FOLDER, static_url_path="")
 CORS(app)
 
+@app.after_request
+def no_cache_js_html(response):
+    """Força browser a sempre buscar JS e HTML atualizados."""
+    if response.content_type and any(t in response.content_type for t in
+            ['javascript', 'text/html']):
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+    return response
+
 # Compressão gzip automática em todas as respostas (reduz ~70% no tamanho)
 from flask_compress import Compress
 Compress(app)
