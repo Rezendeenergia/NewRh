@@ -131,7 +131,7 @@ const CandidatoPortal = {
       const d = await r.json();
       if (!r.ok) {
         if (d.primeiroAcesso) {
-          alertEl.innerHTML = '⚠️ ' + d.message + ' <a href="#" onclick="CandidatoPortal.setTab('primeiro');return false;" style="color:#FF6A00;">Clique aqui</a>';
+          alertEl.innerHTML = '⚠️ ' + d.message + ' <a href="#" onclick="CandidatoPortal.setTab(\'primeiro\');return false;" style="color:#FF6A00;">Clique aqui</a>';
         } else {
           alertEl.textContent = '❌ ' + (d.message || 'Erro ao autenticar');
         }
