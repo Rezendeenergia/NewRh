@@ -336,7 +336,7 @@
                 <span style="font-size:12px;color:#F4F5F7;line-height:1.6;">
                   Li e <strong>concordo</strong> com o uso dos meus dados pessoais para fins de processo seletivo.
                   Entendo que posso solicitar a exclusão dos meus dados a qualquer momento pelo e-mail
-                  <strong style="color:#FF6A00;"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="691b01291b0c130c070d0c0c070c1b0e0008470a0604470b1b">[email&#160;protected]</a></strong>.
+                  <strong style="color:#FF6A00;">rh@rezendeenergia.com.br</strong>.
                 </span>
               </label>
             </div>
@@ -788,18 +788,12 @@
 
     <!-- Login do candidato -->
     <div id="cand-login-panel" style="padding:24px;">
-
-      <!-- Abas: Login / Primeiro Acesso -->
       <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid rgba(255,255,255,.08);">
         <button id="cand-tab-login" onclick="CandidatoPortal.setTab('login')"
-                style="flex:1;padding:9px;background:none;border:none;border-bottom:2px solid #FF6A00;
-                       color:#FF6A00;font-size:13px;font-weight:700;cursor:pointer;">Entrar</button>
+                style="flex:1;padding:9px;background:none;border:none;border-bottom:2px solid #FF6A00;color:#FF6A00;font-size:13px;font-weight:700;cursor:pointer;">Entrar</button>
         <button id="cand-tab-primeiro" onclick="CandidatoPortal.setTab('primeiro')"
-                style="flex:1;padding:9px;background:none;border:none;border-bottom:2px solid transparent;
-                       color:#9AA3B2;font-size:13px;font-weight:600;cursor:pointer;">Primeiro Acesso</button>
+                style="flex:1;padding:9px;background:none;border:none;border-bottom:2px solid transparent;color:#9AA3B2;font-size:13px;font-weight:600;cursor:pointer;">Primeiro Acesso</button>
       </div>
-
-      <!-- Formulário Login -->
       <div id="cand-form-login">
         <div class="form-field">
           <label class="form-field__label">E-mail</label>
@@ -813,21 +807,14 @@
         </div>
         <div id="cand-login-alert" class="alert" style="display:none;margin-bottom:12px;"></div>
         <button onclick="CandidatoPortal.login()" id="cand-btn-login"
-                style="width:100%;padding:13px;background:linear-gradient(135deg,#FF8C2A,#FF6A00);
-                       color:#000;font-weight:800;font-size:15px;border:none;border-radius:10px;cursor:pointer;margin-bottom:10px;">
+                style="width:100%;padding:13px;background:linear-gradient(135deg,#FF8C2A,#FF6A00);color:#000;font-weight:800;font-size:15px;border:none;border-radius:10px;cursor:pointer;margin-bottom:10px;">
           Entrar
         </button>
         <button onclick="CandidatoPortal.setTab('recuperar')"
-                style="width:100%;padding:8px;background:none;border:none;color:#5A6478;
-                       font-size:12px;cursor:pointer;">Esqueci minha senha</button>
+                style="width:100%;padding:8px;background:none;border:none;color:#5A6478;font-size:12px;cursor:pointer;">Esqueci minha senha</button>
       </div>
-
-      <!-- Formulário Primeiro Acesso -->
       <div id="cand-form-primeiro" style="display:none;">
-        <p style="color:#A8A8B8;font-size:13px;line-height:1.6;margin:0 0 16px;">
-          Use o <strong style="color:#fff;">mesmo e-mail</strong> que informou na candidatura.
-          Enviaremos um link para criar sua senha.
-        </p>
+        <p style="color:#A8A8B8;font-size:13px;line-height:1.6;margin:0 0 16px;">Use o <strong style="color:#fff;">mesmo e-mail</strong> informado na candidatura. Enviaremos um link para criar sua senha.</p>
         <div class="form-field">
           <label class="form-field__label">E-mail da candidatura</label>
           <input id="cand-email-primeiro" type="email" class="form-field__input" placeholder="seu@email.com"
@@ -835,17 +822,12 @@
         </div>
         <div id="cand-primeiro-alert" class="alert" style="display:none;margin-bottom:12px;"></div>
         <button onclick="CandidatoPortal.solicitarAcesso()" id="cand-btn-primeiro"
-                style="width:100%;padding:13px;background:linear-gradient(135deg,#FF8C2A,#FF6A00);
-                       color:#000;font-weight:800;font-size:15px;border:none;border-radius:10px;cursor:pointer;">
+                style="width:100%;padding:13px;background:linear-gradient(135deg,#FF8C2A,#FF6A00);color:#000;font-weight:800;font-size:15px;border:none;border-radius:10px;cursor:pointer;">
           Enviar Link de Acesso
         </button>
       </div>
-
-      <!-- Formulário Recuperar Senha -->
       <div id="cand-form-recuperar" style="display:none;">
-        <p style="color:#A8A8B8;font-size:13px;line-height:1.6;margin:0 0 16px;">
-          Informe seu e-mail e enviaremos um link para redefinir sua senha.
-        </p>
+        <p style="color:#A8A8B8;font-size:13px;line-height:1.6;margin:0 0 16px;">Informe seu e-mail e enviaremos um link para redefinir sua senha.</p>
         <div class="form-field">
           <label class="form-field__label">E-mail</label>
           <input id="cand-email-recuperar" type="email" class="form-field__input" placeholder="seu@email.com"
@@ -853,16 +835,12 @@
         </div>
         <div id="cand-recuperar-alert" class="alert" style="display:none;margin-bottom:12px;"></div>
         <button onclick="CandidatoPortal.recuperarSenha()" id="cand-btn-recuperar"
-                style="width:100%;padding:13px;background:linear-gradient(135deg,#FF8C2A,#FF6A00);
-                       color:#000;font-weight:800;font-size:15px;border:none;border-radius:10px;cursor:pointer;margin-bottom:10px;">
+                style="width:100%;padding:13px;background:linear-gradient(135deg,#FF8C2A,#FF6A00);color:#000;font-weight:800;font-size:15px;border:none;border-radius:10px;cursor:pointer;margin-bottom:10px;">
           Enviar Link
         </button>
         <button onclick="CandidatoPortal.setTab('login')"
-                style="width:100%;padding:8px;background:none;border:none;color:#5A6478;font-size:12px;cursor:pointer;">
-          ← Voltar ao login
-        </button>
+                style="width:100%;padding:8px;background:none;border:none;color:#5A6478;font-size:12px;cursor:pointer;">← Voltar ao login</button>
       </div>
-
     </div>
 
     <!-- Dashboard do candidato (pós-login) -->
@@ -886,7 +864,7 @@
       <div style="border-top:1px solid rgba(255,255,255,.06);margin-top:20px;padding-top:16px;">
         <p style="color:#5A6478;font-size:11px;text-align:center;margin:0;line-height:1.7;">
           Para solicitar exclusão dos seus dados, envie um e-mail para<br>
-          <strong style="color:#FF6A00;"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="f3819bb3819689969d9796969d9681949a92dd909c9edd9181">[email&#160;protected]</a></strong> com o assunto
+          <strong style="color:#FF6A00;">rh@rezendeenergia.com.br</strong> com o assunto
           <em>"Exclusão de Dados - LGPD"</em>.
         </p>
       </div>
@@ -990,4 +968,17 @@
         <div id="edit-job-alert" class="alert" style="display:none;"></div>
         <div class="form-actions">
           <button type="button" class="btn btn--outline" onclick="Manager.closeEditModal()">Cancelar</button>
-          <button type="submit" id="edit-job-btn" class="btn btn--pr
+          <button type="submit" id="edit-job-btn" class="btn btn--primary">Salvar Alterações</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<footer class="footer">© 2025 Rezende Energia · Portal de Carreiras</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
