@@ -77,7 +77,16 @@
 </div>
 
 <script>
-// ── Token: pega do sessionStorage (mesmo usado pelo portal principal) ──
+// Cache simples para evitar re-fetch desnecessário
+const _cache = {};
+async function reqCached(url, ttl=10000) {
+  const now = Date.now();
+  if (_cache[url] && (now - _cache[url].ts) < ttl) return _cache[url].data;
+  const data = await req(url);
+  _cache[url] = { data, ts: now };
+  return data;
+}
+
 let TOKEN = localStorage.getItem('rz_token');
 
 
