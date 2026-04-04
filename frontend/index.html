@@ -797,12 +797,12 @@
       <div id="cand-form-login">
         <div class="form-field">
           <label class="form-field__label">E-mail</label>
-          <input id="cand-email" type="email" class="form-field__input" placeholder="seu@email.com"
+          <input id="cand-email" type="email" class="form-field__input" placeholder="seu@email.com" autocomplete="off"
                  onkeydown="if(event.key==='Enter')document.getElementById('cand-senha').focus()">
         </div>
         <div class="form-field">
           <label class="form-field__label">Senha</label>
-          <input id="cand-senha" type="password" class="form-field__input" placeholder="••••••••"
+          <input id="cand-senha" type="password" class="form-field__input" placeholder="••••••••" autocomplete="new-password"
                  onkeydown="if(event.key==='Enter')CandidatoPortal.login()">
         </div>
         <div id="cand-login-alert" class="alert" style="display:none;margin-bottom:12px;"></div>
