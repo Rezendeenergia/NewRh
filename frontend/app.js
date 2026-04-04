@@ -1527,6 +1527,18 @@ document.getElementById('apply-form').addEventListener('submit', async function(
 
 // ─── Init ──────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
+  // Se veio de /admissao ou /admissoes, abre direto na aba do gestor
+  if (new URLSearchParams(window.location.search).get('gestor') === '1') {
+    // Limpa o parâmetro da URL sem recarregar
+    history.replaceState({}, '', '/');
+    // Ativa aba do gestor
+    document.querySelectorAll('.nav__tab').forEach(t => t.classList.remove('nav__tab--active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('panel--active'));
+    const tabGestor = document.querySelector('[data-panel="manager"]');
+    if (tabGestor) tabGestor.classList.add('nav__tab--active');
+    const panelGestor = document.getElementById('panel-manager');
+    if (panelGestor) panelGestor.classList.add('panel--active');
+  }
   await Portal.loadJobList();
   const vagaId = new URLSearchParams(window.location.search).get('vaga');
   if (vagaId) Portal.selectJob(parseInt(vagaId));
