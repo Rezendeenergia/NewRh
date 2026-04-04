@@ -103,7 +103,7 @@ def login():
             return jsonify({"message": "Senha incorreta."}), 401
 
         # Atualiza último acesso
-        conta.ultimo_acesso = datetime.now(timezone.utc)
+        conta.ultimo_acesso = datetime.now()
         db.commit()
 
         cands = _get_candidaturas(db, email)
@@ -142,7 +142,7 @@ def primeiro_acesso():
         # Gera token de definição de senha (válido 2h)
         token = secrets.token_urlsafe(32)
         conta.reset_token    = token
-        conta.reset_expiry   = datetime.now(timezone.utc) + timedelta(hours=2)
+        conta.reset_expiry   = datetime.now() + timedelta(hours=2)  # naive, sem timezone
         db.commit()
 
         # Envia e-mail
@@ -191,13 +191,13 @@ def definir_senha():
         conta = db.query(models.CandidatoConta).filter_by(reset_token=token).first()
         if not conta:
             return jsonify({"message": "Link inválido."}), 400
-        if conta.reset_expiry and conta.reset_expiry < datetime.now(timezone.utc):
+        if conta.reset_expiry and conta.reset_expiry.replace(tzinfo=None) < datetime.now(timezone.utc).replace(tzinfo=None):
             return jsonify({"message": "Link expirado. Solicite um novo."}), 400
 
         conta.senha_hash   = _hash_senha(senha)
         conta.reset_token  = None
         conta.reset_expiry = None
-        conta.ultimo_acesso = datetime.now(timezone.utc)
+        conta.ultimo_acesso = datetime.now()
         db.commit()
 
         cands = _get_candidaturas(db, conta.email)
