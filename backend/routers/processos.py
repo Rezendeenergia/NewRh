@@ -444,7 +444,8 @@ def upload_doc(processo_id, etapa_id):
         cand     = p.candidatura
         cand_nome = cand.full_name
         cand_cpf  = cand.cpf
-        etapa_nome = e.nome
+        etapa_nome   = e.nome
+        etapa_codigo = e.codigo
         sp_url_atual = p.sharepoint_url
 
         audit.log(request.username, "UPLOAD_DOC_ETAPA", entity="processo",
@@ -471,7 +472,7 @@ def upload_doc(processo_id, etapa_id):
                         finally:
                             db2.close()
 
-                sp_url = upload_documento(dest, safe_name, pasta, sub_pasta=etapa_nome)
+                sp_url = upload_documento(dest, safe_name, pasta, sub_pasta=etapa_nome, codigo_etapa=etapa_codigo)
                 if sp_url:
                     db3 = get_db()
                     try:
