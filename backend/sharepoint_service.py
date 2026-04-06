@@ -83,28 +83,29 @@ def _criar_pasta(drive_id, caminho_pai_encoded, nome_pasta):
 
 # ── Estrutura oficial da pasta digital do colaborador ─────────
 ESTRUTURA_PASTA = {
-    "01.DOCUMENTOS PESSOAIS": {
-        "01_PESSOAL": None,
-        "02_DEPENDENTES": None,
-        "03_DADOS_BANCARIOS_E_PIX": None,
+    "01 DOCUMENTO PESSOAL": {
+        "1.1 PESSOAL": None,
+        "1.2 DEPENDENTES": None,
+        "1.3 DADOS BANCARIOS E PIX": None,
     },
-    "02.ADMISSAO": {
-        "01_DOCUMENTO DA CONTABILIDADE": None,
-        "02_DOCUMENTOS ASSINADOS": None,
-        "03_SAUDE_OCUPACIONAL": None,
-        "04_MOBILIZACAO": {
-            "01_TREINAMENTOS": None,
-            "03_EPI_E_CAUTELAS": None,
-            "04_OCORRENCIAS": None,
-        },
+    "02 ADMISSAO": {
+        "2.1 DOCUMENTO ASSINADO": None,
+        "2.2 DOCUMENTO DA CONTABILIDADE": None,
+        "2.3 AVALIACAO": None,
     },
-    "05_TRABALHISTA_FINANCEIRO": {
-        "1_Cartao_Ponto_Digital": None,
-        "2_Holerites_CONTRA_CHEQUE": None,
-        "3_Comprovantes_de_Pagamento": None,
-        "4_Ferias": None,
+    "03 SAUDE OCUPACIONAL": None,
+    "04 MOBILIZACAO": {
+        "4.1 TREINAMENTOS": None,
+        "4.2 EPI E CAUTELAS": None,
+        "4.3 OCORRENCIAS": None,
     },
-    "06_DISCIPLINAR": None,
+    "05 TRABALHISTA E FINANCEIRO": {
+        "5.1 CARTAO PONTO DIGITAL": None,
+        "5.2 HOLERITES CONTRA CHEQUE": None,
+        "5.3 COMPROVANTES DE PAGAMENTO": None,
+        "5.4 FERIAS": None,
+    },
+    "06 MEDIDAS DISCIPLINAR": None,
 }
 
 
@@ -180,27 +181,27 @@ def criar_pasta_colaborador(nome: str, cpf: str) -> dict:
 
 # Mapeamento: código da etapa → pasta oficial no SharePoint
 ETAPA_PARA_PASTA = {
-    # Fase 1 — Seleção (fica na raiz do colaborador)
+    # Fase 1 — Seleção (sem arquivo)
     "TRIAGEM":              None,
     "ENTREVISTA":           None,
     "APROVACAO_FINAL":      None,
     # Fase 2 — Admissão formal
-    "ASO":                  "02.ADMISSAO/03_SAUDE_OCUPACIONAL",
-    "DP_EXTERNO":           "02.ADMISSAO/01_DOCUMENTO DA CONTABILIDADE",
-    "ASSINATURAS":          "02.ADMISSAO/02_DOCUMENTOS ASSINADOS",
-    "CADASTRO_GPM":         "02.ADMISSAO",
-    "ACESSO_TI":            "02.ADMISSAO",
-    "BEMHOEFT":             "02.ADMISSAO/01_DOCUMENTO DA CONTABILIDADE",
+    "ASO":                  "03 SAUDE OCUPACIONAL",
+    "DP_EXTERNO":           "02 ADMISSAO/2.2 DOCUMENTO DA CONTABILIDADE",
+    "ASSINATURAS":          "02 ADMISSAO/2.1 DOCUMENTO ASSINADO",
+    "CADASTRO_GPM":         "02 ADMISSAO/2.3 AVALIACAO",
+    "ACESSO_TI":            "02 ADMISSAO/2.3 AVALIACAO",
+    "BEMHOEFT":             "02 ADMISSAO/2.2 DOCUMENTO DA CONTABILIDADE",
     # Fase 3 — Segurança / SESMT
-    "EPIS_UNIFORMES":       "02.ADMISSAO/04_MOBILIZACAO/03_EPI_E_CAUTELAS",
-    "FORMACAO_NRS":         "02.ADMISSAO/04_MOBILIZACAO/01_TREINAMENTOS",
-    "PRONTUARIO_SEGURANCA": "02.ADMISSAO/04_MOBILIZACAO",
-    "CERTIFICADOS_NR":      "02.ADMISSAO/04_MOBILIZACAO/01_TREINAMENTOS",
-    "PROVA_DEEP":           "02.ADMISSAO/04_MOBILIZACAO",
+    "EPIS_UNIFORMES":       "04 MOBILIZACAO/4.2 EPI E CAUTELAS",
+    "FORMACAO_NRS":         "04 MOBILIZACAO/4.1 TREINAMENTOS",
+    "PRONTUARIO_SEGURANCA": "04 MOBILIZACAO/4.1 TREINAMENTOS",
+    "CERTIFICADOS_NR":      "04 MOBILIZACAO/4.1 TREINAMENTOS",
+    "PROVA_DEEP":           "04 MOBILIZACAO/4.1 TREINAMENTOS",
     # Fase 4 — Integração final
-    "GRAFICA_CRACHA":       "02.ADMISSAO",
-    "INTEGRACAO_EQUATORIAL":"02.ADMISSAO",
-    "LIBERADO_CAMPO":       "02.ADMISSAO",
+    "GRAFICA_CRACHA":       "02 ADMISSAO/2.3 AVALIACAO",
+    "INTEGRACAO_EQUATORIAL":"02 ADMISSAO/2.3 AVALIACAO",
+    "LIBERADO_CAMPO":       "02 ADMISSAO/2.3 AVALIACAO",
 }
 
 
