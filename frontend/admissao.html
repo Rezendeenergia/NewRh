@@ -188,7 +188,9 @@ const Adm = {
       main.innerHTML = '<div style="padding:60px;text-align:center;color:var(--ink-3);">Carregando...</div>';
     }
     try {
-      const p = await reqCached(`/api/processos/${id}`, 30000);
+      // Busca direto do servidor (ignora cache) para garantir dados atualizados
+      const p = await req(`/api/processos/${id}`);
+      _cache[`/api/processos/${id}`] = { data: p, ts: Date.now() };
       currentProcesso = p;
       main.innerHTML = Adm.renderProcesso(p);
     } catch(e) {
@@ -300,6 +302,10 @@ const Adm = {
       await req(`/api/processos/${processoId}/etapas/${etapaId}`, {
         method:'PATCH', body:JSON.stringify({ status, nota })
       });
+      // Invalida cache do processo e da lista para forçar dados frescos
+      delete _cache[`/api/processos/${processoId}`];
+      delete _cache[`/api/processos/stats`];
+      Object.keys(_cache).forEach(k => { if (k.startsWith('/api/processos?')) delete _cache[k]; });
       await Adm.loadProcesso(processoId);
       await Adm.loadStats();
       await Adm.loadLista();
