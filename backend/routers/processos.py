@@ -426,35 +426,68 @@ def upload_doc(processo_id, etapa_id):
         if not arquivo or not arquivo.filename:
             return jsonify({"message": "Arquivo obrigatório"}), 400
 
+        # 1. Salva localmente imediatamente
         safe_name = arquivo.filename.replace(" ", "_")
         dest = os.path.join(UPLOAD_FOLDER, f"{processo_id}_{etapa_id}_{safe_name}")
         arquivo.save(dest)
 
-        sp_url = None
-        try:
-            from sharepoint_service import criar_pasta_colaborador, upload_documento
-            cand  = p.candidatura
-            cpf_c = cand.cpf.replace('.','').replace('-','')
-            pasta = f"{cand.full_name} - {cpf_c}"
-            if not p.sharepoint_url:
-                result = criar_pasta_colaborador(cand.full_name, cand.cpf)
-                if result.get("url"):
-                    p.sharepoint_url = result["url"]
-                    db.commit()
-            sp_url = upload_documento(dest, safe_name, pasta, sub_pasta=e.nome)
-        except Exception as ex:
-            print(f"[SHAREPOINT] Upload falhou: {ex}")
-
+        # 2. Registra o documento no banco SEM esperar SharePoint
         doc = models.DocumentoEtapa(
             etapa_id=etapa_id, nome=arquivo.filename, arquivo=dest,
-            sharepoint_url=sp_url, enviado_por=request.username, status="PENDENTE",
+            sharepoint_url=None,  # será atualizado em background
+            enviado_por=request.username, status="PENDENTE",
         )
         db.add(doc)
         db.commit()
         db.refresh(doc)
+        doc_id   = doc.id
+        cand     = p.candidatura
+        cand_nome = cand.full_name
+        cand_cpf  = cand.cpf
+        etapa_nome = e.nome
+        sp_url_atual = p.sharepoint_url
 
         audit.log(request.username, "UPLOAD_DOC_ETAPA", entity="processo",
-                  entity_id=processo_id, detail=f"Doc '{arquivo.filename}' na etapa '{e.nome}'")
+                  entity_id=processo_id, detail=f"Doc '{arquivo.filename}' na etapa '{etapa_nome}'")
+
+        # 3. Upload SharePoint em background (não bloqueia a resposta)
+        import threading
+        def _upload_sp():
+            try:
+                from sharepoint_service import criar_pasta_colaborador, upload_documento
+                cpf_c = cand_cpf.replace('.','').replace('-','')
+                pasta = f"{cand_nome} - {cpf_c}"
+
+                sp_url = None
+                if not sp_url_atual:
+                    result = criar_pasta_colaborador(cand_nome, cand_cpf)
+                    if result.get("url"):
+                        db2 = get_db()
+                        try:
+                            proc = db2.query(models.ProcessoAdmissao).filter_by(id=processo_id).first()
+                            if proc:
+                                proc.sharepoint_url = result["url"]
+                                db2.commit()
+                        finally:
+                            db2.close()
+
+                sp_url = upload_documento(dest, safe_name, pasta, sub_pasta=etapa_nome)
+                if sp_url:
+                    db3 = get_db()
+                    try:
+                        d = db3.query(models.DocumentoEtapa).filter_by(id=doc_id).first()
+                        if d:
+                            d.sharepoint_url = sp_url
+                            db3.commit()
+                        print(f"[SHAREPOINT] Upload concluído em background: {sp_url}")
+                    finally:
+                        db3.close()
+            except Exception as ex:
+                print(f"[SHAREPOINT] Upload background falhou: {ex}")
+
+        threading.Thread(target=_upload_sp, daemon=True).start()
+
+        # 4. Retorna imediatamente sem esperar SharePoint
         return jsonify(doc_to_dict(doc)), 201
     finally:
         db.close()
