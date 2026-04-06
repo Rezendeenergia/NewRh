@@ -81,14 +81,68 @@ def _criar_pasta(drive_id, caminho_pai_encoded, nome_pasta):
     return r.json()
 
 
+# ── Estrutura oficial da pasta digital do colaborador ─────────
+ESTRUTURA_PASTA = {
+    "01.DOCUMENTOS PESSOAIS": {
+        "01_PESSOAL": None,
+        "02_DEPENDENTES": None,
+        "03_DADOS_BANCARIOS_E_PIX": None,
+    },
+    "02.ADMISSAO": {
+        "01_DOCUMENTO DA CONTABILIDADE": None,
+        "02_DOCUMENTOS ASSINADOS": None,
+        "03_SAUDE_OCUPACIONAL": None,
+        "04_MOBILIZACAO": {
+            "01_TREINAMENTOS": None,
+            "03_EPI_E_CAUTELAS": None,
+            "04_OCORRENCIAS": None,
+        },
+    },
+    "05_TRABALHISTA_FINANCEIRO": {
+        "1_Cartao_Ponto_Digital": None,
+        "2_Holerites_CONTRA_CHEQUE": None,
+        "3_Comprovantes_de_Pagamento": None,
+        "4_Ferias": None,
+    },
+    "06_DISCIPLINAR": None,
+}
+
+
+def _criar_estrutura_recursiva(drive_id: str, caminho_base: str, estrutura: dict):
+    """Cria recursivamente todas as subpastas da estrutura."""
+    for nome_pasta, subpastas in estrutura.items():
+        try:
+            _criar_pasta(drive_id, caminho_base, nome_pasta)
+            print(f"[SHAREPOINT] Pasta criada: {caminho_base}/{nome_pasta}")
+            if subpastas:
+                _criar_estrutura_recursiva(
+                    drive_id,
+                    f"{caminho_base}/{nome_pasta}",
+                    subpastas
+                )
+        except Exception as e:
+            print(f"[SHAREPOINT] Erro ao criar {nome_pasta}: {e}")
+
+
 def criar_pasta_colaborador(nome: str, cpf: str) -> dict:
     """
-    Cria pasta do colaborador dentro de CANDIDATURAS/:
+    Cria pasta do colaborador com estrutura oficial completa:
     CANDIDATURAS/
-    └── Nome Colaborador - CPF/
-            └── (documentos por etapa)
-
-    Retorna {'id': ..., 'url': ..., 'pasta': ...}
+    └── Nome - CPF/
+        ├── 01.DOCUMENTOS PESSOAIS/
+        │   ├── 01_PESSOAL/
+        │   ├── 02_DEPENDENTES/
+        │   └── 03_DADOS_BANCARIOS_E_PIX/
+        ├── 02.ADMISSAO/
+        │   ├── 01_DOCUMENTO DA CONTABILIDADE/
+        │   ├── 02_DOCUMENTOS ASSINADOS/
+        │   ├── 03_SAUDE_OCUPACIONAL/
+        │   └── 04_MOBILIZACAO/
+        │       ├── 01_TREINAMENTOS/
+        │       ├── 03_EPI_E_CAUTELAS/
+        │       └── 04_OCORRENCIAS/
+        ├── 05_TRABALHISTA_FINANCEIRO/
+        └── 06_DISCIPLINAR/
     """
     try:
         cpf_clean = cpf.replace(".", "").replace("-", "")
@@ -97,12 +151,26 @@ def criar_pasta_colaborador(nome: str, cpf: str) -> dict:
         site_id  = _get_site_id()
         drive_id = _get_drive_id(site_id)
 
-        # Cria a pasta do colaborador dentro de CANDIDATURAS
+        # 1. Cria pasta raiz do colaborador
         item = _criar_pasta(drive_id, BASE_PATH, pasta)
+        url  = item.get("webUrl", "")
+        print(f"[SHAREPOINT] Pasta raiz criada: {pasta}")
+
+        # 2. Cria estrutura completa em background para não bloquear
+        import threading
+        def _build_structure():
+            try:
+                caminho_colab = f"{BASE_PATH}/{pasta}"
+                _criar_estrutura_recursiva(drive_id, caminho_colab, ESTRUTURA_PASTA)
+                print(f"[SHAREPOINT] Estrutura completa criada para: {pasta}")
+            except Exception as ex:
+                print(f"[SHAREPOINT] Erro na estrutura: {ex}")
+
+        threading.Thread(target=_build_structure, daemon=True).start()
 
         return {
             "id":    item.get("id"),
-            "url":   item.get("webUrl", ""),
+            "url":   url,
             "pasta": pasta,
         }
     except Exception as e:
@@ -110,37 +178,83 @@ def criar_pasta_colaborador(nome: str, cpf: str) -> dict:
         return {"id": None, "url": None, "pasta": None, "erro": str(e)}
 
 
-def upload_documento(arquivo_path: str, nome_arquivo: str,
-                     pasta_colaborador: str, sub_pasta: str = None) -> str:
-    """
-    Faz upload para:
-    CANDIDATURAS/Nome - CPF/[sub_pasta]/nome_arquivo
+# Mapeamento: código da etapa → pasta oficial no SharePoint
+ETAPA_PARA_PASTA = {
+    # Fase 1 — Seleção (fica na raiz do colaborador)
+    "TRIAGEM":              None,
+    "ENTREVISTA":           None,
+    "APROVACAO_FINAL":      None,
+    # Fase 2 — Admissão formal
+    "ASO":                  "02.ADMISSAO/03_SAUDE_OCUPACIONAL",
+    "DP_EXTERNO":           "02.ADMISSAO/01_DOCUMENTO DA CONTABILIDADE",
+    "ASSINATURAS":          "02.ADMISSAO/02_DOCUMENTOS ASSINADOS",
+    "CADASTRO_GPM":         "02.ADMISSAO",
+    "ACESSO_TI":            "02.ADMISSAO",
+    "BEMHOEFT":             "02.ADMISSAO/01_DOCUMENTO DA CONTABILIDADE",
+    # Fase 3 — Segurança / SESMT
+    "EPIS_UNIFORMES":       "02.ADMISSAO/04_MOBILIZACAO/03_EPI_E_CAUTELAS",
+    "FORMACAO_NRS":         "02.ADMISSAO/04_MOBILIZACAO/01_TREINAMENTOS",
+    "PRONTUARIO_SEGURANCA": "02.ADMISSAO/04_MOBILIZACAO",
+    "CERTIFICADOS_NR":      "02.ADMISSAO/04_MOBILIZACAO/01_TREINAMENTOS",
+    "PROVA_DEEP":           "02.ADMISSAO/04_MOBILIZACAO",
+    # Fase 4 — Integração final
+    "GRAFICA_CRACHA":       "02.ADMISSAO",
+    "INTEGRACAO_EQUATORIAL":"02.ADMISSAO",
+    "LIBERADO_CAMPO":       "02.ADMISSAO",
+}
 
-    Retorna a URL do arquivo no SharePoint.
+
+def _pasta_para_etapa(codigo_etapa: str) -> str | None:
+    """Retorna o caminho relativo da pasta para o código da etapa."""
+    return ETAPA_PARA_PASTA.get(codigo_etapa.upper())
+
+
+def upload_documento(arquivo_path: str, nome_arquivo: str,
+                     pasta_colaborador: str,
+                     sub_pasta: str = None,
+                     codigo_etapa: str = None) -> str:
+    """
+    Faz upload para a pasta correta baseado no código da etapa.
+    Se codigo_etapa for fornecido, usa o mapeamento oficial.
+    Caso contrário, usa sub_pasta como fallback.
     """
     try:
-        caminho = f"{BASE_PATH}/{pasta_colaborador}"
-        if sub_pasta:
-            # Garante que a sub-pasta da etapa existe
-            site_id  = _get_site_id()
-            drive_id = _get_drive_id(site_id)
-            _criar_pasta(drive_id, caminho, sub_pasta)
-            caminho  = f"{caminho}/{sub_pasta}"
-
         site_id  = _get_site_id()
         drive_id = _get_drive_id(site_id)
+        caminho_base = f"{BASE_PATH}/{pasta_colaborador}"
+
+        # Determina pasta destino
+        pasta_destino = None
+        if codigo_etapa:
+            pasta_destino = _pasta_para_etapa(codigo_etapa)
+
+        if pasta_destino:
+            # Garante que toda a hierarquia existe
+            partes = pasta_destino.split("/")
+            caminho_atual = caminho_base
+            for parte in partes:
+                _criar_pasta(drive_id, caminho_atual, parte)
+                caminho_atual = f"{caminho_atual}/{parte}"
+            caminho_final = caminho_atual
+        elif sub_pasta:
+            _criar_pasta(drive_id, caminho_base, sub_pasta)
+            caminho_final = f"{caminho_base}/{sub_pasta}"
+        else:
+            caminho_final = caminho_base
 
         with open(arquivo_path, "rb") as f:
-            content = f.read()
+            file_content = f.read()
 
-        upload_url = f"{GRAPH_BASE}/drives/{drive_id}/root:/{caminho}/{nome_arquivo}:/content"
+        upload_url = f"{GRAPH_BASE}/drives/{drive_id}/root:/{caminho_final}/{nome_arquivo}:/content"
         headers    = {
             "Authorization": f"Bearer {_get_token()}",
             "Content-Type":  "application/octet-stream",
         }
-        r = requests.put(upload_url, headers=headers, data=content, timeout=30)
+        r = requests.put(upload_url, headers=headers, data=file_content, timeout=30)
         r.raise_for_status()
-        return r.json().get("webUrl", "")
+        url = r.json().get("webUrl", "")
+        print(f"[SHAREPOINT] Upload OK → {caminho_final}/{nome_arquivo}")
+        return url
 
     except Exception as e:
         print(f"[SHAREPOINT] Erro no upload: {e}")
