@@ -26,7 +26,7 @@ ETAPAS_FLUXO = [
     {"ordem": 7,  "codigo": "CADASTRO_GPM",          "nome": "Cadastro no GPM",                "departamento": "DP",         "tipo": "CHECKLIST",   "prazo_dias": 1},
     {"ordem": 8,  "codigo": "ACESSO_TI",             "nome": "Criação de Acesso TI/Sistemas",  "departamento": "TI",         "tipo": "CHECKLIST",   "prazo_dias": 1},
     {"ordem": 9,  "codigo": "BEMHOEFT",              "nome": "Inclusão Prontuário Bemhoeft",   "departamento": "DP",         "tipo": "DOCUMENTO",   "prazo_dias": 3},
-    {"ordem": 10, "codigo": "EPIS_UNIFORMES",        "nome": "Fornecimento EPIs e Uniformes",  "departamento": "SESMT",      "tipo": "CHECKLIST",   "prazo_dias": 1},
+    {"ordem": 10, "codigo": "EPIS_UNIFORMES",        "nome": "Fornecimento EPIs e Uniformes",  "departamento": "SESMT",      "tipo": "DOCUMENTO",   "prazo_dias": 1},
     {"ordem": 11, "codigo": "FORMACAO_NRS",          "nome": "Formação e Reciclagem NRs",      "departamento": "SESMT",      "tipo": "DOCUMENTO",   "prazo_dias": 5},
     {"ordem": 12, "codigo": "PRONTUARIO_SEGURANCA",  "nome": "Prontuário de Segurança",        "departamento": "SESMT",      "tipo": "DOCUMENTO",   "prazo_dias": 1},
     {"ordem": 13, "codigo": "CERTIFICADOS_NR",       "nome": "Verificação Certificados NRs",   "departamento": "SESMT",      "tipo": "DOCUMENTO",   "prazo_dias": 2},
