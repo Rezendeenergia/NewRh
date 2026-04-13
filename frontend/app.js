@@ -1639,22 +1639,20 @@ document.getElementById('apply-form').addEventListener('submit', async function(
 
 // ─── Init ──────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
-  // Restaura sessão do gestor a partir do localStorage (persiste navegação entre páginas)
-  const savedToken = localStorage.getItem('rz_token');
-  const savedUser  = localStorage.getItem('rz_username');
-  const savedRole  = localStorage.getItem('rz_role');
-  if (savedToken && !sessionToken) {
-    sessionToken    = savedToken;
-    sessionUsername = savedUser || '';
-    AppState.role   = savedRole || 'ROLE_ADMIN';
-    AppState.username = savedUser || '';
-  }
-
-  // Se veio de /admissao ou /admissoes, abre direto na aba do gestor
+  // Restaura sessão APENAS quando vindo de /admissao ou /admissoes
+  // (não faz auto-login no carregamento normal da página)
   if (new URLSearchParams(window.location.search).get('gestor') === '1') {
+    const savedToken = localStorage.getItem('rz_token');
+    const savedUser  = localStorage.getItem('rz_username');
+    const savedRole  = localStorage.getItem('rz_role');
+    if (savedToken) {
+      sessionToken    = savedToken;
+      sessionUsername = savedUser || '';
+      AppState.role   = savedRole || 'ROLE_ADMIN';
+      AppState.username = savedUser || '';
+    }
     history.replaceState({}, '', '/');
     if (sessionToken) {
-      // Já logado — abre dashboard do gestor direto
       document.querySelectorAll('.nav__tab').forEach(t => t.classList.remove('nav__tab--active'));
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('panel--active'));
       const tabGestor = document.querySelector('[data-panel="manager"]');
