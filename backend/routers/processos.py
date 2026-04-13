@@ -20,7 +20,7 @@ ETAPAS_FLUXO = [
     {"ordem": 1,  "codigo": "TRIAGEM",              "nome": "Triagem",                        "departamento": "RH",         "tipo": "APROVACAO",   "prazo_dias": 2},
     {"ordem": 2,  "codigo": "ENTREVISTA",            "nome": "Entrevista",                     "departamento": "RH",         "tipo": "ENTREVISTA",  "prazo_dias": 5},
     {"ordem": 3,  "codigo": "APROVACAO_FINAL",       "nome": "Aprovação Final",                "departamento": "RH",         "tipo": "APROVACAO",   "prazo_dias": 1},
-    {"ordem": 4,  "codigo": "ASO",                   "nome": "Agendamento ASO",                "departamento": "RH",         "tipo": "DOCUMENTO",   "prazo_dias": 1},
+    {"ordem": 4,  "codigo": "ASO",                   "nome": "ASO",                "departamento": "RH",         "tipo": "DOCUMENTO",   "prazo_dias": 1},
     {"ordem": 5,  "codigo": "DP_EXTERNO",            "nome": "Admissão DP Externo",            "departamento": "DP_EXTERNO", "tipo": "DOCUMENTO",   "prazo_dias": 2},
     {"ordem": 6,  "codigo": "ASSINATURAS",           "nome": "Coleta de Assinaturas",          "departamento": "DP",         "tipo": "DOCUMENTO",   "prazo_dias": 1},
     {"ordem": 7,  "codigo": "CADASTRO_GPM",          "nome": "Cadastro no GPM",                "departamento": "DP",         "tipo": "CHECKLIST",   "prazo_dias": 1},
