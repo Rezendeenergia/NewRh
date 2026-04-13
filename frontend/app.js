@@ -198,22 +198,45 @@ const CandidatoPortal = {
   },
 
   async _showDashboard() {
-    document.getElementById('cand-login-panel').style.display    = 'none';
+    document.getElementById('cand-login-panel').style.display     = 'none';
     document.getElementById('cand-dashboard-panel').style.display = 'block';
+    this.setDashTab('candidaturas');
     await this._loadCandidaturas();
     await this._loadDocs();
   },
 
+  setDashTab(tab) {
+    // Abas
+    const tabs = ['candidaturas', 'documentos'];
+    tabs.forEach(t => {
+      const btn    = document.getElementById(`tab-${t}`);
+      const painel = document.getElementById(`painel-${t}`);
+      const isActive = t === tab;
+      if (btn) {
+        btn.style.borderBottomColor = isActive ? '#FF6A00' : 'transparent';
+        btn.style.color = isActive ? '#FF6A00' : '#9AA3B2';
+      }
+      if (painel) painel.style.display = isActive ? 'block' : 'none';
+    });
+    if (tab === 'documentos') this._loadDocs();
+  },
+
   abrirUpload() {
+    // Garante que está na aba documentos
+    this.setDashTab('documentos');
     const form = document.getElementById('cand-upload-form');
     if (!form) return;
     const visible = form.style.display !== 'none';
     form.style.display = visible ? 'none' : 'block';
     if (!visible) {
-      document.getElementById('cand-doc-descricao').value = '';
-      document.getElementById('cand-doc-label').textContent = '📎 Clique para selecionar';
-      document.getElementById('cand-doc-alert').style.display = 'none';
-      document.getElementById('cand-doc-zone').style.borderColor = 'rgba(255,106,0,.4)';
+      const desc = document.getElementById('cand-doc-descricao');
+      const label = document.getElementById('cand-doc-label');
+      const alert = document.getElementById('cand-doc-alert');
+      const zone  = document.getElementById('cand-doc-zone');
+      if (desc)  desc.value = '';
+      if (label) label.textContent = 'Toque para selecionar o arquivo';
+      if (alert) alert.style.display = 'none';
+      if (zone)  zone.style.borderColor = 'rgba(255,106,0,.5)';
     }
   },
 
