@@ -30,6 +30,20 @@
   cursor: default;
 }
 .adf-opt.adf-selected { color: #FF6A00; background: rgba(255,106,0,.08); }
+
+/* ── Mobile ───────────────────────────────────────── */
+@media (max-width: 640px) {
+  .site-header { padding: 10px 14px !important; }
+  .hero { padding: 24px 14px 16px !important; }
+  .hero__title { font-size: 1.9rem !important; }
+  .jobs-grid { grid-template-columns: 1fr !important; padding: 12px 14px !important; gap: 10px !important; }
+  .job-card { padding: 16px !important; }
+  .filters-bar { flex-direction: column !important; padding: 10px 14px !important; gap: 8px !important; }
+  .form-grid { grid-template-columns: 1fr !important; }
+  .form-actions { flex-direction: column !important; }
+  .form-actions .btn { width: 100% !important; }
+  .nav__tab { padding: 7px 10px !important; font-size: .75rem !important; }
+}
 </style>
 </head>
 <body>
@@ -336,7 +350,7 @@
                 <span style="font-size:12px;color:#F4F5F7;line-height:1.6;">
                   Li e <strong>concordo</strong> com o uso dos meus dados pessoais para fins de processo seletivo.
                   Entendo que posso solicitar a exclusão dos meus dados a qualquer momento pelo e-mail
-                  <strong style="color:#FF6A00;"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="3f4d577f4d5a455a515b5a5a515a4d58565e115c5052115d4d">[email&#160;protected]</a></strong>.
+                  <strong style="color:#FF6A00;">rh@rezendeenergia.com.br</strong>.
                 </span>
               </label>
             </div>
@@ -767,14 +781,15 @@
 
 <!-- ════ MODAL: Portal do Candidato ════ -->
 <div id="candidato-portal-overlay"
-     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);
-            z-index:10000;align-items:center;justify-content:center;padding:20px;">
-  <div style="background:#161B27;border:1px solid rgba(255,255,255,.1);border-radius:16px;
-              width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.6);">
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(6px);
+            z-index:10000;align-items:flex-end;justify-content:center;">
+  <div style="background:#161B27;border:1px solid rgba(255,255,255,.1);border-radius:16px 16px 0 0;
+              width:100%;max-width:520px;height:90vh;display:flex;flex-direction:column;
+              box-shadow:0 -8px 40px rgba(0,0,0,.6);">
 
-    <!-- Header -->
+    <!-- Header (fixo) -->
     <div style="display:flex;align-items:center;justify-content:space-between;
-                padding:20px 24px;border-bottom:1px solid rgba(255,255,255,.07);">
+                padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0;">
       <div style="display:flex;align-items:center;gap:10px;">
         <span style="font-size:20px;">🔍</span>
         <div>
@@ -783,11 +798,12 @@
         </div>
       </div>
       <button onclick="CandidatoPortal.fechar()"
-              style="background:none;border:none;color:#9AA3B2;font-size:20px;cursor:pointer;line-height:1;">✕</button>
+              style="background:rgba(255,255,255,.1);border:none;color:#fff;font-size:16px;
+                     cursor:pointer;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;">✕</button>
     </div>
 
     <!-- Login do candidato -->
-    <div id="cand-login-panel" style="padding:24px;">
+    <div id="cand-login-panel" style="padding:20px;overflow-y:auto;flex:1;">
       <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid rgba(255,255,255,.08);">
         <button id="cand-tab-login" onclick="CandidatoPortal.setTab('login')"
                 style="flex:1;padding:9px;background:none;border:none;border-bottom:2px solid #FF6A00;color:#FF6A00;font-size:13px;font-weight:700;cursor:pointer;">Entrar</button>
@@ -844,7 +860,7 @@
     </div>
 
     <!-- Dashboard do candidato (pós-login) -->
-    <div id="cand-dashboard-panel" style="display:none;padding:24px;">
+    <div id="cand-dashboard-panel" style="display:none;padding:20px;overflow-y:auto;flex:1;">
 
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
         <p style="margin:0;color:#fff;font-weight:700;">Olá, <span id="cand-nome" style="color:#FF6A00;"></span>! 👋</p>
@@ -861,17 +877,15 @@
         <p style="color:#9AA3B2;text-align:center;padding:20px;">Carregando...</p>
       </div>
 
-      <!-- Seção de documentos extras -->
+      <!-- Documentos extras -->
       <div style="border-top:1px solid rgba(255,255,255,.08);margin-top:20px;padding-top:16px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
           <h4 style="color:#FF6A00;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin:0;">📎 Meus Documentos</h4>
           <button onclick="CandidatoPortal.abrirUpload()"
-                  style="background:rgba(255,106,0,.12);border:1px solid rgba(255,106,0,.25);color:#FF6A00;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">
-            + Enviar
-          </button>
+                  style="background:rgba(255,106,0,.12);border:1px solid rgba(255,106,0,.25);color:#FF6A00;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">+ Enviar</button>
         </div>
         <div id="cand-upload-form" style="display:none;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:14px;margin-bottom:12px;">
-          <select id="cand-doc-tipo" style="width:100%;background:var(--surface);border:1px solid rgba(255,255,255,.1);color:var(--ink-1);border-radius:8px;padding:8px 10px;font-size:13px;margin-bottom:8px;">
+          <select id="cand-doc-tipo" style="width:100%;background:var(--surface);border:1px solid rgba(255,255,255,.1);color:var(--ink-1);border-radius:8px;padding:8px 10px;font-size:14px;margin-bottom:8px;">
             <option value="NR">Certificado NR</option>
             <option value="DIPLOMA">Diploma / Histórico Escolar</option>
             <option value="CERTIFICADO">Certificado de Curso</option>
@@ -879,14 +893,15 @@
             <option value="OUTRO">Outro</option>
           </select>
           <input id="cand-doc-descricao" type="text" placeholder="Descrição (ex: NR10 Básico 2024)" autocomplete="off"
-                 style="width:100%;background:var(--surface);border:1px solid rgba(255,255,255,.1);color:var(--ink-1);border-radius:8px;padding:8px 10px;font-size:13px;margin-bottom:8px;box-sizing:border-box;">
+                 style="width:100%;background:var(--surface);border:1px solid rgba(255,255,255,.1);color:var(--ink-1);border-radius:8px;padding:8px 10px;font-size:14px;margin-bottom:8px;box-sizing:border-box;">
           <div id="cand-doc-zone" onclick="document.getElementById('cand-doc-file').click()"
-               style="border:1px dashed rgba(255,106,0,.4);border-radius:8px;padding:14px;text-align:center;cursor:pointer;margin-bottom:8px;">
+               style="border:2px dashed rgba(255,106,0,.5);border-radius:10px;padding:20px;text-align:center;cursor:pointer;margin-bottom:10px;">
             <input type="file" id="cand-doc-file" style="display:none" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" onchange="CandidatoPortal.uploadDoc(this)">
-            <span id="cand-doc-label" style="color:var(--ink-3);font-size:13px;">📎 Clique para selecionar</span>
+            <p style="margin:0 0 4px;font-size:1.5rem;">📎</p>
+            <span id="cand-doc-label" style="color:var(--ink-3);font-size:13px;">Toque para selecionar o arquivo</span>
           </div>
           <div id="cand-doc-alert" class="alert" style="display:none;margin-bottom:8px;"></div>
-          <button onclick="CandidatoPortal.abrirUpload()" style="width:100%;padding:8px;background:none;border:1px solid rgba(255,255,255,.1);color:var(--ink-3);border-radius:8px;font-size:13px;cursor:pointer;">Cancelar</button>
+          <button onclick="CandidatoPortal.abrirUpload()" style="width:100%;padding:10px;background:none;border:1px solid rgba(255,255,255,.1);color:var(--ink-3);border-radius:8px;font-size:13px;cursor:pointer;">Cancelar</button>
         </div>
         <div id="cand-docs-lista" style="display:flex;flex-direction:column;gap:8px;">
           <p style="color:#5A6478;font-size:12px;text-align:center;padding:8px 0;">Nenhum documento enviado ainda.</p>
@@ -896,7 +911,7 @@
       <div style="border-top:1px solid rgba(255,255,255,.06);margin-top:16px;padding-top:16px;">
         <p style="color:#5A6478;font-size:11px;text-align:center;margin:0;line-height:1.7;">
           Para solicitar exclusão dos seus dados, envie um e-mail para<br>
-          <strong style="color:#FF6A00;"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="a7d5cfe7d5c2ddc2c9c3c2c2c9c2d5c0cec689c4c8ca89c5d5">[email&#160;protected]</a></strong> com o assunto
+          <strong style="color:#FF6A00;">rh@rezendeenergia.com.br</strong> com o assunto
           <em>"Exclusão de Dados - LGPD"</em>.
         </p>
       </div>
@@ -1000,4 +1015,17 @@
         <div id="edit-job-alert" class="alert" style="display:none;"></div>
         <div class="form-actions">
           <button type="button" class="btn btn--outline" onclick="Manager.closeEditModal()">Cancelar</button>
-          <button type="submit" id="edit-job-btn" class="btn btn--pr
+          <button type="submit" id="edit-job-btn" class="btn btn--primary">Salvar Alterações</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<footer class="footer">© 2025 Rezende Energia · Portal de Carreiras</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
