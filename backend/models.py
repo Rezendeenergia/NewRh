@@ -203,6 +203,8 @@ class ProcessoAdmissao(Base):
     candidatura_id   = Column(Integer, ForeignKey("candidaturas.id", ondelete="CASCADE"), unique=True)
     status           = Column(String(20), nullable=False, default="EM_ANDAMENTO")
     # status: EM_ANDAMENTO | CONCLUIDO | CANCELADO
+    tipo_admissao    = Column(String(30), nullable=True, default="ADMISSAO_NOVA")
+    # tipo_admissao: ADMISSAO_NOVA | MUDANCA_FUNCAO | REINTEGRACAO | MOBILIZACAO
     etapa_atual      = Column(String(50), nullable=True)
     sharepoint_url   = Column(Text, nullable=True)
     created_at       = Column(DateTime, server_default=func.now())
@@ -299,3 +301,19 @@ class CandidatoConta(Base):
     reset_expiry   = Column(DateTime(timezone=True), nullable=True)
     ultimo_acesso  = Column(DateTime(timezone=True), nullable=True)
     created_at     = Column(DateTime(timezone=True), server_default=func.now())
+
+
+# ── Documentos adicionais do Candidato ───────────────────────
+class CandidatoDocumento(Base):
+    __tablename__ = "candidato_documentos"
+
+    id             = Column(Integer, primary_key=True, index=True)
+    candidatura_id = Column(Integer, ForeignKey("candidaturas.id", ondelete="CASCADE"), nullable=False)
+    nome           = Column(String(200), nullable=False)   # nome original do arquivo
+    arquivo        = Column(String(300), nullable=True)    # path local
+    sharepoint_url = Column(Text, nullable=True)
+    tipo           = Column(String(50), nullable=True)     # NR, DIPLOMA, CERTIFICADO, OUTRO
+    descricao      = Column(String(200), nullable=True)
+    enviado_em     = Column(DateTime, server_default=func.now())
+
+    candidatura = relationship("Candidatura", backref="documentos_extras")
