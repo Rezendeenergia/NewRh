@@ -503,7 +503,9 @@ def update_status(candidatura_id):
         if new_status == "APPROVED" and old_status != "APPROVED":
             try:
                 from routers.processos import criar_processo_para_candidatura
-                criar_processo_para_candidatura(c.id, db)
+                # Pega tipo_admissao do request se informado
+                tipo_admissao = data.get("tipoAdmissao", "ADMISSAO_NOVA") or "ADMISSAO_NOVA"
+                criar_processo_para_candidatura(c.id, db, tipo_admissao=tipo_admissao)
             except Exception as ex:
                 print(f"[PROCESSO] Erro ao criar processo: {ex}")
 
