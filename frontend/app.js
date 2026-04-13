@@ -199,7 +199,7 @@ const CandidatoPortal = {
 
   async _showDashboard() {
     document.getElementById('cand-login-panel').style.display     = 'none';
-    document.getElementById('cand-dashboard-panel').style.display = 'block';
+    document.getElementById('cand-dashboard-panel').style.display = 'flex';
     this.setDashTab('candidaturas');
     await this._loadCandidaturas();
     await this._loadDocs();
