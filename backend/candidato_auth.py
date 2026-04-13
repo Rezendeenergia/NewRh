@@ -273,3 +273,108 @@ def meu_perfil():
         })
     finally:
         db.close()
+
+# ── Documentos extras do candidato ───────────────────────────
+
+@bp_cand.get("/meus-documentos")
+@require_candidato
+def meus_documentos():
+    """Lista documentos extras enviados pelo candidato."""
+    email = request.candidato_email
+    db    = get_db()
+    try:
+        cands = _get_candidaturas(db, email)
+        if not cands:
+            return jsonify([])
+
+        # Pega documentos de todas as candidaturas do email
+        docs = db.query(models.CandidatoDocumento).filter(
+            models.CandidatoDocumento.candidatura_id.in_([c.id for c in cands])
+        ).order_by(models.CandidatoDocumento.enviado_em.desc()).all()
+
+        return jsonify([{
+            "id":          d.id,
+            "nome":        d.nome,
+            "tipo":        d.tipo,
+            "descricao":   d.descricao,
+            "enviadoEm":   d.enviado_em.strftime("%d/%m/%Y") if d.enviado_em else "—",
+            "url":         d.sharepoint_url,
+        } for d in docs])
+    finally:
+        db.close()
+
+
+@bp_cand.post("/enviar-documento")
+@require_candidato
+def enviar_documento():
+    """Candidato envia documento extra (NR, diploma, certificado, etc)."""
+    email = request.candidato_email
+    db    = get_db()
+    try:
+        cands = _get_candidaturas(db, email)
+        if not cands:
+            return jsonify({"message": "Candidatura não encontrada"}), 404
+
+        arquivo  = request.files.get("arquivo")
+        tipo     = request.form.get("tipo", "OUTRO")
+        descricao = request.form.get("descricao", "")
+
+        if not arquivo or not arquivo.filename:
+            return jsonify({"message": "Arquivo obrigatório"}), 400
+
+        # Salva localmente
+        import os
+        UPLOAD_FOLDER = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", "uploads", "candidatos")
+        )
+        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+        safe_name = arquivo.filename.replace(" ", "_")
+        dest = os.path.join(UPLOAD_FOLDER, f"{cands[0].id}_{safe_name}")
+        arquivo.save(dest)
+
+        doc = models.CandidatoDocumento(
+            candidatura_id=cands[0].id,
+            nome=arquivo.filename,
+            arquivo=dest,
+            tipo=tipo,
+            descricao=descricao,
+            sharepoint_url=None,
+        )
+        db.add(doc)
+        db.commit()
+        db.refresh(doc)
+
+        # Upload SharePoint em background
+        import threading
+        doc_id   = doc.id
+        cand_nome = cands[0].full_name
+        cand_cpf  = cands[0].cpf
+
+        def _upload_sp():
+            try:
+                from sharepoint_service import upload_documento, criar_pasta_colaborador
+                cpf_c = cand_cpf.replace('.','').replace('-','')
+                pasta = f"{cand_nome} - {cpf_c}"
+                sp_url = upload_documento(dest, safe_name, pasta,
+                                          sub_pasta="01 DOCUMENTO PESSOAL/1.1 PESSOAL")
+                if sp_url:
+                    db2 = get_db()
+                    try:
+                        d = db2.query(models.CandidatoDocumento).filter_by(id=doc_id).first()
+                        if d:
+                            d.sharepoint_url = sp_url
+                            db2.commit()
+                    finally:
+                        db2.close()
+            except Exception as ex:
+                print(f"[SHAREPOINT] Doc candidato falhou: {ex}")
+
+        threading.Thread(target=_upload_sp, daemon=True).start()
+
+        return jsonify({
+            "message": "Documento enviado com sucesso!",
+            "id":      doc.id,
+            "nome":    doc.nome,
+        }), 201
+    finally:
+        db.close()
