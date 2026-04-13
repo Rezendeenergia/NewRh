@@ -201,6 +201,95 @@ const CandidatoPortal = {
     document.getElementById('cand-login-panel').style.display    = 'none';
     document.getElementById('cand-dashboard-panel').style.display = 'block';
     await this._loadCandidaturas();
+    await this._loadDocs();
+  },
+
+  abrirUpload() {
+    const form = document.getElementById('cand-upload-form');
+    if (!form) return;
+    const visible = form.style.display !== 'none';
+    form.style.display = visible ? 'none' : 'block';
+    if (!visible) {
+      document.getElementById('cand-doc-descricao').value = '';
+      document.getElementById('cand-doc-label').textContent = '📎 Clique para selecionar';
+      document.getElementById('cand-doc-alert').style.display = 'none';
+      document.getElementById('cand-doc-zone').style.borderColor = 'rgba(255,106,0,.4)';
+    }
+  },
+
+  async uploadDoc(input) {
+    if (!input.files[0]) return;
+    const file      = input.files[0];
+    const tipo      = document.getElementById('cand-doc-tipo').value;
+    const descricao = document.getElementById('cand-doc-descricao').value;
+    const label     = document.getElementById('cand-doc-label');
+    const zone      = document.getElementById('cand-doc-zone');
+    const alertEl   = document.getElementById('cand-doc-alert');
+
+    label.textContent = `⏳ Enviando ${file.name}...`;
+    zone.style.borderColor = '#FF6A00';
+    alertEl.style.display = 'none';
+
+    const fd = new FormData();
+    fd.append('arquivo', file);
+    fd.append('tipo', tipo);
+    fd.append('descricao', descricao);
+
+    try {
+      const r = await fetch('/api/candidato/enviar-documento', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + this._token },
+        body: fd,
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.message || 'Erro');
+      zone.style.borderColor = '#2ECC71';
+      label.textContent = `✅ ${file.name} enviado!`;
+      alertEl.textContent = '✅ Documento enviado com sucesso!';
+      alertEl.style.background = 'rgba(46,204,113,.1)';
+      alertEl.style.color = '#2ECC71';
+      alertEl.style.display = 'block';
+      setTimeout(() => { this.abrirUpload(); this._loadDocs(); }, 1500);
+    } catch(e) {
+      label.textContent = '📎 Clique para selecionar';
+      zone.style.borderColor = 'rgba(255,82,82,.4)';
+      alertEl.textContent = '❌ ' + e.message;
+      alertEl.style.background = 'rgba(255,82,82,.1)';
+      alertEl.style.color = '#FF5252';
+      alertEl.style.display = 'block';
+    }
+    input.value = '';
+  },
+
+  async _loadDocs() {
+    const lista = document.getElementById('cand-docs-lista');
+    if (!lista) return;
+    try {
+      const r = await fetch('/api/candidato/meus-documentos', {
+        headers: { 'Authorization': 'Bearer ' + this._token },
+      });
+      const docs = await r.json();
+      if (!r.ok || !docs.length) {
+        lista.innerHTML = '<p style="color:#5A6478;font-size:12px;text-align:center;padding:8px 0;">Nenhum documento enviado ainda.</p>';
+        return;
+      }
+      const TIPO_ICON = { NR:'📜', DIPLOMA:'🎓', CERTIFICADO:'📋', CNH:'🪪', OUTRO:'📄' };
+      lista.innerHTML = docs.map(d => `
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;
+                    background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);
+                    border-radius:8px;padding:10px 12px;">
+          <div style="display:flex;align-items:center;gap:8px;overflow:hidden;">
+            <span style="font-size:1.1rem;">${TIPO_ICON[d.tipo] || '📄'}</span>
+            <div style="overflow:hidden;">
+              <p style="margin:0;font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${d.nome}</p>
+              <p style="margin:0;font-size:11px;color:#5A6478;">${d.descricao || d.tipo} · ${d.enviadoEm}</p>
+            </div>
+          </div>
+          ${d.url ? `<a href="${d.url}" target="_blank" style="color:#FF6A00;font-size:11px;white-space:nowrap;text-decoration:none;">Ver ↗</a>` : '<span style="color:#5A6478;font-size:11px;">Processando...</span>'}
+        </div>`).join('');
+    } catch(e) {
+      lista.innerHTML = `<p style="color:#FF5252;font-size:12px;text-align:center;">${e.message}</p>`;
+    }
   },
 
   async _loadCandidaturas() {
