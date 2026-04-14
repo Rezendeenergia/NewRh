@@ -221,8 +221,33 @@ const CandidatoPortal = {
     if (tab === 'documentos') this._loadDocs();
   },
 
+  _candidaturaIdSelecionada: null,
+
+  anexarNaCandidatura(candidaturaId, label) {
+    this._candidaturaIdSelecionada = candidaturaId;
+    this.setDashTab('documentos');
+    // Mostra o contexto da candidatura selecionada
+    const ctx = document.getElementById('cand-upload-context');
+    if (ctx) {
+      ctx.textContent = `📋 Anexando em: ${label}`;
+      ctx.style.display = 'block';
+    }
+    const form = document.getElementById('cand-upload-form');
+    if (form) form.style.display = 'block';
+    const desc = document.getElementById('cand-doc-descricao');
+    const label2 = document.getElementById('cand-doc-label');
+    const alert = document.getElementById('cand-doc-alert');
+    const zone  = document.getElementById('cand-doc-zone');
+    if (desc)   desc.value = '';
+    if (label2) label2.textContent = 'Toque para selecionar o arquivo';
+    if (alert)  alert.style.display = 'none';
+    if (zone)   zone.style.borderColor = 'rgba(255,106,0,.5)';
+  },
+
   abrirUpload() {
-    // Garante que está na aba documentos
+    this._candidaturaIdSelecionada = null;
+    const ctx = document.getElementById('cand-upload-context');
+    if (ctx) ctx.style.display = 'none';
     this.setDashTab('documentos');
     const form = document.getElementById('cand-upload-form');
     if (!form) return;
@@ -259,6 +284,9 @@ const CandidatoPortal = {
     fd.append('descricao', descricao);
 
     try {
+      if (this._candidaturaIdSelecionada) {
+        fd.append('candidatura_id', this._candidaturaIdSelecionada);
+      }
       const r = await fetch('/api/candidato/enviar-documento', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + this._token },
@@ -338,11 +366,18 @@ const CandidatoPortal = {
         const cor = COR[c.statusKey] || '#9AA3B2';
         return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:14px 16px;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
-            <div>
+            <div style="flex:1;min-width:0;">
               <p style="margin:0 0 2px;font-size:15px;font-weight:700;color:#fff;">${c.vaga}</p>
               <p style="margin:0;font-size:12px;color:#9AA3B2;">📍 ${c.local} · ${c.appliedAt}</p>
             </div>
             <span style="background:${cor}18;border:1px solid ${cor}44;color:${cor};border-radius:20px;padding:3px 12px;font-size:12px;font-weight:700;white-space:nowrap;">${c.status}</span>
+          </div>
+          <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.05);">
+            <button onclick="CandidatoPortal.anexarNaCandidatura(${c.id}, '${c.vaga} — ${c.local}')"
+                    style="background:rgba(255,106,0,.08);border:1px solid rgba(255,106,0,.25);color:#FF6A00;
+                           border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;width:100%;">
+              📎 Anexar Documento nesta Candidatura
+            </button>
           </div>
         </div>`;
       }).join('');
