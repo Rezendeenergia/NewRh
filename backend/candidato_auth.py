@@ -352,9 +352,16 @@ def enviar_documento():
 
         def _upload_sp():
             try:
-                from sharepoint_service import upload_documento, criar_pasta_colaborador
+                from sharepoint_service import upload_documento, criar_pasta_colaborador, _get_site_id, _get_drive_id, _criar_pasta, BASE_PATH
                 cpf_c = cand_cpf.replace('.','').replace('-','')
                 pasta = f"{cand_nome} - {cpf_c}"
+                
+                # Garante que a pasta do colaborador e subpastas existem
+                try:
+                    criar_pasta_colaborador(cand_nome, cand_cpf)
+                except Exception:
+                    pass
+                
                 sp_url = upload_documento(dest, safe_name, pasta,
                                           sub_pasta="01 DOCUMENTO PESSOAL/1.1 PESSOAL")
                 if sp_url:
