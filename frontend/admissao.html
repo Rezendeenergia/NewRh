@@ -247,9 +247,11 @@ const Adm = {
       </div>` : '';
 
     const uploadHtml = isAtiva && temDocs ? `
-      <div class="upload-zone" onclick="document.getElementById('upload-${e.id}').click()">
-        <input type="file" id="upload-${e.id}" onchange="Adm.uploadDoc(${processoId},${e.id},this)">
-        <span style="color:var(--ink-2);font-size:.85rem;">📎 Clique para anexar documento</span>
+      <div class="upload-zone" id="zone-${e.id}" onclick="document.getElementById('upload-${e.id}').click()"
+           style="cursor:pointer;">
+        <input type="file" id="upload-${e.id}" style="display:none"
+               onchange="Adm.uploadDoc(${processoId},${e.id},this)">
+        <span id="zone-label-${e.id}" style="color:var(--ink-2);font-size:.85rem;">📎 Clique para anexar documento</span>
       </div>` : '';
 
     const actionsHtml = isAtiva ? `
@@ -314,12 +316,28 @@ const Adm = {
 
   async uploadDoc(processoId, etapaId, input) {
     if (!input.files[0]) return;
+    const file     = input.files[0];
+    const label    = document.getElementById(`zone-label-${etapaId}`);
+    const zone     = document.getElementById(`zone-${etapaId}`);
+
+    // Feedback imediato ao selecionar o arquivo
+    const originalLabel = label ? label.innerHTML : '';
+    if (label) label.innerHTML = `⏳ Enviando <strong>${file.name}</strong>...`;
+    if (zone)  zone.style.borderColor = '#FF6A00';
+
     const fd = new FormData();
-    fd.append('arquivo', input.files[0]);
+    fd.append('arquivo', file);
     try {
       await reqForm(`/api/processos/${processoId}/etapas/${etapaId}/documentos`, fd);
-      await Adm.loadProcesso(processoId);
-    } catch(e) { alert('Erro no upload: ' + e.message); }
+      if (label) label.innerHTML = `✅ <strong>${file.name}</strong> anexado!`;
+      if (zone)  zone.style.borderColor = '#2ECC71';
+      // Recarrega a tela após 800ms para mostrar o arquivo
+      setTimeout(() => Adm.loadProcesso(processoId), 800);
+    } catch(e) {
+      if (label) label.innerHTML = originalLabel;
+      if (zone)  zone.style.borderColor = '';
+      alert('Erro no upload: ' + e.message);
+    }
     input.value = '';
   },
 
