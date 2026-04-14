@@ -352,16 +352,26 @@ def enviar_documento():
 
         def _upload_sp():
             try:
-                from sharepoint_service import upload_documento, criar_pasta_colaborador, _get_site_id, _get_drive_id, _criar_pasta, BASE_PATH
+                from sharepoint_service import upload_documento, criar_pasta_colaborador, BASE_PATH, _get_site_id, _get_drive_id, _criar_pasta
                 cpf_c = cand_cpf.replace('.','').replace('-','')
                 pasta = f"{cand_nome} - {cpf_c}"
-                
-                # Garante que a pasta do colaborador e subpastas existem
+
+                # Tenta criar a pasta do colaborador (pode já existir)
                 try:
                     criar_pasta_colaborador(cand_nome, cand_cpf)
-                except Exception:
-                    pass
-                
+                except Exception as ex:
+                    print(f"[SHAREPOINT] Pasta colaborador: {ex}")
+
+                # Garante subpasta de documentos pessoais existe
+                try:
+                    site_id  = _get_site_id()
+                    drive_id = _get_drive_id(site_id)
+                    caminho  = f"{BASE_PATH}/{pasta}"
+                    _criar_pasta(drive_id, caminho, "01 DOCUMENTO PESSOAL")
+                    _criar_pasta(drive_id, f"{caminho}/01 DOCUMENTO PESSOAL", "1.1 PESSOAL")
+                except Exception as ex:
+                    print(f"[SHAREPOINT] Subpasta: {ex}")
+
                 sp_url = upload_documento(dest, safe_name, pasta,
                                           sub_pasta="01 DOCUMENTO PESSOAL/1.1 PESSOAL")
                 if sp_url:
