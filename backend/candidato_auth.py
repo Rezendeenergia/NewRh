@@ -315,25 +315,31 @@ def enviar_documento():
         if not cands:
             return jsonify({"message": "Candidatura não encontrada"}), 404
 
-        arquivo  = request.files.get("arquivo")
-        tipo     = request.form.get("tipo", "OUTRO")
-        descricao = request.form.get("descricao", "")
+        arquivo       = request.files.get("arquivo")
+        tipo          = request.form.get("tipo", "OUTRO")
+        descricao     = request.form.get("descricao", "")
+        cand_id_param = request.form.get("candidatura_id")
+
+        # Usa a candidatura específica se informada, senão usa a mais recente
+        if cand_id_param:
+            cand_alvo = next((c for c in cands if str(c.id) == str(cand_id_param)), cands[0])
+        else:
+            cand_alvo = cands[0]
 
         if not arquivo or not arquivo.filename:
             return jsonify({"message": "Arquivo obrigatório"}), 400
 
-        # Salva localmente
         import os
         UPLOAD_FOLDER = os.path.abspath(
             os.path.join(os.path.dirname(__file__), "..", "uploads", "candidatos")
         )
         os.makedirs(UPLOAD_FOLDER, exist_ok=True)
         safe_name = arquivo.filename.replace(" ", "_")
-        dest = os.path.join(UPLOAD_FOLDER, f"{cands[0].id}_{safe_name}")
+        dest = os.path.join(UPLOAD_FOLDER, f"{cand_alvo.id}_{safe_name}")
         arquivo.save(dest)
 
         doc = models.CandidatoDocumento(
-            candidatura_id=cands[0].id,
+            candidatura_id=cand_alvo.id,
             nome=arquivo.filename,
             arquivo=dest,
             tipo=tipo,
@@ -347,8 +353,8 @@ def enviar_documento():
         # Upload SharePoint em background
         import threading
         doc_id   = doc.id
-        cand_nome = cands[0].full_name
-        cand_cpf  = cands[0].cpf
+        cand_nome = cand_alvo.full_name
+        cand_cpf  = cand_alvo.cpf
 
         def _upload_sp():
             try:
