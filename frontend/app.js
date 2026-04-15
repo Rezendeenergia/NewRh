@@ -608,18 +608,48 @@ const Portal = {
       } catch (err) { showToast('Erro', err.message, 'error'); return; }
     }
 
-    document.getElementById('apply-job-title').textContent = selectedJob.position;
-    document.getElementById('apply-job-tags').innerHTML = `
+    const tagsHtml = `
       <span class="tag">📍 ${selectedJob.location}</span>
       ${selectedJob.tipo ? `<span class="tag">${selectedJob.tipo}</span>` : ''}
       <span class="tag">${selectedJob.numVagas} vaga${selectedJob.numVagas !== 1 ? 's' : ''}</span>`;
+
+    // Preenche a tela de detalhes
+    document.getElementById('detail-job-title').textContent = selectedJob.position;
+    document.getElementById('detail-job-tags').innerHTML = tagsHtml;
+    const descEl = document.getElementById('detail-job-description');
+    const noDescEl = document.getElementById('detail-job-no-description');
+    if (selectedJob.finalidade) {
+      descEl.textContent = selectedJob.finalidade;
+      descEl.style.display = 'block';
+      noDescEl.style.display = 'none';
+    } else {
+      descEl.style.display = 'none';
+      noDescEl.style.display = 'block';
+    }
+
+    // Preenche o banner do formulário antecipadamente
+    document.getElementById('apply-job-title').textContent = selectedJob.position;
+    document.getElementById('apply-job-tags').innerHTML = tagsHtml;
 
     const url = new URL(window.location.href);
     url.searchParams.set('vaga', jobId);
     window.history.pushState({}, '', url);
 
-    document.getElementById('job-list').style.display        = 'none';
+    document.getElementById('job-list').style.display          = 'none';
+    document.getElementById('apply-form-view').style.display   = 'none';
+    document.getElementById('job-detail-view').style.display   = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  },
+
+  goToApplyForm() {
+    document.getElementById('job-detail-view').style.display = 'none';
     document.getElementById('apply-form-view').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  },
+
+  backToDetail() {
+    document.getElementById('apply-form-view').style.display = 'none';
+    document.getElementById('job-detail-view').style.display = 'block';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   },
 
@@ -629,6 +659,7 @@ const Portal = {
     url.searchParams.delete('vaga');
     window.history.pushState({}, '', url);
 
+    document.getElementById('job-detail-view').style.display  = 'none';
     document.getElementById('apply-form-view').style.display = 'none';
     document.getElementById('job-list').style.display        = 'block';
     document.getElementById('apply-form').reset();
