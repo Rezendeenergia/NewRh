@@ -130,9 +130,37 @@
       </div>
     </div>
 
+    <!-- Detalhes da vaga -->
+    <div id="job-detail-view" style="display:none;">
+      <button class="btn btn--ghost" onclick="Portal.backToJobList()">← Voltar às vagas</button>
+
+      <div class="job-banner" id="detail-job-banner">
+        <div class="job-banner__glow"></div>
+        <h2 class="job-banner__title" id="detail-job-title"></h2>
+        <div class="job-banner__tags" id="detail-job-tags"></div>
+      </div>
+
+      <div class="card" style="margin-top:24px;">
+        <div class="card__header">
+          <span class="card__title">📋 Descrição da Vaga</span>
+        </div>
+        <div class="card__body">
+          <p id="detail-job-description" style="white-space:pre-wrap;line-height:1.7;color:var(--ink-1);font-size:15px;"></p>
+          <div id="detail-job-no-description" style="display:none;color:var(--ink-3);font-style:italic;">
+            Nenhuma descrição disponível para esta vaga.
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:24px;display:flex;gap:12px;justify-content:flex-end;">
+        <button class="btn btn--ghost" onclick="Portal.backToJobList()">← Voltar</button>
+        <button class="btn btn--primary btn--large" onclick="Portal.goToApplyForm()">Candidatar-se →</button>
+      </div>
+    </div>
+
     <!-- Formulário de candidatura -->
     <div id="apply-form-view" style="display:none;">
-      <button class="btn btn--ghost" onclick="Portal.backToJobList()">← Voltar às vagas</button>
+      <button class="btn btn--ghost" onclick="Portal.backToDetail()">← Voltar à vaga</button>
 
       <div class="job-banner" id="apply-job-banner">
         <div class="job-banner__glow"></div>
