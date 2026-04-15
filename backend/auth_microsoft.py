@@ -23,6 +23,7 @@ BASE_URL      = os.getenv("BASE_URL", "https://carreiras.rezendeenergia.com.br")
 # ROLE_OWNER  → Rafael (aprovação de vagas)
 # ROLE_ADMIN  → Gestores de RH (controle total)
 # ROLE_VIEWER → Equipe DP/RH (acompanha e move candidatos, sem aprovar vagas)
+# ROLE_GESTOR → Gerentes/supervisores (só podem solicitar abertura de vagas)
 
 GESTORES = {
     "leonardo@rezendeenergia.com.br":           "ROLE_ADMIN",
@@ -45,7 +46,17 @@ EQUIPE_TI = {
     "ti@rezendeenergia.com.br": "ROLE_ADMIN",
 }
 
-USUARIOS_AUTORIZADOS = {**GESTORES, **EQUIPE_DP_RH, **EQUIPE_TI}
+# ROLE_GESTOR → Gerentes/supervisores que podem APENAS solicitar abertura de vagas
+# A solicitação vai para aprovação do Rafael normalmente
+GESTORES_CAMPO = {
+    "helio@rezendeenergia.com.br":          "ROLE_GESTOR",  # Hélio Barbosa Costa
+    "jose.lima@rezendeenergia.com.br":      "ROLE_GESTOR",  # José Luis Silva de Lima
+    "viniciusamaral@rezendeenergia.com.br": "ROLE_GESTOR",  # Vinicius Oliveira Amaral de Souza
+    "andre.sousa@rezendeenergia.com.br":    "ROLE_GESTOR",  # André Luis Aguiar de Sousa
+    "marcos.lopes@rezendeenergia.com.br":   "ROLE_GESTOR",  # Marcos Vinicius Lopes de Jesus
+}
+
+USUARIOS_AUTORIZADOS = {**GESTORES, **EQUIPE_DP_RH, **EQUIPE_TI, **GESTORES_CAMPO}
 
 REDIRECT_URI   = f"{BASE_URL}/api/auth/microsoft/callback"
 AUTH_URL       = f"https://login.microsoftonline.com/{TENANT_ID}/oauth2/v2.0/authorize"
