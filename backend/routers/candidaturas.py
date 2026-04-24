@@ -302,11 +302,36 @@ def get_all():
 def get_stats():
     db = get_db()
     try:
+        # Stats básicas + funil completo em 1 query
+        from sqlalchemy import case
+        row = db.execute(__import__('sqlalchemy').text("""
+            SELECT
+                COUNT(*)                                                         AS total,
+                COUNT(*) FILTER (WHERE status = 'PENDING')                       AS pending,
+                COUNT(*) FILTER (WHERE status = 'APPROVED')                      AS approved,
+                COUNT(*) FILTER (WHERE status = 'REJECTED')                      AS rejected,
+                COUNT(*) FILTER (WHERE status = 'TRIAGEM')                       AS triagem,
+                COUNT(*) FILTER (WHERE status = 'TRIAGEM_OK')                    AS triagem_ok,
+                COUNT(*) FILTER (WHERE status = 'ENTREVISTA')                    AS entrevista,
+                COUNT(*) FILTER (WHERE status = 'ENTREVISTA_OK')                 AS entrevista_ok,
+                COUNT(*) FILTER (WHERE status = 'APROVACAO_FINAL')               AS aprovacao_final
+            FROM candidaturas
+        """)).fetchone()
         return jsonify({
-            "total":    db.query(models.Candidatura).count(),
-            "pending":  db.query(models.Candidatura).filter_by(status="PENDING").count(),
-            "approved": db.query(models.Candidatura).filter_by(status="APPROVED").count(),
-            "rejected": db.query(models.Candidatura).filter_by(status="REJECTED").count(),
+            "total":          row[0] or 0,
+            "pending":        row[1] or 0,
+            "approved":       row[2] or 0,
+            "rejected":       row[3] or 0,
+            "funil": {
+                "recebidas":       (row[0] or 0),
+                "triagem":         (row[4] or 0),
+                "triagem_ok":      (row[5] or 0),
+                "entrevista":      (row[6] or 0),
+                "entrevista_ok":   (row[7] or 0),
+                "aprovacao_final": (row[8] or 0),
+                "aprovados":       (row[2] or 0),
+                "rejeitados":      (row[3] or 0),
+            },
         })
     finally:
         db.close()
