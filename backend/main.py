@@ -185,6 +185,7 @@ def email_test_send():
     return jsonify(result)
 
 from routers import auth, jobs, candidaturas, processos, solicitacoes
+from colaboradores_router import bp_colab
 app.register_blueprint(auth.bp)
 
 # Microsoft SSO
@@ -198,6 +199,7 @@ app.register_blueprint(jobs.bp)
 app.register_blueprint(candidaturas.bp)
 app.register_blueprint(processos.bp)
 app.register_blueprint(solicitacoes.bp)
+app.register_blueprint(bp_colab)
 
 @app.route("/revisar-solicitacao")
 def revisar_solicitacao():
