@@ -313,11 +313,66 @@ def _processar_decisao(db, sol, decision: str, motivo: str, decidido_por: str):
     except Exception as e:
         print(f"[EMAIL] Erro ao notificar gestor: {e}")
 
+    # Notifica candidatos anteriores da mesma vaga que há nova oportunidade
+    if decision == "APROVADA" and job_id:
+        try:
+            _notificar_candidatos_nova_vaga(sol, db)
+        except Exception as e:
+            print(f"[EMAIL] Erro ao notificar candidatos: {e}")
+
     return jsonify({
         "status": decision,
         "jobId": job_id,
         "message": "Vaga criada com sucesso!" if decision == "APROVADA" else "Solicitação rejeitada.",
     })
+
+
+def _notificar_candidatos_nova_vaga(sol, db):
+    """Notifica candidatos anteriores quando uma vaga do mesmo cargo é publicada."""
+    import models
+    from email_service import send_email, _base_template
+    BASE_URL = os.getenv("BASE_URL", "https://newrh.onrender.com")
+
+    # Busca candidatos anteriores para o mesmo cargo (não aprovados nem rejeitados)
+    from database import get_db as _get_db
+    db2 = _get_db()
+    try:
+        candidatos = (
+            db2.query(models.Candidatura)
+            .join(models.Job, models.Candidatura.job_id == models.Job.id)
+            .filter(
+                models.Job.position == sol.position,
+                models.Candidatura.status.in_(["PENDING", "REJECTED"]),
+            )
+            .limit(100).all()
+        )
+        emails_notificados = set()
+        for c in candidatos:
+            if c.email in emails_notificados:
+                continue
+            emails_notificados.add(c.email)
+            nome = c.full_name.split()[0]
+            subject = f"🎯 Nova vaga disponível: {sol.position} — Rezende Energia"
+            content_html = (
+                f'<h2 style="margin:0 0 6px;font-size:22px;font-weight:800;color:#fff;">'
+                f'Olá, {nome}! 👋</h2>'
+                f'<p style="margin:0 0 20px;font-size:13px;color:rgba(255,106,0,0.8);font-weight:600;'
+                f'text-transform:uppercase;letter-spacing:2px;">Nova Oportunidade</p>'
+                f'<p style="color:#A8A8B8;font-size:15px;line-height:1.7;margin:0 0 16px;">'
+                f'Uma nova vaga de <strong style="color:#fff;">{sol.position}</strong> '
+                f'em <strong style="color:#fff;">{sol.location}</strong> acaba de ser publicada '
+                f'no nosso portal de carreiras!</p>'
+                f'<div style="text-align:center;margin:0 0 24px;">'
+                f'<a href="{BASE_URL}" style="display:inline-block;background:linear-gradient(135deg,#FF8C2A,#FF6A00);'
+                f'color:#000;font-weight:800;font-size:15px;text-decoration:none;'
+                f'padding:14px 36px;border-radius:10px;">🚀 Ver Vaga</a></div>'
+                f'<p style="color:#5A6478;font-size:12px;text-align:center;margin:0;">'
+                f'Rezende Energia · Portal de Carreiras</p>'
+            )
+            send_email(c.email, subject, _base_template(subject, content_html))
+            print(f"[EMAIL] Nova vaga notificada para {c.email}")
+    finally:
+        db2.close()
 
 
 def _html_resultado(mensagem: str, sucesso: bool) -> str:
