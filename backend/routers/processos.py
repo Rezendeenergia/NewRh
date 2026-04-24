@@ -162,7 +162,7 @@ def _avancar_etapa(processo, db):
     db.commit()
 
 
-def criar_processo_para_candidatura(candidatura_id: int, db) -> models.ProcessoAdmissao:
+def criar_processo_para_candidatura(candidatura_id: int, db, tipo_admissao: str = "ADMISSAO_NOVA") -> models.ProcessoAdmissao:
     existing = db.query(models.ProcessoAdmissao).filter_by(candidatura_id=candidatura_id).first()
     if existing:
         return existing
