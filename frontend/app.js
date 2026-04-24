@@ -608,48 +608,18 @@ const Portal = {
       } catch (err) { showToast('Erro', err.message, 'error'); return; }
     }
 
-    const tagsHtml = `
+    document.getElementById('apply-job-title').textContent = selectedJob.position;
+    document.getElementById('apply-job-tags').innerHTML = `
       <span class="tag">📍 ${selectedJob.location}</span>
       ${selectedJob.tipo ? `<span class="tag">${selectedJob.tipo}</span>` : ''}
       <span class="tag">${selectedJob.numVagas} vaga${selectedJob.numVagas !== 1 ? 's' : ''}</span>`;
-
-    // Preenche a tela de detalhes
-    document.getElementById('detail-job-title').textContent = selectedJob.position;
-    document.getElementById('detail-job-tags').innerHTML = tagsHtml;
-    const descEl = document.getElementById('detail-job-description');
-    const noDescEl = document.getElementById('detail-job-no-description');
-    if (selectedJob.finalidade) {
-      descEl.textContent = selectedJob.finalidade;
-      descEl.style.display = 'block';
-      noDescEl.style.display = 'none';
-    } else {
-      descEl.style.display = 'none';
-      noDescEl.style.display = 'block';
-    }
-
-    // Preenche o banner do formulário antecipadamente
-    document.getElementById('apply-job-title').textContent = selectedJob.position;
-    document.getElementById('apply-job-tags').innerHTML = tagsHtml;
 
     const url = new URL(window.location.href);
     url.searchParams.set('vaga', jobId);
     window.history.pushState({}, '', url);
 
-    document.getElementById('job-list').style.display          = 'none';
-    document.getElementById('apply-form-view').style.display   = 'none';
-    document.getElementById('job-detail-view').style.display   = 'block';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  },
-
-  goToApplyForm() {
-    document.getElementById('job-detail-view').style.display = 'none';
+    document.getElementById('job-list').style.display        = 'none';
     document.getElementById('apply-form-view').style.display = 'block';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  },
-
-  backToDetail() {
-    document.getElementById('apply-form-view').style.display = 'none';
-    document.getElementById('job-detail-view').style.display = 'block';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   },
 
@@ -659,7 +629,6 @@ const Portal = {
     url.searchParams.delete('vaga');
     window.history.pushState({}, '', url);
 
-    document.getElementById('job-detail-view').style.display  = 'none';
     document.getElementById('apply-form-view').style.display = 'none';
     document.getElementById('job-list').style.display        = 'block';
     document.getElementById('apply-form').reset();
@@ -698,13 +667,86 @@ const Manager = {
     }
   },
 
+  onTipoVagaChange(val) {
+    const field = document.getElementById('colaborador-field');
+    if (field) field.style.display = val === 'Mudança de Função' ? 'block' : 'none';
+    if (val !== 'Mudança de Função') {
+      document.getElementById('colab-search').value = '';
+      document.getElementById('colab-selecionado-nome').value = '';
+      document.getElementById('colab-selecionado-cargo').value = '';
+      document.getElementById('colab-selecionado-info').style.display = 'none';
+    }
+  },
+
+  _buscarTimer: null,
+  async buscarColaborador(q) {
+    clearTimeout(this._buscarTimer);
+    const dropdown = document.getElementById('colab-dropdown');
+    if (!q || q.length < 2) { if(dropdown) dropdown.style.display='none'; return; }
+    this._buscarTimer = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/colaboradores/buscar?q=${encodeURIComponent(q)}`, {
+          headers: {'Authorization': 'Bearer ' + sessionToken}
+        });
+        const items = await r.json();
+        if (!dropdown) return;
+        if (!items.length) { dropdown.style.display = 'none'; return; }
+        dropdown.innerHTML = items.map(c =>
+          `<div onclick="Manager.selecionarColaborador('${c.nome.replace(/'/g,"\'")}','${c.cargo.replace(/'/g,"\'")}','${c.localidade || ''}')"
+               style="padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid rgba(255,255,255,.06);"
+               onmouseover="this.style.background='rgba(255,106,0,.1)'" onmouseout="this.style.background=''">
+            <strong style="color:#fff;">${c.nome}</strong>
+            <span style="color:#9AA3B2;font-size:12px;"> · ${c.cargo}${c.localidade ? ' · '+c.localidade : ''}</span>
+          </div>`
+        ).join('');
+        dropdown.style.display = 'block';
+      } catch(e) { console.error('buscarColaborador:', e); }
+    }, 300);
+  },
+
+  selecionarColaborador(nome, cargo, local) {
+    document.getElementById('colab-search').value = nome;
+    document.getElementById('colab-selecionado-nome').value = nome;
+    document.getElementById('colab-selecionado-cargo').value = cargo;
+    const info = document.getElementById('colab-selecionado-info');
+    if (info) {
+      info.textContent = `✅ ${nome} — ${cargo}${local ? ' · '+local : ''}`;
+      info.style.display = 'block';
+    }
+    const dd = document.getElementById('colab-dropdown');
+    if (dd) dd.style.display = 'none';
+    // Auto-preenche descrição
+    const desc = document.getElementById('job-description');
+    if (desc && !desc.value) desc.value = `Mudança de função de ${nome} — atual: ${cargo}.`;
+  },
+
   showDashboard() {
     document.getElementById('manager-login').style.display     = 'none';
     document.getElementById('manager-dashboard').style.display = 'block';
     document.getElementById('dashboard-greeting').textContent  = `Olá, ${sessionUsername} 👋`;
-    this.loadStats();
-    this.loadJobList();
-    setTimeout(() => Solicitacoes.loadBadge(), 500);
+
+    // ROLE_GESTOR: mostra só "Solicitar Vaga" e esconde o resto
+    if (AppState.role === 'ROLE_GESTOR') {
+      document.querySelectorAll('.subtab').forEach(btn => {
+        const tab = btn.getAttribute('data-subtab');
+        // Esconde tudo exceto solicitar-vaga
+        if (tab && tab !== 'create-job') btn.style.display = 'none';
+        // Esconde links de Admissão
+        if (!tab) btn.style.display = 'none';
+      });
+      // Esconde stats e só mostra o formulário
+      const statsGrid = document.querySelector('.stats-grid');
+      if (statsGrid) statsGrid.style.display = 'none';
+      // Esconde botões de convidar/exportar
+      const actions = document.querySelector('.dashboard-header__actions');
+      if (actions) {
+        actions.querySelectorAll('button:not(.btn--ghost)').forEach(b => b.style.display = 'none');
+      }
+    } else {
+      this.loadStats();
+      this.loadJobList();
+      setTimeout(() => Solicitacoes.loadBadge(), 500);
+    }
   },
 
   logout() {
@@ -742,6 +784,92 @@ const Manager = {
   },
 
   // ── Stats ─────────────────────────────────────────────────
+
+  async loadFunil() {
+    const body = document.getElementById('funil-body');
+    if (!body) return;
+    body.innerHTML = '<p style="color:var(--ink-3);text-align:center;padding:20px;">Carregando...</p>';
+    try {
+      const d = await apiRequest('/api/candidaturas/stats');
+      const f = d.funil || {};
+      const etapas = [
+        { label:'📥 Recebidas',        key:'recebidas',       cor:'#5B8DEF' },
+        { label:'🔍 Triagem',           key:'triagem',         cor:'#FFB830' },
+        { label:'✅ Triagem OK',        key:'triagem_ok',      cor:'#2ECC71' },
+        { label:'🎤 Entrevista',        key:'entrevista',      cor:'#A78BFA' },
+        { label:'✅ Entrevista OK',     key:'entrevista_ok',   cor:'#2ECC71' },
+        { label:'🏆 Aprovação Final',   key:'aprovacao_final', cor:'#FF8C2A' },
+        { label:'✅ Aprovados',         key:'aprovados',       cor:'#2ECC71' },
+        { label:'❌ Não Selecionados',  key:'rejeitados',      cor:'#FF5252' },
+      ];
+      const total = f.recebidas || 1;
+      body.innerHTML = etapas.map(e => {
+        const val = f[e.key] || 0;
+        const pct = Math.round((val / total) * 100);
+        return `<div style="margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <span style="font-size:13px;color:#fff;">${e.label}</span>
+            <span style="font-size:13px;font-weight:700;color:${e.cor};">${val}</span>
+          </div>
+          <div style="height:8px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;">
+            <div style="height:100%;width:${pct}%;background:${e.cor};border-radius:99px;transition:width .4s;"></div>
+          </div>
+        </div>`;
+      }).join('');
+    } catch(e) { body.innerHTML = `<p style="color:#FF5252;">Erro: ${e.message}</p>`; }
+  },
+
+  async loadHeadcount() {
+    try {
+      const d = await apiRequest('/api/colaboradores/headcount');
+
+      // NRs expirando
+      const nrsBody = document.getElementById('nrs-body');
+      if (nrsBody) {
+        if (!d.nrsExpirando?.length) {
+          nrsBody.innerHTML = '<p style="color:#2ECC71;text-align:center;padding:16px;">✅ Nenhuma NR expirando nos próximos 90 dias.</p>';
+        } else {
+          nrsBody.innerHTML = d.nrsExpirando.map(n => {
+            const cor = n.diasRestantes < 30 ? '#FF5252' : n.diasRestantes < 60 ? '#FFB830' : '#2ECC71';
+            return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);">
+              <div>
+                <p style="margin:0;font-size:13px;font-weight:600;color:#fff;">${n.nome}</p>
+                <p style="margin:0;font-size:11px;color:#9AA3B2;">${n.documento}</p>
+              </div>
+              <div style="text-align:right;">
+                <span style="color:${cor};font-size:12px;font-weight:700;">${n.vencimento}</span><br>
+                <span style="color:${cor};font-size:11px;">${n.diasRestantes}d restantes</span>
+              </div>
+            </div>`;
+          }).join('');
+        }
+      }
+
+      // Por localidade
+      const localBody = document.getElementById('headcount-local-body');
+      if (localBody) {
+        localBody.innerHTML = d.porLocalidade.length
+          ? d.porLocalidade.map(r => `
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);">
+              <span style="color:#fff;font-size:13px;">📍 ${r.local}</span>
+              <span style="color:#FF6A00;font-weight:700;">${r.total}</span>
+            </div>`).join('')
+          : '<p style="color:var(--ink-3);text-align:center;padding:20px;">Nenhum dado ainda.</p>';
+      }
+
+      // Por cargo
+      const cargoBody = document.getElementById('headcount-cargo-body');
+      if (cargoBody) {
+        cargoBody.innerHTML = d.porCargo.length
+          ? d.porCargo.map(r => `
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);">
+              <span style="color:#fff;font-size:13px;">💼 ${r.cargo}</span>
+              <span style="color:#FF6A00;font-weight:700;">${r.total}</span>
+            </div>`).join('')
+          : '<p style="color:var(--ink-3);text-align:center;padding:20px;">Nenhum dado ainda.</p>';
+      }
+    } catch(e) { console.error('loadHeadcount:', e); }
+  },
 
   async loadStats() {
     try {
