@@ -47,6 +47,7 @@
         <option value="DP_EXTERNO">DP Externo</option>
         <option value="SESMT">SESMT</option>
       </select>
+      <button onclick="Adm.loadLista(true)" title="Atualizar lista" style="background:rgba(255,106,0,.12);color:var(--brand);border:1px solid rgba(255,106,0,.2);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:.85rem;" id="btn-refresh">🔄</button>
     </div>
 
     <div class="processo-list" id="processo-list">
@@ -131,7 +132,7 @@ const Adm = {
     } catch(e) { console.error(e); }
   },
 
-  async loadLista() {
+  async loadLista(forceRefresh = false) {
     const status = document.getElementById('filter-status').value;
     const dept   = document.getElementById('filter-dept').value;
     const list   = document.getElementById('processo-list');
@@ -147,6 +148,9 @@ const Adm = {
       if (status) params.set('status', status);
       if (dept)   params.set('departamento', dept);
       // cache de 15s para não re-buscar ao trocar filtros rapidamente
+      if (forceRefresh) {
+        Object.keys(_cache).forEach(k => { if (k.startsWith('/api/processos?')) delete _cache[k]; });
+      }
       const data = await reqCached(`/api/processos?${params}`, 15000);
       if (data.items.length === 0) {
         list.innerHTML = '<div style="padding:24px;text-align:center;color:var(--ink-3);font-size:.83rem;">Nenhum processo encontrado</div>';
@@ -361,7 +365,7 @@ document.addEventListener('DOMContentLoaded', async () => {
        || sessionStorage.getItem('rz_token')
        || sessionStorage.getItem('token')
        || '';
-  await Promise.all([Adm.loadStats(), Adm.loadLista()]);
+  await Promise.all([Adm.loadStats(), Adm.loadLista(true)]);
 });
 </script>
 </body>
