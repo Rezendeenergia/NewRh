@@ -47,7 +47,6 @@
         <option value="DP_EXTERNO">DP Externo</option>
         <option value="SESMT">SESMT</option>
       </select>
-      <button onclick="Adm.loadLista(true)" title="Atualizar lista" style="background:rgba(255,106,0,.12);color:var(--brand);border:1px solid rgba(255,106,0,.2);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:.85rem;" id="btn-refresh">🔄</button>
     </div>
 
     <div class="processo-list" id="processo-list">
@@ -132,7 +131,7 @@ const Adm = {
     } catch(e) { console.error(e); }
   },
 
-  async loadLista(forceRefresh = false) {
+  async loadLista() {
     const status = document.getElementById('filter-status').value;
     const dept   = document.getElementById('filter-dept').value;
     const list   = document.getElementById('processo-list');
@@ -148,9 +147,6 @@ const Adm = {
       if (status) params.set('status', status);
       if (dept)   params.set('departamento', dept);
       // cache de 15s para não re-buscar ao trocar filtros rapidamente
-      if (forceRefresh) {
-        Object.keys(_cache).forEach(k => { if (k.startsWith('/api/processos?')) delete _cache[k]; });
-      }
       const data = await reqCached(`/api/processos?${params}`, 15000);
       if (data.items.length === 0) {
         list.innerHTML = '<div style="padding:24px;text-align:center;color:var(--ink-3);font-size:.83rem;">Nenhum processo encontrado</div>';
@@ -227,7 +223,64 @@ const Adm = {
       </div>
       <div class="progress-bar"><div class="progress-bar__fill" style="width:${p.progresso}%"></div></div>
 
-      <div class="etapas-wrap">${etapasHtml}</div>`;
+      <div class="etapas-wrap">${etapasHtml}</div>
+
+      <!-- Painel Interno (notas + salário) — nunca enviado ao candidato -->
+      <div style="margin-top:24px;background:rgba(91,141,239,.06);border:1px solid rgba(91,141,239,.2);
+                  border-left:3px solid #5B8DEF;border-radius:12px;padding:20px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+          <span style="font-size:16px;">🔒</span>
+          <h4 style="margin:0;color:#5B8DEF;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">
+            Uso Interno — Não enviado ao candidato
+          </h4>
+        </div>
+
+        <!-- Notas internas -->
+        <div style="margin-bottom:16px;">
+          <label style="display:block;color:#A8A8B8;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">
+            📝 Notas Internas
+          </label>
+          <textarea id="notas-internas-${p.id}" rows="4"
+                    placeholder="Observações internas sobre o candidato (perfil, pontos de atenção, feedback da equipe...)&#10;Visível apenas para gestores no sistema."
+                    style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(91,141,239,.25);
+                           color:#fff;border-radius:8px;padding:12px;font-size:13px;resize:vertical;
+                           font-family:inherit;box-sizing:border-box;">${p.notasInternas || ''}</textarea>
+        </div>
+
+        <!-- Salário proposto -->
+        <div style="display:grid;grid-template-columns:1fr 2fr;gap:12px;margin-bottom:16px;">
+          <div>
+            <label style="display:block;color:#A8A8B8;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">
+              💰 Salário Proposto (R$)
+            </label>
+            <input type="number" id="salario-proposto-${p.id}" step="0.01" min="0"
+                   value="${p.salarioProposto || ''}"
+                   placeholder="0,00"
+                   style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(91,141,239,.25);
+                          color:#fff;border-radius:8px;padding:10px 12px;font-size:14px;font-weight:700;
+                          box-sizing:border-box;">
+          </div>
+          <div>
+            <label style="display:block;color:#A8A8B8;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">
+              📋 Observação sobre Salário
+            </label>
+            <input type="text" id="salario-obs-${p.id}"
+                   value="${p.salarioObs || ''}"
+                   placeholder="Ex: inclui benefícios, a confirmar com DP..."
+                   style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(91,141,239,.25);
+                          color:#fff;border-radius:8px;padding:10px 12px;font-size:13px;
+                          box-sizing:border-box;">
+          </div>
+        </div>
+
+        <button onclick="Adm.salvarInterno(${p.id})" id="btn-interno-${p.id}"
+                style="background:rgba(91,141,239,.15);border:1px solid rgba(91,141,239,.3);
+                       color:#5B8DEF;border-radius:8px;padding:9px 20px;font-size:13px;
+                       font-weight:700;cursor:pointer;">
+          💾 Salvar Notas e Salário
+        </button>
+        <span id="interno-saved-${p.id}" style="display:none;color:#2ECC71;font-size:12px;margin-left:12px;">✅ Salvo!</span>
+      </div>`;
   },
 
   renderEtapa(e, processoId) {
@@ -356,6 +409,23 @@ const Adm = {
   },
 
   closeModal() { document.getElementById('action-modal').style.display = 'none'; },
+
+  async salvarInterno(processoId) {
+    const notas   = document.getElementById(`notas-internas-${processoId}`)?.value || '';
+    const salario = document.getElementById(`salario-proposto-${processoId}`)?.value || '';
+    const salObs  = document.getElementById(`salario-obs-${processoId}`)?.value || '';
+    const btn     = document.getElementById(`btn-interno-${processoId}`);
+    const saved   = document.getElementById(`interno-saved-${processoId}`);
+    if (btn) { btn.textContent = '💾 Salvando...'; btn.disabled = true; }
+    try {
+      await req(`/api/processos/${processoId}/interno`, {
+        method: 'PATCH',
+        body: JSON.stringify({ notasInternas: notas, salarioProposto: salario || null, salarioObs: salObs }),
+      });
+      if (saved) { saved.style.display = 'inline'; setTimeout(() => { saved.style.display='none'; }, 3000); }
+    } catch(e) { alert('Erro ao salvar: ' + e.message); }
+    finally { if (btn) { btn.textContent = '💾 Salvar Notas e Salário'; btn.disabled = false; } }
+  },
 };
 
 // ── Init: usa token do portal, sem tela de login ──────────────
@@ -365,7 +435,7 @@ document.addEventListener('DOMContentLoaded', async () => {
        || sessionStorage.getItem('rz_token')
        || sessionStorage.getItem('token')
        || '';
-  await Promise.all([Adm.loadStats(), Adm.loadLista(true)]);
+  await Promise.all([Adm.loadStats(), Adm.loadLista()]);
 });
 </script>
 </body>
