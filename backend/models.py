@@ -230,7 +230,8 @@ class EtapaProcesso(Base):
     # tipo: APROVACAO | DOCUMENTO | CHECKLIST | ENTREVISTA
     prazo_dias   = Column(Integer, nullable=True)
     observacao   = Column(Text, nullable=True)
-    nota         = Column(Text, nullable=True)          # nota interna do gestor
+    nota         = Column(Text, nullable=True)          # nota interna (só gestores)
+    nota_externa = Column(Text, nullable=True)          # nota externa (enviada ao candidato)
     responsavel  = Column(String(100), nullable=True)   # username do gestor
     iniciado_em  = Column(DateTime, nullable=True)
     concluido_em = Column(DateTime, nullable=True)
