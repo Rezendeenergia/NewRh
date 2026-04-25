@@ -20,7 +20,7 @@ ETAPAS_FLUXO = [
     {"ordem": 1,  "codigo": "TRIAGEM",              "nome": "Triagem",                        "departamento": "RH",         "tipo": "APROVACAO",   "prazo_dias": 2},
     {"ordem": 2,  "codigo": "ENTREVISTA",            "nome": "Entrevista",                     "departamento": "RH",         "tipo": "ENTREVISTA",  "prazo_dias": 5},
     {"ordem": 3,  "codigo": "APROVACAO_FINAL",       "nome": "Aprovação Final",                "departamento": "RH",         "tipo": "APROVACAO",   "prazo_dias": 1},
-    {"ordem": 4,  "codigo": "ASO",                   "nome": "ASO",                "departamento": "RH",         "tipo": "DOCUMENTO",   "prazo_dias": 1},
+    {"ordem": 4,  "codigo": "ASO",                   "nome": "Agendamento ASO",                "departamento": "RH",         "tipo": "DOCUMENTO",   "prazo_dias": 1},
     {"ordem": 5,  "codigo": "DP_EXTERNO",            "nome": "Admissão DP Externo",            "departamento": "DP_EXTERNO", "tipo": "DOCUMENTO",   "prazo_dias": 2},
     {"ordem": 6,  "codigo": "ASSINATURAS",           "nome": "Coleta de Assinaturas",          "departamento": "DP",         "tipo": "DOCUMENTO",   "prazo_dias": 1},
     {"ordem": 7,  "codigo": "CADASTRO_GPM",          "nome": "Cadastro no GPM",                "departamento": "DP",         "tipo": "CHECKLIST",   "prazo_dias": 1},
@@ -134,8 +134,11 @@ def processo_to_dict(p):
             "cargo": c.job.position if c.job else "—",
             "local": c.job.location if c.job else "—",
         },
-        "etapas":    [etapa_to_dict(e) for e in p.etapas],
-        "progresso": _calc_progresso(p.etapas),
+        "etapas":          [etapa_to_dict(e) for e in p.etapas],
+        "progresso":       _calc_progresso(p.etapas),
+        "notasInternas":   p.notas_internas or "",
+        "salarioProposto": float(p.salario_proposto) if p.salario_proposto else None,
+        "salarioObs":      p.salario_observacao or "",
     }
 
 
@@ -162,7 +165,7 @@ def _avancar_etapa(processo, db):
     db.commit()
 
 
-def criar_processo_para_candidatura(candidatura_id: int, db, tipo_admissao: str = "ADMISSAO_NOVA") -> models.ProcessoAdmissao:
+def criar_processo_para_candidatura(candidatura_id: int, db) -> models.ProcessoAdmissao:
     existing = db.query(models.ProcessoAdmissao).filter_by(candidatura_id=candidatura_id).first()
     if existing:
         return existing
@@ -490,6 +493,37 @@ def upload_doc(processo_id, etapa_id):
 
         # 4. Retorna imediatamente sem esperar SharePoint
         return jsonify(doc_to_dict(doc)), 201
+    finally:
+        db.close()
+
+
+# ── Notas internas + Salário (não enviado ao candidato) ─────
+
+@bp.patch("/<int:processo_id>/interno")
+@require_auth
+def atualizar_interno(processo_id):
+    """Salva notas internas e salário proposto — nunca enviados ao candidato."""
+    data = request.get_json()
+    db   = get_db()
+    try:
+        p = db.query(models.ProcessoAdmissao).filter_by(id=processo_id).first()
+        if not p:
+            return jsonify({"message": "Processo não encontrado"}), 404
+
+        if "notasInternas" in data:
+            p.notas_internas = data["notasInternas"]
+        if "salarioProposto" in data:
+            try:
+                p.salario_proposto = float(data["salarioProposto"]) if data["salarioProposto"] else None
+            except (ValueError, TypeError):
+                pass
+        if "salarioObs" in data:
+            p.salario_observacao = data["salarioObs"]
+
+        db.commit()
+        audit.log(request.username, "NOTAS_INTERNAS", entity="processo",
+                  entity_id=processo_id, detail="Notas internas atualizadas")
+        return jsonify({"ok": True})
     finally:
         db.close()
 
