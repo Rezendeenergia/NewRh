@@ -136,9 +136,9 @@ def processo_to_dict(p):
         },
         "etapas":          [etapa_to_dict(e) for e in p.etapas],
         "progresso":       _calc_progresso(p.etapas),
-        "notasInternas":   p.notas_internas or "",
-        "salarioProposto": float(p.salario_proposto) if p.salario_proposto else None,
-        "salarioObs":      p.salario_observacao or "",
+        "notasInternas":   getattr(p, "notas_internas", None) or "",
+        "salarioProposto": float(getattr(p, "salario_proposto", None)) if getattr(p, "salario_proposto", None) else None,
+        "salarioObs":      getattr(p, "salario_observacao", None) or "",
     }
 
 
