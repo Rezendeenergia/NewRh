@@ -71,6 +71,7 @@ def etapa_to_dict(e):
         "prazo_dias":   e.prazo_dias,
         "observacao":   e.observacao,
         "nota":         e.nota,
+        "notaExterna":  getattr(e, "nota_externa", None) or "",
         "responsavel":  e.responsavel,
         "iniciadoEm":   e.iniciado_em.isoformat() if e.iniciado_em else None,
         "concluidoEm":  e.concluido_em.isoformat() if e.concluido_em else None,
@@ -357,9 +358,11 @@ def atualizar_etapa(processo_id, etapa_id):
 
         e.status       = novo_status
         e.nota         = data.get("nota", e.nota)
+        e.nota_externa = data.get("notaExterna", getattr(e, "nota_externa", None))
         e.observacao   = data.get("observacao", e.observacao)
         e.responsavel  = request.username
         e.concluido_em = datetime.now(timezone.utc) if novo_status in ("APROVADO", "REPROVADO", "NAO_APLICAVEL") else None
+        nota_externa   = getattr(e, "nota_externa", None) or ""
         nota_texto     = e.nota
 
         if novo_status == "REPROVADO":
