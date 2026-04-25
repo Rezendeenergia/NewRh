@@ -26,20 +26,20 @@ BASE_URL      = os.getenv("BASE_URL", "https://carreiras.rezendeenergia.com.br")
 # ROLE_GESTOR → Gerentes/supervisores (só podem solicitar abertura de vagas)
 
 GESTORES = {
-    "leonardo@rezendeenergia.com.br":           "ROLE_ADMIN",
-    "demetrius.pereira@rezendeenergia.com.br"   "ROLE_ADMIN",
-    "gabrielle.lira@rezendeenergia.com.br":     "ROLE_ADMIN",
-    "pedrohueb@rezendeenergia.com.br":           "ROLE_ADMIN",
-    "bruno@rezendeenergia.com.br":               "ROLE_ADMIN",
-    "rafael@rezendeenergia.com.br":              "ROLE_OWNER",
+    "leonardo@rezendeenergia.com.br":         "ROLE_ADMIN",
+    "gabrielle.lira@rezendeenergia.com.br":   "ROLE_ADMIN",
+    "pedrohueb@rezendeenergia.com.br":         "ROLE_ADMIN",
+    "pamella.macambira@rezendeenergia.com.br": "ROLE_ADMIN",
+    "bruno@rezendeenergia.com.br":             "ROLE_ADMIN",
+    "rafael@rezendeenergia.com.br":            "ROLE_OWNER",
 }
 
 EQUIPE_DP_RH = {
     "mariane.froz@rezendeenergia.com.br":     "ROLE_VIEWER",
     "kailany.castanha@rezendeenergia.com.br": "ROLE_VIEWER",
     "andreiaazevedo@rezendeenergia.com.br":   "ROLE_VIEWER",
-    "davyd.reis@rezendeenergia.com.br":        "ROLE_VIEWER",
-    "ana.tapajos@rezendeenergia.com.br":       "ROLE_VIEWER",
+    "davyd.reis@rezendeenergia.com.br":       "ROLE_VIEWER",
+    "ana.tapajos@rezendeenergia.com.br":      "ROLE_VIEWER",
 }
 
 EQUIPE_TI = {
@@ -108,8 +108,8 @@ def ms_callback():
     if me.status_code != 200:
         return redirect("/#ms-error=Falha+ao+obter+dados+do+usuário")
 
-    me_data     = me.json()
-    email       = me_data.get("mail") or me_data.get("userPrincipalName", "")
+    me_data      = me.json()
+    email        = me_data.get("mail") or me_data.get("userPrincipalName", "")
     display_name = me_data.get("displayName", email.split("@")[0])
 
     # Valida se o e-mail está na lista autorizada
@@ -155,15 +155,15 @@ def ms_callback():
         token = create_token(user.username, user.role)
         audit.log(user.username, "LOGIN_MS", detail=f"SSO Microsoft — {email}")
 
-        # Redireciona com token no hash E seta cookie (cobre todos os cenários)
+        # Redireciona com token no hash
         resp = redirect(f"/#ms-token={token}&ms-user={user.username}&ms-role={user.role}&ms-name={display_name}")
         resp.set_cookie(
             "rz_token", token,
-            max_age=86400,        # 24 horas
+            max_age=86400,
             path="/",
             samesite="Lax",
-            secure=False,         # True quando tiver HTTPS próprio
-            httponly=False,       # JS precisa ler
+            secure=False,
+            httponly=False,
         )
         return resp
 
