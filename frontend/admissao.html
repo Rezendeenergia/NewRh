@@ -312,8 +312,27 @@ const Adm = {
       </div>` : '';
 
     const actionsHtml = isAtiva ? `
-      <div class="nota-field">
-        <textarea id="nota-${e.id}" placeholder="Observação / nota interna (opcional)"></textarea>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div>
+          <label style="display:block;font-size:11px;font-weight:700;color:#9AA3B2;text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;">
+            🔒 Nota Interna <span style="color:#5A6478;font-weight:400;">(só gestores)</span>
+          </label>
+          <textarea id="nota-${e.id}" rows="3"
+                    placeholder="Anotações internas — não enviado ao candidato..."
+                    style="width:100%;background:rgba(91,141,239,.05);border:1px solid rgba(91,141,239,.2);
+                           color:#fff;border-radius:8px;padding:10px;font-size:12px;resize:vertical;
+                           font-family:inherit;box-sizing:border-box;"></textarea>
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;font-weight:700;color:#9AA3B2;text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;">
+            📧 Nota Externa <span style="color:#5A6478;font-weight:400;">(enviada ao candidato)</span>
+          </label>
+          <textarea id="nota-externa-${e.id}" rows="3"
+                    placeholder="Mensagem enviada ao candidato por e-mail ao aprovar/reprovar..."
+                    style="width:100%;background:rgba(255,106,0,.05);border:1px solid rgba(255,106,0,.2);
+                           color:#fff;border-radius:8px;padding:10px;font-size:12px;resize:vertical;
+                           font-family:inherit;box-sizing:border-box;"></textarea>
+        </div>
       </div>
       <div class="etapa-actions">
         <button class="btn btn-aprovar btn--small" onclick="Adm.atualizarEtapa(${processoId},${e.id},'APROVADO')">✅ Aprovar</button>
@@ -322,7 +341,10 @@ const Adm = {
         <button class="btn btn--small" style="background:rgba(90,100,120,.15);color:#9AA3B2;border:1px solid rgba(90,100,120,.3);" onclick="Adm.atualizarEtapa(${processoId},${e.id},'NAO_APLICAVEL')" title="Marcar como Não Aplicável — etapa será pulada">🚫 N/A</button>
       </div>` : '';
 
-    const notaHtml = e.nota ? `<p style="font-size:.8rem;color:var(--ink-2);margin-top:8px;font-style:italic;">💬 ${e.nota}</p>` : '';
+    const notaHtml = (e.nota || e.notaExterna) ? `
+      ${e.nota ? `<p style="font-size:.8rem;color:#5B8DEF;margin-top:8px;font-style:italic;">🔒 ${e.nota}</p>` : ''}
+      ${e.notaExterna ? `<p style="font-size:.8rem;color:#FF6A00;margin-top:4px;font-style:italic;">📧 ${e.notaExterna}</p>` : ''}
+    ` : '';
     const respHtml = e.responsavel ? `<p style="font-size:.75rem;color:var(--ink-3);margin-top:4px;">👤 ${e.responsavel} ${e.concluidoEm ? '· '+new Date(e.concluidoEm).toLocaleDateString('pt-BR') : ''}</p>` : '';
 
     return `
@@ -359,7 +381,11 @@ const Adm = {
     if (!confirm(labels[status])) return;
     try {
       await req(`/api/processos/${processoId}/etapas/${etapaId}`, {
-        method:'PATCH', body:JSON.stringify({ status, nota })
+        method:'PATCH', body:JSON.stringify({
+          status,
+          nota,
+          notaExterna: document.getElementById(`nota-externa-${etapaId}`)?.value || ''
+        })
       });
       // Invalida cache do processo e da lista para forçar dados frescos
       delete _cache[`/api/processos/${processoId}`];
