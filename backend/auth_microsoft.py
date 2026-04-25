@@ -27,9 +27,9 @@ BASE_URL      = os.getenv("BASE_URL", "https://carreiras.rezendeenergia.com.br")
 
 GESTORES = {
     "leonardo@rezendeenergia.com.br":           "ROLE_ADMIN",
+    "demetrius.pereira@rezendeenergia.com.br"   "ROLE_ADMIN",
     "gabrielle.lira@rezendeenergia.com.br":     "ROLE_ADMIN",
     "pedrohueb@rezendeenergia.com.br":           "ROLE_ADMIN",
-    "pamella.macambira@rezendeenergia.com.br":   "ROLE_ADMIN",
     "bruno@rezendeenergia.com.br":               "ROLE_ADMIN",
     "rafael@rezendeenergia.com.br":              "ROLE_OWNER",
 }
