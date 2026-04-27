@@ -247,7 +247,8 @@ const Adm = {
                            font-family:inherit;box-sizing:border-box;">${p.notasInternas || ''}</textarea>
         </div>
 
-        <!-- Salário proposto -->
+        <!-- Salário proposto — só para quem tem permissão -->
+        ${Adm.podVerSalario() ? `
         <div style="display:grid;grid-template-columns:1fr 2fr;gap:12px;margin-bottom:16px;">
           <div>
             <label style="display:block;color:#A8A8B8;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">
@@ -271,7 +272,7 @@ const Adm = {
                           color:#fff;border-radius:8px;padding:10px 12px;font-size:13px;
                           box-sizing:border-box;">
           </div>
-        </div>
+        </div>` : ''}
 
         <button onclick="Adm.salvarInterno(${p.id})" id="btn-interno-${p.id}"
                 style="background:rgba(91,141,239,.15);border:1px solid rgba(91,141,239,.3);
@@ -435,6 +436,19 @@ const Adm = {
   },
 
   closeModal() { document.getElementById('action-modal').style.display = 'none'; },
+
+  EMAILS_VER_SALARIO: [
+    "gabrielle.lira@rezendeenergia.com.br",
+    "andreiaazevedo@rezendeenergia.com.br",
+    "mariane.froz@rezendeenergia.com.br",
+    "kailany.castanha@rezendeenergia.com.br",
+    "ti@rezendeenergia.com.br",
+  ],
+
+  podVerSalario() {
+    const email = (localStorage.getItem('rz_email') || '').toLowerCase();
+    return this.EMAILS_VER_SALARIO.includes(email);
+  },
 
   async salvarInterno(processoId) {
     const notas   = document.getElementById(`notas-internas-${processoId}`)?.value || '';
