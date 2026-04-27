@@ -484,12 +484,45 @@ def notify_etapa_candidato(candidatura, etapa_nome: str, status: str, nota: str 
 
 # Destinatários padrão de notificações
 EMAIL_TI  = "ti@rezendeenergia.com.br"           # TI — recebe primeiro (TO principal)
-EMAIL_RH  = "rh@rezendeenergia.com.br"            # RH individual
+EMAIL_RH    = "rh@rezendeenergia.com.br"          # RH individual
+EMAIL_SESMT = "RezendeSESMT@rezendeenergia.com.br"  # SESMT
 EMAIL_GRP = [                                      # Grupos e RH — sempre em CC
     "RezendeRH@rezendeenergia.com.br",
     "RezendeDP@rezendeenergia.com.br",
     "rh@rezendeenergia.com.br",
 ]
+
+
+def notify_dept_sesmt(candidatura, etapa_nome: str):
+    """Notifica o SESMT quando uma etapa deles está prestes a começar."""
+    nome  = candidatura.full_name
+    cargo = candidatura.job.position if hasattr(candidatura, "job") and candidatura.job else ""
+    subject = f"⚠️ SESMT — Ação necessária: {etapa_nome} · {nome}"
+    content_html = (
+        f'<h2 style="margin:0 0 6px;font-size:20px;font-weight:800;color:#fff;">SESMT — Ação Necessária</h2>'
+        f'<p style="margin:0 0 20px;font-size:13px;color:rgba(255,106,0,0.8);font-weight:600;'
+        f'text-transform:uppercase;letter-spacing:2px;">Etapa em andamento</p>'
+        f'<div style="background:rgba(255,106,0,.06);border:1px solid rgba(255,106,0,.2);'
+        f'border-left:3px solid #FF6A00;border-radius:12px;padding:18px 22px;margin-bottom:20px;">'
+        f'<p style="margin:0 0 4px;font-size:11px;color:#FF6A00;font-weight:700;'
+        f'text-transform:uppercase;letter-spacing:2px;">Candidato</p>'
+        f'<p style="margin:0;font-size:17px;font-weight:800;color:#fff;">{nome}</p>'
+        f'<p style="margin:4px 0 0;font-size:13px;color:#A8A8B8;">{cargo}</p>'
+        f'</div>'
+        f'<p style="color:#A8A8B8;font-size:14px;line-height:1.7;margin:0 0 20px;">'
+        f'A etapa <strong style="color:#fff;">{etapa_nome}</strong> está aguardando '
+        f'ação do SESMT no portal de admissão.</p>'
+        f'<div style="text-align:center;">'
+        f'<a href="https://newrh.onrender.com/admissao" '
+        f'style="display:inline-block;background:linear-gradient(135deg,#FF8C2A,#FF6A00);'
+        f'color:#000;font-weight:800;font-size:14px;text-decoration:none;'
+        f'padding:12px 32px;border-radius:10px;">🔒 Acessar Admissão</a></div>'
+    )
+    try:
+        send_email(EMAIL_SESMT, subject, _base_template(subject, content_html))
+        print(f"[EMAIL] SESMT notificado: {etapa_nome} → {nome}")
+    except Exception as e:
+        print(f"[EMAIL] Erro SESMT: {e}")
 
 
 def notify_solicitacao_rafael(sol, rafael_email: str, base_url: str):
