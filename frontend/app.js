@@ -14,6 +14,34 @@ let allJobs         = [];   // cache para busca local
 // Estado global do usuário logado
 const AppState = { role: null, username: null };
 
+// Emails autorizados a ver a aba "Área do Gestor"
+const EMAILS_GESTOR = ["leonardo@rezendeenergia.com.br", "gabrielle.lira@rezendeenergia.com.br", "pedrohueb@rezendeenergia.com.br", "demetrius.pereira@rezendeenergia.com.br", "pamella.macambira@rezendeenergia.com.br", "bruno@rezendeenergia.com.br", "rafael@rezendeenergia.com.br", "mariane.froz@rezendeenergia.com.br", "kailany.castanha@rezendeenergia.com.br", "andreiaazevedo@rezendeenergia.com.br", "davyd.reis@rezendeenergia.com.br", "ana.tapajos@rezendeenergia.com.br", "ti@rezendeenergia.com.br", "helio@rezendeenergia.com.br", "jose.lima@rezendeenergia.com.br", "viniciusamaral@rezendeenergia.com.br", "andre.sousa@rezendeenergia.com.br", "marcos.lopes@rezendeenergia.com.br"];
+
+function _mostrarTabGestor() {
+  const tab = document.getElementById('nav-gestor-tab');
+  if (tab) tab.style.display = '';
+  localStorage.setItem('rz_gestor_autorizado', '1');
+}
+
+function _esconderTabGestor() {
+  const tab = document.getElementById('nav-gestor-tab');
+  if (tab) tab.style.display = 'none';
+  localStorage.removeItem('rz_gestor_autorizado');
+}
+
+function _verificarTabGestor() {
+  // Verifica email salvo no localStorage
+  const email = (localStorage.getItem('rz_email') || '').toLowerCase();
+  const token = localStorage.getItem('rz_token');
+  if (token && email && EMAILS_GESTOR.includes(email)) {
+    _mostrarTabGestor();
+  } else if (localStorage.getItem('rz_gestor_autorizado') === '1' && token) {
+    _mostrarTabGestor();
+  } else {
+    _esconderTabGestor();
+  }
+}
+
 
 
 // ── Microsoft SSO callback handler ───────────────────────────
@@ -1833,6 +1861,9 @@ document.getElementById('apply-form').addEventListener('submit', async function(
 
 // ─── Init ──────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
+  // Verifica se deve mostrar aba do gestor (baseado em sessão anterior)
+  _verificarTabGestor();
+
   // Restaura sessão APENAS quando vindo de /admissao ou /admissoes
   // (não faz auto-login no carregamento normal da página)
   if (new URLSearchParams(window.location.search).get('gestor') === '1') {
