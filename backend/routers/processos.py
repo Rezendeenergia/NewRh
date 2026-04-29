@@ -166,7 +166,8 @@ def _avancar_etapa(processo, db):
     db.commit()
 
 
-def criar_processo_para_candidatura(candidatura_id: int, db) -> models.ProcessoAdmissao:
+def criar_processo_para_candidatura(candidatura_id: int, db,
+                                     tipo_admissao: str = "ADMISSAO_NOVA") -> models.ProcessoAdmissao:
     existing = db.query(models.ProcessoAdmissao).filter_by(candidatura_id=candidatura_id).first()
     if existing:
         return existing
@@ -174,18 +175,28 @@ def criar_processo_para_candidatura(candidatura_id: int, db) -> models.ProcessoA
     processo = models.ProcessoAdmissao(
         candidatura_id=candidatura_id,
         status="EM_ANDAMENTO",
-        etapa_atual="Triagem",
+        etapa_atual="Aprovação Final",
+        tipo_admissao=tipo_admissao,
     )
     db.add(processo)
     db.flush()
     _criar_etapas(processo.id, db)
     db.flush()
 
-    primeira = db.query(models.EtapaProcesso)\
-        .filter_by(processo_id=processo.id, ordem=1).first()
-    if primeira:
-        primeira.status      = "EM_ANDAMENTO"
-        primeira.iniciado_em = datetime.now(timezone.utc)
+    # Triagem e Entrevista já aprovadas (candidato passou pelo funil de seleção)
+    db.query(models.EtapaProcesso).filter(
+        models.EtapaProcesso.processo_id == processo.id,
+        models.EtapaProcesso.codigo.in_(["TRIAGEM", "ENTREVISTA"])
+    ).update({"status": "APROVADO", "concluido_em": datetime.now(timezone.utc)},
+              synchronize_session=False)
+
+    # Inicia na Aprovação Final
+    aprovacao = db.query(models.EtapaProcesso).filter_by(
+        processo_id=processo.id, codigo="APROVACAO_FINAL"
+    ).first()
+    if aprovacao:
+        aprovacao.status      = "EM_ANDAMENTO"
+        aprovacao.iniciado_em = datetime.now(timezone.utc)
 
     db.commit()
 
