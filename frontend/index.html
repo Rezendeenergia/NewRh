@@ -528,6 +528,7 @@
         <button class="subtab" data-subtab="solicitacoes">📋 Solicitações <span class="subtab__count" id="count-solicitacoes" style="display:none;background:#FF5252;"></span></button>
           <a href="/admissao" class="subtab" style="text-decoration:none;">🏢 Admissão</a>
         <a href="/admissoes" class="subtab" style="text-decoration:none;">🏗 Admissões</a>
+        <button class="subtab" data-subtab="banco-talentos">🏅 Banco de Talentos</button>
       </div>
 
       <!-- Funil de Candidatos -->
@@ -586,6 +587,22 @@
           <div class="card"><div class="card__header"><span class="card__title">💼 Por Cargo</span></div><div class="card__body" id="headcount-cargo-body"></div></div>
         </div>
       </div>
+      <!-- Banco de Talentos -->
+      <div class="subtab-panel" id="subtab-banco-talentos">
+        <div class="card">
+          <div class="card__header">
+            <span class="card__title">🏅 Banco de Talentos</span>
+            <input id="banco-search-main" type="text" placeholder="Buscar nome, vaga, NR..."
+                   oninput="Manager.filtrarBanco(this.value)"
+                   style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+                          color:#fff;border-radius:8px;padding:7px 14px;font-size:13px;width:220px;">
+          </div>
+          <div class="card__body" id="banco-talentos-body">
+            <p style="color:var(--ink-3);text-align:center;padding:32px;">Carregando...</p>
+          </div>
+        </div>
+      </div>
+
       <!-- Auditoria -->
       <div class="subtab-panel" id="subtab-audit">
         <div class="card">
