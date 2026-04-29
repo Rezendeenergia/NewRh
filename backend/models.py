@@ -253,8 +253,12 @@ class DocumentoEtapa(Base):
     enviado_por  = Column(String(100), nullable=True)   # username
     status       = Column(String(20), nullable=False, default="PENDENTE")
     # status: PENDENTE | APROVADO | REPROVADO | REENVIAR
-    observacao   = Column(Text, nullable=True)
-    created_at   = Column(DateTime, server_default=func.now())
+    observacao          = Column(Text, nullable=True)   # observação enviada ao candidato (legado)
+    comentario_interno  = Column(Text, nullable=True)   # comentário interno da equipe
+    versao              = Column(Integer, nullable=False, default=1)  # versão do documento
+    substituido_por     = Column(Integer, ForeignKey("documento_etapa.id"), nullable=True)  # ref à nova versão
+    created_at          = Column(DateTime, server_default=func.now())
+    updated_at          = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     etapa = relationship("EtapaProcesso", back_populates="documentos")
 
