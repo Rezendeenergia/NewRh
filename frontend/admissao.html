@@ -101,7 +101,7 @@ async function req(url, opts={}) {
   if (r.status === 401) {
     // Token expirado — volta pro portal
     localStorage.removeItem('rz_token');
-    window.location.href = '/';
+    window.location.href = '/?gestor=1';
     return;
   }
   if (!r.ok) { const e = await r.json().catch(()=>({message:'Erro'})); throw new Error(e.message); }
