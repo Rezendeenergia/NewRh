@@ -818,7 +818,7 @@ const Manager = {
     if (!body) return;
     body.innerHTML = '<p style="color:var(--ink-3);text-align:center;padding:20px;">Carregando...</p>';
     try {
-      const d = await apiRequest('/api/candidaturas/stats');
+      const d = await request('/api/candidaturas/stats');
       const f = d.funil || {};
       const etapas = [
         { label:'📥 Recebidas',        key:'recebidas',       cor:'#5B8DEF' },
@@ -854,7 +854,7 @@ const Manager = {
     if (!body) return;
     body.innerHTML = '<p style="color:var(--ink-3);text-align:center;padding:32px;">Carregando...</p>';
     try {
-      const items = await apiRequest('/api/processos/banco-talentos');
+      const items = await request('/api/processos/banco-talentos');
       this._bancoData = items;
       this._renderBanco(items, body);
     } catch(e) {
@@ -917,7 +917,7 @@ const Manager = {
 
   async loadHeadcount() {
     try {
-      const d = await apiRequest('/api/colaboradores/headcount');
+      const d = await request('/api/colaboradores/headcount');
 
       // NRs expirando
       const nrsBody = document.getElementById('nrs-body');
