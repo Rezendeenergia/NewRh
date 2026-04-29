@@ -219,6 +219,9 @@ def listar():
 
         if status_f:
             q = q.filter(models.ProcessoAdmissao.status == status_f)
+        else:
+            # Por padrão, não mostra cancelados na lista principal
+            q = q.filter(models.ProcessoAdmissao.status != "CANCELADO")
 
         # Filtro por dept via JOIN no banco (não Python-side)
         if dept_f:
@@ -701,6 +704,59 @@ def download_doc(processo_id, etapa_id, doc_id):
         if not doc or not doc.arquivo or not os.path.exists(doc.arquivo):
             return jsonify({"message": "Arquivo não encontrado"}), 404
         return send_file(doc.arquivo, as_attachment=True, download_name=doc.nome)
+    finally:
+        db.close()
+
+
+# ── Banco de Talentos (candidatos cancelados) ─────────────────
+
+@bp.get("/banco-talentos")
+@require_auth
+def banco_talentos():
+    """Lista candidatos cancelados com dados para banco de talentos."""
+    db = get_db()
+    try:
+        processos = (
+            db.query(models.ProcessoAdmissao)
+            .filter(models.ProcessoAdmissao.status == "CANCELADO")
+            .options(
+                joinedload(models.ProcessoAdmissao.candidatura)
+                    .joinedload(models.Candidatura.job),
+            )
+            .order_by(models.ProcessoAdmissao.updated_at.desc())
+            .all()
+        )
+
+        items = []
+        for p in processos:
+            try:
+                c = p.candidatura
+                if not c:
+                    continue
+                j = getattr(c, 'job', None)
+                items.append({
+                    "processoId":    p.id,
+                    "candidaturaId": c.id,
+                    "nome":          getattr(c, 'full_name', '') or '',
+                    "email":         getattr(c, 'email', '') or '',
+                    "telefone":      getattr(c, 'phone', '') or '',
+                    "vaga":          j.position if j else '',
+                    "local":         j.location if j else '',
+                    "formacao":      getattr(c, 'education', '') or '',
+                    "experiencia":   getattr(c, 'experience', '') or '',
+                    "nrs":           getattr(c, 'nrs', '') or '',
+                    "cnh":           getattr(c, 'carteira_motorista', '') or '',
+                    "motivoCancelamento": p.etapa_atual or '',
+                    "dataCancelamento": p.updated_at.strftime("%d/%m/%Y") if p.updated_at else '',
+                    "curriculo":     bool(getattr(c, 'resume_name', None)),
+                    "downloadCurriculoUrl": f"/api/candidaturas/{c.id}/resume" if getattr(c, 'resume_name', None) else None,
+                    "notas":         getattr(p, "notas_internas", None) or '',
+                })
+            except Exception as ex:
+                print(f"[BANCO] Erro ao processar processo {p.id}: {ex}")
+                continue
+
+        return jsonify(items)
     finally:
         db.close()
 
