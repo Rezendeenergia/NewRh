@@ -847,6 +847,74 @@ const Manager = {
     } catch(e) { body.innerHTML = `<p style="color:#FF5252;">Erro: ${e.message}</p>`; }
   },
 
+  _bancoData: [],
+
+  async loadBancoTalentos() {
+    const body = document.getElementById('banco-talentos-body');
+    if (!body) return;
+    body.innerHTML = '<p style="color:var(--ink-3);text-align:center;padding:32px;">Carregando...</p>';
+    try {
+      const items = await apiRequest('/api/processos/banco-talentos');
+      this._bancoData = items;
+      this._renderBanco(items, body);
+    } catch(e) {
+      body.innerHTML = `<p style="color:#FF5252;text-align:center;">${e.message}</p>`;
+    }
+  },
+
+  filtrarBanco(q) {
+    const body = document.getElementById('banco-talentos-body');
+    if (!body) return;
+    if (!q) { this._renderBanco(this._bancoData, body); return; }
+    const ql = q.toLowerCase();
+    this._renderBanco(this._bancoData.filter(c =>
+      c.nome.toLowerCase().includes(ql) ||
+      c.vaga.toLowerCase().includes(ql) ||
+      (c.nrs||'').toLowerCase().includes(ql) ||
+      (c.email||'').toLowerCase().includes(ql)
+    ), body);
+  },
+
+  _renderBanco(items, body) {
+    if (!body) return;
+    if (!items.length) {
+      body.innerHTML = '<p style="color:#5A6478;text-align:center;padding:40px;">Nenhum candidato no banco de talentos ainda.</p>';
+      return;
+    }
+    body.innerHTML = items.map(c => `
+      <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);
+                  border-radius:12px;padding:16px;margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+          <div>
+            <p style="margin:0 0 2px;font-size:16px;font-weight:800;color:#fff;">${c.nome}</p>
+            <p style="margin:0;font-size:12px;color:#9AA3B2;">📍 ${c.vaga} · ${c.local} · Cancelado em ${c.dataCancelamento}</p>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            ${c.curriculo ? `<a href="${c.downloadCurriculoUrl}" target="_blank"
+              style="background:rgba(255,106,0,.1);border:1px solid rgba(255,106,0,.25);color:#FF6A00;
+                     border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;text-decoration:none;">
+              📄 Currículo</a>` : ''}
+            <a href="mailto:${c.email}"
+               style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#9AA3B2;
+                      border-radius:6px;padding:5px 12px;font-size:12px;text-decoration:none;">
+              ✉️ ${c.email}</a>
+            ${c.telefone ? `<a href="https://wa.me/55${c.telefone.replace(/\D/g,'')}" target="_blank"
+               style="background:rgba(37,211,102,.08);border:1px solid rgba(37,211,102,.2);color:#25D366;
+                      border-radius:6px;padding:5px 12px;font-size:12px;text-decoration:none;">
+              📱 WhatsApp</a>` : ''}
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">
+          ${c.formacao ? `<span style="background:rgba(255,255,255,.05);border-radius:4px;padding:2px 8px;font-size:11px;color:#A8A8B8;">🎓 ${c.formacao}</span>` : ''}
+          ${c.experiencia ? `<span style="background:rgba(255,255,255,.05);border-radius:4px;padding:2px 8px;font-size:11px;color:#A8A8B8;">⏱ ${c.experiencia}</span>` : ''}
+          ${c.nrs ? `<span style="background:rgba(255,106,0,.06);border-radius:4px;padding:2px 8px;font-size:11px;color:#FF8C2A;">📜 ${c.nrs}</span>` : ''}
+          ${c.cnh ? `<span style="background:rgba(255,255,255,.05);border-radius:4px;padding:2px 8px;font-size:11px;color:#A8A8B8;">🪪 CNH: ${c.cnh}</span>` : ''}
+        </div>
+        ${c.motivoCancelamento ? `<p style="margin:8px 0 0;font-size:11px;color:#FF5252;">❌ ${c.motivoCancelamento}</p>` : ''}
+        ${c.notas ? `<p style="margin:6px 0 0;font-size:11px;color:#5B8DEF;font-style:italic;">🔒 ${c.notas}</p>` : ''}
+      </div>`).join('');
+  },
+
   async loadHeadcount() {
     try {
       const d = await apiRequest('/api/colaboradores/headcount');
