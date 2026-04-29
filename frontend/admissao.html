@@ -88,6 +88,7 @@ async function reqCached(url, ttl=10000) {
 }
 
 let TOKEN = localStorage.getItem('rz_token');
+let ROLE  = localStorage.getItem('rz_role') || '';
 
 
 
@@ -594,10 +595,10 @@ const Adm = {
   ],
 
   podVerSalario() {
+    // ROLE_ADMIN e ROLE_OWNER sempre veem o salário
+    if (['ROLE_ADMIN','ROLE_OWNER'].includes(ROLE)) return true;
+    // Lista específica de emails que podem ver
     const email = (localStorage.getItem('rz_email') || '').toLowerCase();
-    const role  = localStorage.getItem('rz_role') || '';
-    // Admins e owners sempre veem
-    if (['ROLE_ADMIN','ROLE_OWNER'].includes(role)) return true;
     return this.EMAILS_VER_SALARIO.includes(email);
   },
 
