@@ -555,6 +555,141 @@ def revisar_doc(processo_id, etapa_id, doc_id):
         db.close()
 
 
+# ── Comentário interno em documento (sem email) ──────────────
+
+@bp.patch("/<int:processo_id>/etapas/<int:etapa_id>/documentos/<int:doc_id>/comentar")
+@require_auth
+def comentar_doc(processo_id, etapa_id, doc_id):
+    """Salva comentário interno num documento — não envia email ao candidato."""
+    data = request.get_json()
+    db   = get_db()
+    try:
+        doc = db.query(models.DocumentoEtapa).filter_by(id=doc_id, etapa_id=etapa_id).first()
+        if not doc:
+            return jsonify({"message": "Documento não encontrado"}), 404
+        doc.comentario_interno = data.get("comentario", "")
+        db.commit()
+        audit.log(request.username, "COMENTARIO_DOC", entity="processo",
+                  entity_id=processo_id, detail=f"Comentário em '{doc.nome}'")
+        return jsonify(doc_to_dict(doc))
+    finally:
+        db.close()
+
+
+# ── Substituição de documento (sem email ao candidato) ────────
+
+@bp.post("/<int:processo_id>/etapas/<int:etapa_id>/documentos/<int:doc_id>/substituir")
+@require_auth
+def substituir_doc(processo_id, etapa_id, doc_id):
+    """Substitui um documento por nova versão. Não envia email ao candidato.
+    O arquivo antigo é removido do SharePoint e substituído pelo novo."""
+    arquivo  = request.files.get("arquivo")
+    motivo   = request.form.get("motivo", "Substituição de documento")
+    if not arquivo or not arquivo.filename:
+        return jsonify({"message": "Arquivo obrigatório"}), 400
+
+    db = get_db()
+    try:
+        doc_antigo = db.query(models.DocumentoEtapa).filter_by(id=doc_id, etapa_id=etapa_id).first()
+        if not doc_antigo:
+            return jsonify({"message": "Documento não encontrado"}), 404
+
+        etapa = db.query(models.EtapaProcesso).filter_by(id=etapa_id).first()
+        processo = db.query(models.ProcessoAdmissao).filter_by(id=processo_id).first()
+        candidatura = db.query(models.Candidatura).filter_by(id=processo.candidatura_id).first()
+
+        # Salva novo arquivo local
+        safe_name = arquivo.filename.replace(" ", "_")
+        UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "uploads"))
+        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+        dest = os.path.join(UPLOAD_FOLDER, f"v{(getattr(doc_antigo,'versao',1) or 1)+1}_{etapa_id}_{safe_name}")
+        arquivo.save(dest)
+
+        # Cria novo registro de documento (nova versão)
+        doc_novo = models.DocumentoEtapa(
+            etapa_id      = etapa_id,
+            nome          = arquivo.filename,
+            arquivo       = dest,
+            enviado_por   = request.username,
+            status        = "PENDENTE",
+            observacao    = None,
+            comentario_interno = motivo,
+            versao        = (getattr(doc_antigo, "versao", 1) or 1) + 1,
+        )
+        db.add(doc_novo)
+        db.flush()
+
+        # Marca documento antigo como substituído
+        doc_antigo.substituido_por = doc_novo.id
+        doc_antigo.comentario_interno = f"Substituído: {motivo}"
+        db.commit()
+        db.refresh(doc_novo)
+
+        doc_novo_id = doc_novo.id
+
+        # Upload SharePoint em background — apaga antigo, sobe novo
+        import threading
+        sp_url_antigo = doc_antigo.sharepoint_url
+
+        def _substituir_sp():
+            try:
+                from sharepoint_service import upload_documento, _get_token, _get_site_id, _get_drive_id, BASE_PATH
+                import requests as req_lib
+
+                cpf_limpo = (candidatura.cpf or "").replace(".", "").replace("-", "")
+                pasta      = f"{candidatura.full_name} - {cpf_limpo}"
+                etapa_nome = etapa.nome if etapa else "Documentos"
+                codigo     = etapa.codigo if etapa else ""
+
+                # Upload do novo arquivo
+                sp_url = upload_documento(dest, safe_name, pasta,
+                                          sub_pasta=etapa_nome, codigo_etapa=codigo)
+
+                # Tenta apagar o arquivo antigo do SharePoint
+                if sp_url_antigo:
+                    try:
+                        token    = _get_token()
+                        site_id  = _get_site_id()
+                        drive_id = _get_drive_id(site_id)
+                        headers  = {"Authorization": f"Bearer {token}"}
+                        # Busca item pelo nome antigo para deletar
+                        nome_antigo = doc_antigo.nome.replace(" ", "_")
+                        caminho_antigo = f"{BASE_PATH}/{pasta}/{etapa_nome}/{nome_antigo}"
+                        url_item = f"https://graph.microsoft.com/v1.0/drives/{drive_id}/root:/{caminho_antigo}"
+                        r_get = req_lib.get(url_item, headers=headers, timeout=10)
+                        if r_get.status_code == 200:
+                            item_id = r_get.json().get("id")
+                            req_lib.delete(
+                                f"https://graph.microsoft.com/v1.0/drives/{drive_id}/items/{item_id}",
+                                headers=headers, timeout=10
+                            )
+                            print(f"[SP] Arquivo antigo removido: {caminho_antigo}")
+                    except Exception as ex:
+                        print(f"[SP] Erro ao apagar antigo: {ex}")
+
+                if sp_url:
+                    db4 = get_db()
+                    try:
+                        d = db4.query(models.DocumentoEtapa).filter_by(id=doc_novo_id).first()
+                        if d:
+                            d.sharepoint_url = sp_url
+                            db4.commit()
+                    finally:
+                        db4.close()
+            except Exception as ex:
+                print(f"[SP] Erro substituição: {ex}")
+
+        threading.Thread(target=_substituir_sp, daemon=True).start()
+
+        audit.log(request.username, "SUBSTITUICAO_DOC", entity="processo",
+                  entity_id=processo_id,
+                  detail=f"Doc '{doc_antigo.nome}' substituído por '{arquivo.filename}' — {motivo}")
+
+        return jsonify({"ok": True, "novoDoc": doc_to_dict(doc_novo)}), 201
+    finally:
+        db.close()
+
+
 # ── Download de documento ─────────────────────────────────────
 
 @bp.get("/<int:processo_id>/etapas/<int:etapa_id>/documentos/<int:doc_id>/download")
