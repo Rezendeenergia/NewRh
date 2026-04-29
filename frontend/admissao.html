@@ -595,6 +595,9 @@ const Adm = {
 
   podVerSalario() {
     const email = (localStorage.getItem('rz_email') || '').toLowerCase();
+    const role  = localStorage.getItem('rz_role') || '';
+    // Admins e owners sempre veem
+    if (['ROLE_ADMIN','ROLE_OWNER'].includes(role)) return true;
     return this.EMAILS_VER_SALARIO.includes(email);
   },
 
