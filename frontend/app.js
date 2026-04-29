@@ -1939,17 +1939,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     const savedUser  = localStorage.getItem('rz_username');
     const savedRole  = localStorage.getItem('rz_role');
     if (savedToken) {
-      sessionToken    = savedToken;
-      sessionUsername = savedUser || '';
-      AppState.role   = savedRole || 'ROLE_ADMIN';
+      sessionToken      = savedToken;
+      sessionUsername   = savedUser || '';
+      AppState.role     = savedRole || 'ROLE_ADMIN';
       AppState.username = savedUser || '';
     }
     history.replaceState({}, '', '/');
     if (sessionToken) {
+      // Mostra a aba do gestor (remove display:none)
+      _mostrarTabGestor();
+      // Ativa a aba e o painel do gestor
       document.querySelectorAll('.nav__tab').forEach(t => t.classList.remove('nav__tab--active'));
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('panel--active'));
       const tabGestor = document.querySelector('[data-panel="manager"]');
-      if (tabGestor) tabGestor.classList.add('nav__tab--active');
+      if (tabGestor) {
+        tabGestor.style.display = '';   // garante visível
+        tabGestor.classList.add('nav__tab--active');
+      }
       const panelGestor = document.getElementById('panel-manager');
       if (panelGestor) panelGestor.classList.add('panel--active');
       Manager.showDashboard();
