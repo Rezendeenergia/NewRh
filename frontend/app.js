@@ -1707,10 +1707,14 @@ document.querySelectorAll('.subtab').forEach(tab => {
     document.querySelectorAll('.subtab-panel').forEach(p => p.classList.remove('subtab-panel--active'));
     tab.classList.add('subtab--active');
     document.getElementById('subtab-' + tab.dataset.subtab)?.classList.add('subtab-panel--active');
-    if (tab.dataset.subtab === 'job-list')     Manager.loadJobList();
-    if (tab.dataset.subtab === 'applications') Manager.loadApplications();
-    if (tab.dataset.subtab === 'charts')       Manager.loadCharts();
-    if (tab.dataset.subtab === 'audit')        Manager.loadAudit(1);
+    if (tab.dataset.subtab === 'job-list')       Manager.loadJobList();
+    if (tab.dataset.subtab === 'applications')  Manager.loadApplications();
+    if (tab.dataset.subtab === 'charts')        Manager.loadCharts();
+    if (tab.dataset.subtab === 'audit')         Manager.loadAudit(1);
+    if (tab.dataset.subtab === 'funil')         Manager.loadFunil();
+    if (tab.dataset.subtab === 'headcount')     Manager.loadHeadcount();
+    if (tab.dataset.subtab === 'banco-talentos') Manager.loadBancoTalentos();
+    if (tab.dataset.subtab === 'solicitacoes')  Solicitacoes.loadLista();
   });
 });
 
