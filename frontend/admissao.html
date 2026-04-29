@@ -291,16 +291,47 @@ const Adm = {
     const docsHtml   = e.documentos.length > 0 ? `
       <div class="docs-list">
         ${e.documentos.map(d => `
-          <div class="doc-item">
-            <span>📄</span>
-            <span class="doc-item__name">${d.nome}</span>
-            <span class="pill pill--${d.status}" style="font-size:.68rem;">${STATUS_LABEL[d.status]||d.status}</span>
-            ${d.sharepointUrl ? `<a href="${d.sharepointUrl}" target="_blank" style="color:var(--fire);font-size:.75rem;text-decoration:none;">SP ↗</a>` : ''}
-            ${isAtiva && d.status === 'PENDENTE' ? `
-              <button class="btn btn--ghost btn--small" onclick="Adm.revisarDoc(${processoId},${e.id},${d.id},'APROVADO')">✅</button>
-              <button class="btn btn--ghost btn--small" onclick="Adm.revisarDoc(${processoId},${e.id},${d.id},'REENVIAR')">🔄</button>
-              <button class="btn btn--ghost btn--small" onclick="Adm.revisarDoc(${processoId},${e.id},${d.id},'REPROVADO')">❌</button>
-            ` : ''}
+          <div style="flex-direction:column;align-items:stretch;" class="doc-item">
+            <div style="display:flex;align-items:center;gap:6px;width:100%;">
+              <span>📄</span>
+              <span class="doc-item__name" style="flex:1;min-width:0;">${d.nome}${d.versao>1?`<span style="font-size:10px;background:rgba(91,141,239,.2);color:#5B8DEF;border-radius:4px;padding:1px 5px;margin-left:4px;">v${d.versao}</span>`:''}</span>
+              <span class="pill pill--${d.status}" style="font-size:.68rem;flex-shrink:0;">${STATUS_LABEL[d.status]||d.status}</span>
+              ${d.sharepointUrl ? `<a href="${d.sharepointUrl}" target="_blank" style="color:var(--fire);font-size:.75rem;text-decoration:none;flex-shrink:0;">SP ↗</a>` : '<span style="color:#5A6478;font-size:.7rem;flex-shrink:0;">SP...</span>'}
+              ${isAtiva && d.status === 'PENDENTE' ? `
+                <button class="btn btn--ghost btn--small" onclick="Adm.revisarDoc(${processoId},${e.id},${d.id},'APROVADO')" title="Aprovar">✅</button>
+                <button class="btn btn--ghost btn--small" onclick="Adm.revisarDoc(${processoId},${e.id},${d.id},'REENVIAR')" title="Pedir reenvio">🔄</button>
+                <button class="btn btn--ghost btn--small" onclick="Adm.revisarDoc(${processoId},${e.id},${d.id},'REPROVADO')" title="Reprovar">❌</button>
+              ` : ''}
+              <button onclick="Adm.toggleDocAcoes(${d.id})"
+                      title="Comentar / Substituir arquivo"
+                      style="background:none;border:1px solid rgba(255,255,255,.12);color:#9AA3B2;
+                             border-radius:5px;padding:2px 7px;font-size:11px;cursor:pointer;
+                             flex-shrink:0;margin-left:auto;">✏️</button>
+            </div>
+            <div id="doc-acoes-${d.id}" style="display:none;margin-top:8px;padding:10px;
+                 background:rgba(255,255,255,.03);border-radius:8px;border:1px solid rgba(255,255,255,.07);">
+              <p style="margin:0 0 6px;font-size:11px;color:#9AA3B2;font-weight:700;text-transform:uppercase;">🔒 Uso Interno</p>
+              <textarea id="comentario-${d.id}" rows="2"
+                        placeholder="Comentário interno (não enviado ao candidato)..."
+                        style="width:100%;background:rgba(91,141,239,.05);border:1px solid rgba(91,141,239,.2);
+                               color:#fff;border-radius:6px;padding:8px;font-size:12px;resize:none;
+                               font-family:inherit;box-sizing:border-box;margin-bottom:8px;">${d.comentarioInterno||''}</textarea>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                <button onclick="Adm.salvarComentario(${d.id},${e.id})"
+                        style="background:rgba(91,141,239,.15);border:1px solid rgba(91,141,239,.3);color:#5B8DEF;
+                               border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">
+                  💾 Salvar
+                </button>
+                <label style="background:rgba(255,82,82,.1);border:1px solid rgba(255,82,82,.25);color:#FF5252;
+                              border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">
+                  🔄 Substituir Arquivo
+                  <input type="file" accept="*/*" style="display:none"
+                         onchange="Adm.substituirDoc(${d.id},${e.id},this)">
+                </label>
+                <span id="acao-saved-${d.id}" style="display:none;color:#2ECC71;font-size:11px;">✅ Salvo!</span>
+              </div>
+              ${d.comentarioInterno?`<p style="margin:6px 0 0;font-size:11px;color:#5B8DEF;font-style:italic;">💬 ${d.comentarioInterno}</p>`:''}
+            </div>
           </div>`).join('')}
       </div>` : '';
 
@@ -436,6 +467,85 @@ const Adm = {
   },
 
   closeModal() { document.getElementById('action-modal').style.display = 'none'; },
+
+  _bancoData: [],
+
+  async toggleBancoTalentos() {
+    const overlay = document.getElementById('banco-talentos-overlay');
+    if (!overlay) return;
+    const visible = overlay.style.display !== 'none';
+    if (visible) { overlay.style.display = 'none'; return; }
+    overlay.style.display = 'flex';
+    await this._loadBancoTalentos();
+  },
+
+  async _loadBancoTalentos() {
+    const lista = document.getElementById('banco-lista');
+    lista.innerHTML = '<p style="color:#9AA3B2;text-align:center;padding:32px;">Carregando...</p>';
+    try {
+      const r = await fetch('/api/processos/banco-talentos', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      this._bancoData = await r.json();
+      this._renderBanco(this._bancoData);
+    } catch(e) {
+      lista.innerHTML = `<p style="color:#FF5252;text-align:center;">${e.message}</p>`;
+    }
+  },
+
+  filtrarBanco(q) {
+    if (!q) { this._renderBanco(this._bancoData); return; }
+    const ql = q.toLowerCase();
+    this._renderBanco(this._bancoData.filter(c =>
+      c.nome.toLowerCase().includes(ql) ||
+      c.vaga.toLowerCase().includes(ql) ||
+      (c.nrs || '').toLowerCase().includes(ql) ||
+      (c.email || '').toLowerCase().includes(ql)
+    ));
+  },
+
+  _renderBanco(items) {
+    const lista = document.getElementById('banco-lista');
+    if (!items.length) {
+      lista.innerHTML = '<p style="color:#5A6478;text-align:center;padding:40px;">Nenhum candidato no banco de talentos ainda.</p>';
+      return;
+    }
+    lista.innerHTML = items.map(c => `
+      <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);
+                  border-radius:12px;padding:16px;margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+          <div>
+            <p style="margin:0 0 2px;font-size:16px;font-weight:800;color:#fff;">${c.nome}</p>
+            <p style="margin:0;font-size:12px;color:#9AA3B2;">📍 ${c.vaga} · ${c.local} · Cancelado em ${c.dataCancelamento}</p>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            ${c.curriculo ? `<a href="${c.downloadCurriculoUrl}" target="_blank"
+                style="background:rgba(255,106,0,.1);border:1px solid rgba(255,106,0,.25);color:#FF6A00;
+                       border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;text-decoration:none;">
+              📄 Currículo
+            </a>` : ''}
+            <a href="mailto:${c.email}"
+               style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#9AA3B2;
+                      border-radius:6px;padding:5px 12px;font-size:12px;text-decoration:none;">
+              ✉️ ${c.email}
+            </a>
+            ${c.telefone ? `<a href="https://wa.me/55${c.telefone.replace(/\D/g,'')}" target="_blank"
+               style="background:rgba(37,211,102,.08);border:1px solid rgba(37,211,102,.2);color:#25D366;
+                      border-radius:6px;padding:5px 12px;font-size:12px;text-decoration:none;">
+              📱 WhatsApp
+            </a>` : ''}
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">
+          ${c.formacao ? `<span style="background:rgba(255,255,255,.05);border-radius:4px;padding:2px 8px;font-size:11px;color:#A8A8B8;">🎓 ${c.formacao}</span>` : ''}
+          ${c.experiencia ? `<span style="background:rgba(255,255,255,.05);border-radius:4px;padding:2px 8px;font-size:11px;color:#A8A8B8;">⏱ ${c.experiencia}</span>` : ''}
+          ${c.nrs ? `<span style="background:rgba(255,106,0,.06);border-radius:4px;padding:2px 8px;font-size:11px;color:#FF8C2A;">📜 ${c.nrs}</span>` : ''}
+          ${c.cnh ? `<span style="background:rgba(255,255,255,.05);border-radius:4px;padding:2px 8px;font-size:11px;color:#A8A8B8;">🪪 CNH: ${c.cnh}</span>` : ''}
+        </div>
+        ${c.motivoCancelamento ? `<p style="margin:8px 0 0;font-size:11px;color:#FF5252;">❌ ${c.motivoCancelamento}</p>` : ''}
+        ${c.notas ? `<p style="margin:6px 0 0;font-size:11px;color:#5B8DEF;font-style:italic;">🔒 ${c.notas}</p>` : ''}
+      </div>`).join('');
+  },
 
   toggleDocAcoes(docId) {
     const el = document.getElementById(`doc-acoes-${docId}`);
