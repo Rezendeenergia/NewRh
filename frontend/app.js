@@ -854,11 +854,22 @@ const Manager = {
     if (!body) return;
     body.innerHTML = '<p style="color:var(--ink-3);text-align:center;padding:32px;">Carregando...</p>';
     try {
-      const items = await request('/api/processos/banco-talentos');
-      this._bancoData = items;
-      this._renderBanco(items, body);
+      const resp = await fetch('/api/processos/banco-talentos', {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + sessionToken,
+        }
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({message: `HTTP ${resp.status}`}));
+        throw new Error(err.message || `Erro ${resp.status}`);
+      }
+      const items = await resp.json();
+      this._bancoData = Array.isArray(items) ? items : [];
+      this._renderBanco(this._bancoData, body);
     } catch(e) {
-      body.innerHTML = `<p style="color:#FF5252;text-align:center;">${e.message}</p>`;
+      body.innerHTML = `<p style="color:#FF5252;text-align:center;padding:32px;">❌ Erro: ${e.message}</p>`;
+      console.error('Banco de Talentos error:', e);
     }
   },
 
