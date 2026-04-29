@@ -437,6 +437,44 @@ const Adm = {
 
   closeModal() { document.getElementById('action-modal').style.display = 'none'; },
 
+  toggleDocAcoes(docId) {
+    const el = document.getElementById(`doc-acoes-${docId}`);
+    if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  },
+
+  async salvarComentario(docId, etapaId) {
+    const txt   = document.getElementById(`comentario-${docId}`)?.value || '';
+    const saved = document.getElementById(`acao-saved-${docId}`);
+    try {
+      await req(`/api/processos/${Adm.processoAtual}/etapas/${etapaId}/documentos/${docId}/comentar`, {
+        method: 'PATCH',
+        body: JSON.stringify({ comentario: txt }),
+      });
+      if (saved) { saved.style.display = 'inline'; setTimeout(() => saved.style.display = 'none', 2000); }
+    } catch(e) { alert('Erro: ' + e.message); }
+  },
+
+  async substituirDoc(docId, etapaId, input) {
+    const file = input.files[0];
+    if (!file) return;
+    const motivo = prompt('Motivo da substituição (ex: documento fora de conformidade):') || 'Substituição interna';
+    if (!confirm(`Substituir "${file.name}"?\nMotivo: ${motivo}\n\nO candidato NÃO será notificado.`)) {
+      input.value = ''; return;
+    }
+    const fd = new FormData();
+    fd.append('arquivo', file);
+    fd.append('motivo', motivo);
+    try {
+      const r = await fetch(`/api/processos/${Adm.processoAtual}/etapas/${etapaId}/documentos/${docId}/substituir`, {
+        method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd,
+      });
+      if (!r.ok) throw new Error((await r.json()).message);
+      alert('✅ Documento substituído! O arquivo antigo foi removido do SharePoint.');
+      await Adm.loadProcesso(Adm.processoAtual);
+    } catch(e) { alert('Erro ao substituir: ' + e.message); }
+    input.value = '';
+  },
+
   EMAILS_VER_SALARIO: [
     "gabrielle.lira@rezendeenergia.com.br",
     "andreiaazevedo@rezendeenergia.com.br",
