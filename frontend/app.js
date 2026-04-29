@@ -30,12 +30,10 @@ function _esconderTabGestor() {
 }
 
 function _verificarTabGestor() {
-  // Verifica email salvo no localStorage
+  // Só mostra a aba se o email for autorizado E houver token válido
   const email = (localStorage.getItem('rz_email') || '').toLowerCase();
   const token = localStorage.getItem('rz_token');
   if (token && email && EMAILS_GESTOR.includes(email)) {
-    _mostrarTabGestor();
-  } else if (localStorage.getItem('rz_gestor_autorizado') === '1' && token) {
     _mostrarTabGestor();
   } else {
     _esconderTabGestor();
@@ -854,10 +852,12 @@ const Manager = {
     if (!body) return;
     body.innerHTML = '<p style="color:var(--ink-3);text-align:center;padding:32px;">Carregando...</p>';
     try {
+      const tkn = sessionToken || localStorage.getItem('rz_token');
+      if (!tkn) { body.innerHTML = '<p style="color:#FF5252;text-align:center;padding:32px;">❌ Faça login para ver o banco de talentos.</p>'; return; }
       const resp = await fetch('/api/processos/banco-talentos', {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + sessionToken,
+          'Authorization': 'Bearer ' + tkn,
         }
       });
       if (!resp.ok) {
