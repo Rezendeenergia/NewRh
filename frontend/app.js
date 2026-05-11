@@ -926,6 +926,159 @@ const Manager = {
       </div>`).join('');
   },
 
+  // ── Colaboradores Admitidos ─────────────────────────────────────
+  _admitidosData: [],
+
+  async loadColaboradoresAdmitidos() {
+    const body  = document.getElementById('admitidos-body');
+    const kpis  = document.getElementById('admitidos-kpis');
+    const badge = document.getElementById('admitidos-count-badge');
+    if (!body) return;
+
+    body.innerHTML = `<div style="text-align:center;padding:40px;color:#5A6478;">
+      <div style="font-size:36px;margin-bottom:12px;">⏳</div>
+      <p>Carregando colaboradores admitidos...</p></div>`;
+
+    try {
+      const resp = await request('/api/processos/colaboradores-admitidos');
+      this._admitidosData = resp || [];
+
+      if (badge) badge.textContent = `${this._admitidosData.length} colaborador${this._admitidosData.length !== 1 ? 'es' : ''}`;
+
+      if (kpis && this._admitidosData.length) {
+        const diasList = this._admitidosData.filter(c => c.diasTotal !== null).map(c => c.diasTotal);
+        const mediaDias = diasList.length ? Math.round(diasList.reduce((a,b)=>a+b,0)/diasList.length) : '—';
+        const menorDias = diasList.length ? Math.min(...diasList) : '—';
+        const maiorDias = diasList.length ? Math.max(...diasList) : '—';
+        kpis.innerHTML = [
+          ['🎓', 'Total Admitidos', this._admitidosData.length, '#2ECC71'],
+          ['📅', 'Tempo Médio (dias)', mediaDias, '#FF8C2A'],
+          ['⚡', 'Mais Rápido (dias)', menorDias, '#60A5FA'],
+          ['🐢', 'Mais Longo (dias)', maiorDias, '#9AA3B2'],
+        ].map(([icon, label, val, cor]) => `
+          <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;text-align:center;">
+            <div style="font-size:24px;margin-bottom:4px;">${icon}</div>
+            <div style="font-size:22px;font-weight:900;color:${cor};">${val}</div>
+            <div style="font-size:11px;color:#5A6478;margin-top:2px;text-transform:uppercase;letter-spacing:1px;">${label}</div>
+          </div>`).join('');
+      }
+
+      this._renderAdmitidos(this._admitidosData, body);
+    } catch(e) {
+      body.innerHTML = `<p style="color:#FF5252;text-align:center;padding:32px;">Erro ao carregar: ${e.message}</p>`;
+    }
+  },
+
+  filtrarAdmitidos(q) {
+    const body = document.getElementById('admitidos-body');
+    if (!body) return;
+    if (!q) { this._renderAdmitidos(this._admitidosData, body); return; }
+    const ql = q.toLowerCase();
+    this._renderAdmitidos(this._admitidosData.filter(c =>
+      c.nome.toLowerCase().includes(ql) ||
+      c.cargo.toLowerCase().includes(ql) ||
+      (c.local||'').toLowerCase().includes(ql)
+    ), body);
+  },
+
+  _renderAdmitidos(items, body) {
+    const DEPT_COLORS = { RH:'#60A5FA', DP:'#A78BFA', DP_EXTERNO:'#F472B6', SESMT:'#34D399', TI:'#FBBF24' };
+    const DEPT_LABELS = { RH:'RH', DP:'DP', DP_EXTERNO:'DP Ext.', SESMT:'SESMT', TI:'TI' };
+
+    if (!items || !items.length) {
+      body.innerHTML = `<div style="text-align:center;padding:60px;color:#5A6478;">
+        <div style="font-size:48px;margin-bottom:16px;">🎓</div>
+        <p style="font-size:16px;font-weight:600;color:#9AA3B2;">Nenhum colaborador admitido ainda.</p>
+        <p style="font-size:13px;margin-top:6px;">Processos concluídos aparecerão aqui.</p>
+      </div>`;
+      return;
+    }
+
+    function fmtData(iso) {
+      if (!iso) return '—';
+      return new Date(iso).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
+    }
+
+    const maxDias = Math.max(...items.map(c => c.diasTotal || 0), 1);
+
+    body.innerHTML = items.map(c => {
+      const etapasHtml = (c.etapasTimeline || []).map(e => {
+        const cor = e.status === 'APROVADO' ? '#2ECC71' : e.status === 'NAO_APLICAVEL' ? '#5A6478' : '#FFB830';
+        const dur = (e.duracaoDias !== null && e.duracaoDias !== undefined) ? `${e.duracaoDias}d` : '';
+        return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">
+          <div style="width:8px;height:8px;border-radius:50%;background:${cor};flex-shrink:0;"></div>
+          <span style="font-size:11px;color:#9AA3B2;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e.nome}</span>
+          ${dur ? `<span style="font-size:10px;color:${cor};font-weight:700;">${dur}</span>` : ''}
+        </div>`;
+      }).join('');
+
+      const deptBarsHtml = Object.entries(c.deptTempos || {}).map(([dept, dias]) => {
+        const cor = DEPT_COLORS[dept] || '#9AA3B2';
+        const lbl = DEPT_LABELS[dept] || dept;
+        const pct = Math.min(100, Math.round((dias / (c.diasTotal || 1)) * 100));
+        return `<div style="margin-bottom:6px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:2px;">
+            <span style="font-size:10px;color:${cor};font-weight:700;">${lbl}</span>
+            <span style="font-size:10px;color:#5A6478;">${dias}d</span>
+          </div>
+          <div style="background:rgba(255,255,255,.06);border-radius:4px;height:4px;overflow:hidden;">
+            <div style="background:${cor};width:${pct}%;height:100%;border-radius:4px;"></div>
+          </div>
+        </div>`;
+      }).join('');
+
+      const progPct = Math.min(100, Math.round(((c.diasTotal||0) / maxDias) * 100));
+      const diasCor = c.diasTotal <= 15 ? '#2ECC71' : c.diasTotal <= 30 ? '#FFB830' : '#FF6A00';
+
+      return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;margin-bottom:16px;overflow:hidden;">
+        <div style="background:rgba(46,204,113,.04);border-bottom:1px solid rgba(255,255,255,.05);padding:16px 20px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+              <span style="background:#0D2E1A;border:1px solid #2ECC71;color:#2ECC71;font-size:10px;font-weight:700;border-radius:20px;padding:2px 10px;">✅ ADMITIDO</span>
+              ${c.sharepointUrl ? `<a href="${c.sharepointUrl}" target="_blank" style="background:rgba(0,120,212,.1);border:1px solid rgba(0,120,212,.3);color:#60A5FA;font-size:10px;font-weight:700;border-radius:20px;padding:2px 10px;text-decoration:none;">📁 SharePoint</a>` : ''}
+            </div>
+            <p style="margin:0 0 2px;font-size:17px;font-weight:800;color:#fff;">${c.nome}</p>
+            <p style="margin:0;font-size:12px;color:#9AA3B2;">🔧 ${c.cargo} · 📍 ${c.local}</p>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:28px;font-weight:900;color:${diasCor};">${c.diasTotal !== null ? c.diasTotal : '—'}</div>
+            <div style="font-size:10px;color:#5A6478;text-transform:uppercase;letter-spacing:1px;">dias no processo</div>
+          </div>
+        </div>
+        <div style="padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.05);">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:4px;">
+            <div>
+              <span style="font-size:10px;color:#5A6478;text-transform:uppercase;letter-spacing:1px;">Candidatou-se</span>
+              <p style="margin:2px 0 0;font-size:13px;font-weight:700;color:#F4F5F7;">${fmtData(c.dtCandidatura)}</p>
+            </div>
+            <span style="font-size:18px;color:#FF6A00;align-self:center;">→</span>
+            <div style="text-align:right;">
+              <span style="font-size:10px;color:#5A6478;text-transform:uppercase;letter-spacing:1px;">Admitido em</span>
+              <p style="margin:2px 0 0;font-size:13px;font-weight:700;color:#2ECC71;">${fmtData(c.dtAdmitido)}</p>
+            </div>
+          </div>
+          <div style="background:rgba(255,255,255,.06);border-radius:6px;height:6px;overflow:hidden;margin-top:8px;">
+            <div style="background:linear-gradient(90deg,#2ECC71,#FF6A00);width:${progPct}%;height:100%;border-radius:6px;"></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
+          <div style="padding:14px 20px;border-right:1px solid rgba(255,255,255,.05);">
+            <p style="margin:0 0 8px;font-size:10px;color:#5A6478;text-transform:uppercase;letter-spacing:1px;font-weight:700;">Etapas do Processo</p>
+            <div style="max-height:180px;overflow-y:auto;padding-right:4px;">${etapasHtml || '<p style="color:#5A6478;font-size:12px;">—</p>'}</div>
+          </div>
+          <div style="padding:14px 20px;">
+            <p style="margin:0 0 8px;font-size:10px;color:#5A6478;text-transform:uppercase;letter-spacing:1px;font-weight:700;">Tempo por Departamento</p>
+            ${deptBarsHtml || '<p style="color:#5A6478;font-size:12px;">—</p>'}
+          </div>
+        </div>
+        <div style="padding:10px 20px;background:rgba(255,255,255,.02);border-top:1px solid rgba(255,255,255,.05);display:flex;gap:8px;flex-wrap:wrap;">
+          ${c.email ? `<a href="mailto:${c.email}" style="font-size:11px;color:#9AA3B2;text-decoration:none;background:rgba(255,255,255,.04);border-radius:6px;padding:4px 10px;">✉️ ${c.email}</a>` : ''}
+          ${c.telefone ? `<a href="https://wa.me/55${c.telefone.replace(/\D/g,'')}" target="_blank" style="font-size:11px;color:#25D366;text-decoration:none;background:rgba(37,211,102,.06);border-radius:6px;padding:4px 10px;">📱 ${c.telefone}</a>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  },
+
   async loadHeadcount() {
     try {
       const d = await request('/api/colaboradores/headcount');
@@ -1715,6 +1868,7 @@ document.querySelectorAll('.subtab').forEach(tab => {
     if (tab.dataset.subtab === 'headcount')     Manager.loadHeadcount();
     if (tab.dataset.subtab === 'banco-talentos') Manager.loadBancoTalentos();
     if (tab.dataset.subtab === 'solicitacoes')  Solicitacoes.loadLista();
+    if (tab.dataset.subtab === 'colaboradores-admitidos') Manager.loadColaboradoresAdmitidos();
   });
 });
 
