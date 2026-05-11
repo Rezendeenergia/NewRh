@@ -392,6 +392,7 @@ def atualizar_etapa(processo_id, etapa_id):
                   entity_id=processo_id,
                   detail=f"{etapa_nome}: {old_status} → {novo_status}")
 
+        # ── Notificação ao candidato ──────────────────────────────────────────
         if novo_status in ("APROVADO", "REPROVADO", "REENVIAR"):
             try:
                 from email_service import notify_etapa_candidato
@@ -403,7 +404,43 @@ def atualizar_etapa(processo_id, etapa_id):
                 j = _Job(); j.position = cand_cargo; c.job = j
                 notify_etapa_candidato(c, etapa_nome, novo_status, nota_texto)
             except Exception as ex:
-                print(f"[EMAIL] Erro: {ex}")
+                print(f"[EMAIL] Erro (candidato): {ex}")
+
+        # ── Notificação para departamentos internos (RH, DP, SESMT, TI) ──────
+        try:
+            from email_service import (
+                notify_depts_etapa_atualizada,
+                notify_depts_admissao_concluida,
+            )
+            # Reconstói objeto leve para o email_service
+            class _CandDept:
+                pass
+            class _JobDept:
+                pass
+            cd = _CandDept()
+            cd.full_name = cand_nome
+            cd.email     = cand_email
+            jd           = _JobDept()
+            jd.position  = cand_cargo
+            cd.job       = jd
+
+            # Notifica depts sobre a mudança de etapa
+            notify_depts_etapa_atualizada(
+                candidatura   = cd,
+                etapa_nome    = etapa_nome,
+                departamento  = e.departamento,
+                status_anterior = old_status,
+                status_novo   = novo_status,
+                responsavel   = request.username,
+                processo_id   = processo_id,
+            )
+
+            # Se o processo foi concluído (última etapa aprovada), notifica todos
+            if p.status == "CONCLUIDO":
+                notify_depts_admissao_concluida(cd, processo_id, request.username)
+
+        except Exception as ex:
+            print(f"[EMAIL] Erro (departamentos): {ex}")
 
         if not sp_url:
             try:
@@ -715,6 +752,99 @@ def download_doc(processo_id, etapa_id, doc_id):
         if not doc or not doc.arquivo or not os.path.exists(doc.arquivo):
             return jsonify({"message": "Arquivo não encontrado"}), 404
         return send_file(doc.arquivo, as_attachment=True, download_name=doc.nome)
+    finally:
+        db.close()
+
+
+# ── Colaboradores Admitidos ───────────────────────────────────
+
+@bp.get("/colaboradores-admitidos")
+@require_auth
+def colaboradores_admitidos():
+    """
+    Lista colaboradores cujo processo de admissão foi CONCLUÍDO.
+    Inclui o tempo total desde a candidatura até a conclusão,
+    além do tempo em cada etapa.
+    """
+    import sqlalchemy
+    db = get_db()
+    try:
+        processos = (
+            db.query(models.ProcessoAdmissao)
+            .filter(models.ProcessoAdmissao.status == "CONCLUIDO")
+            .options(
+                joinedload(models.ProcessoAdmissao.candidatura)
+                    .joinedload(models.Candidatura.job),
+                selectinload(models.ProcessoAdmissao.etapas),
+            )
+            .order_by(models.ProcessoAdmissao.updated_at.desc())
+            .all()
+        )
+
+        items = []
+        for p in processos:
+            try:
+                c = p.candidatura
+                if not c:
+                    continue
+                j = getattr(c, "job", None)
+
+                # Data de candidatura (applied_at) e data de conclusão (updated_at do processo)
+                dt_candidatura = getattr(c, "applied_at", None) or p.created_at
+                dt_admitido    = p.updated_at  # última atualização = conclusão
+
+                # Tempo total em dias
+                if dt_candidatura and dt_admitido:
+                    delta = dt_admitido - dt_candidatura
+                    dias_total = max(0, delta.days)
+                else:
+                    dias_total = None
+
+                # Detalhamento por etapa
+                etapas_timeline = []
+                for e in p.etapas:
+                    dur_dias = None
+                    if e.iniciado_em and e.concluido_em:
+                        d = e.concluido_em - e.iniciado_em
+                        dur_dias = max(0, d.days)
+                    etapas_timeline.append({
+                        "nome":        e.nome,
+                        "departamento": e.departamento,
+                        "status":       e.status,
+                        "iniciadoEm":  e.iniciado_em.isoformat() if e.iniciado_em else None,
+                        "concluidoEm": e.concluido_em.isoformat() if e.concluido_em else None,
+                        "duracaoDias": dur_dias,
+                    })
+
+                # Progresso por departamento: quantos dias cada dept usou
+                dept_tempos = {}
+                for e in p.etapas:
+                    if e.iniciado_em and e.concluido_em:
+                        d = e.concluido_em - e.iniciado_em
+                        dep = e.departamento
+                        dept_tempos[dep] = dept_tempos.get(dep, 0) + max(0, d.days)
+
+                items.append({
+                    "processoId":      p.id,
+                    "candidaturaId":   c.id,
+                    "nome":            c.full_name or "",
+                    "cpf":             c.cpf or "",
+                    "email":           c.email or "",
+                    "telefone":        c.phone or "",
+                    "cargo":           j.position if j else "",
+                    "local":           j.location if j else "",
+                    "dtCandidatura":   dt_candidatura.isoformat() if dt_candidatura else None,
+                    "dtAdmitido":      dt_admitido.isoformat() if dt_admitido else None,
+                    "diasTotal":       dias_total,
+                    "sharepointUrl":   p.sharepoint_url or "",
+                    "etapasTimeline":  etapas_timeline,
+                    "deptTempos":      dept_tempos,
+                })
+            except Exception as ex:
+                print(f"[ADMITIDOS] Erro ao processar processo {p.id}: {ex}")
+                continue
+
+        return jsonify(items)
     finally:
         db.close()
 
