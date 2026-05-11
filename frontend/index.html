@@ -529,6 +529,7 @@
           <a href="/admissao" class="subtab" style="text-decoration:none;">🏢 Admissão</a>
         <a href="/admissoes" class="subtab" style="text-decoration:none;">🏗 Admissões</a>
         <button class="subtab" data-subtab="banco-talentos">🏅 Banco de Talentos</button>
+        <button class="subtab" data-subtab="colaboradores-admitidos">🎓 Colaboradores Admitidos</button>
       </div>
 
       <!-- Funil de Candidatos -->
@@ -599,6 +600,38 @@
           </div>
           <div class="card__body" id="banco-talentos-body">
             <p style="color:var(--ink-3);text-align:center;padding:32px;">Carregando...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Colaboradores Admitidos -->
+      <div class="subtab-panel" id="subtab-colaboradores-admitidos">
+        <div class="card">
+          <div class="card__header" style="flex-wrap:wrap;gap:12px;">
+            <span class="card__title">🎓 Colaboradores Admitidos</span>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <input id="admitidos-search" type="text" placeholder="Buscar nome ou cargo..."
+                     oninput="Manager.filtrarAdmitidos(this.value)"
+                     style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+                            color:#fff;border-radius:8px;padding:7px 14px;font-size:13px;width:210px;">
+              <span id="admitidos-count-badge"
+                    style="background:rgba(255,106,0,.15);border:1px solid rgba(255,106,0,.3);
+                           color:#FF8C2A;font-size:12px;font-weight:700;border-radius:20px;
+                           padding:4px 12px;white-space:nowrap;">0 colaboradores</span>
+            </div>
+          </div>
+
+          <!-- KPIs rápidos -->
+          <div id="admitidos-kpis"
+               style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+                      gap:12px;padding:16px 20px 0;">
+          </div>
+
+          <div class="card__body" id="admitidos-body" style="padding:20px;">
+            <div style="text-align:center;padding:40px;color:var(--ink-3);">
+              <div style="font-size:40px;margin-bottom:12px;">⏳</div>
+              <p>Carregando colaboradores...</p>
+            </div>
           </div>
         </div>
       </div>
