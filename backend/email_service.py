@@ -485,6 +485,7 @@ def notify_etapa_candidato(candidatura, etapa_nome: str, status: str, nota: str 
 # Destinatários padrão de notificações
 EMAIL_TI    = "ti@rezendeenergia.com.br"
 EMAIL_RH    = "rh@rezendeenergia.com.br"
+EMAIL_DP    = "RezendeDP@rezendeenergia.com.br"
 EMAIL_SESMT = "RezendeSESMT@rezendeenergia.com.br"
 EMAIL_RH_CC = [                                    # CC nas notificações ao gestor
     "RezendeRH@rezendeenergia.com.br",
@@ -492,6 +493,18 @@ EMAIL_RH_CC = [                                    # CC nas notificações ao ge
     "ti@rezendeenergia.com.br",
     "rh@rezendeenergia.com.br",                    # ← adicionado
 ]
+
+# Mapeamento: departamento responsável → emails que devem ser notificados
+DEPT_EMAILS = {
+    "RH":         [EMAIL_RH],
+    "DP":         [EMAIL_DP],
+    "DP_EXTERNO": [EMAIL_DP],
+    "SESMT":      [EMAIL_SESMT],
+    "TI":         [EMAIL_TI],
+}
+
+# Sempre enviamos cópia para RH + DP independentemente da etapa
+ALWAYS_CC = [EMAIL_RH, EMAIL_DP]
 
 
 def notify_dept_sesmt(candidatura, etapa_nome: str):
@@ -694,3 +707,249 @@ def notify_solicitacao_gestor(sol, base_url: str):
 
     html = _base_template(subject, content)
     send_email(sol.solicitante_email, subject, html, cc=EMAIL_RH_CC)
+
+
+# ── Notificação de mudança de etapa para departamentos internos ──────────────
+
+def build_dept_etapa_email(
+    candidato_nome: str,
+    candidato_cargo: str,
+    etapa_nome: str,
+    departamento: str,
+    status_anterior: str,
+    status_novo: str,
+    responsavel: str,
+    processo_id: int,
+) -> tuple[str, str]:
+    """
+    Email enviado para os departamentos (RH, DP, SESMT, TI) quando uma etapa
+    muda de status no processo de admissão.
+    """
+    DEPT_LABELS = {
+        "RH": "Recursos Humanos",
+        "DP": "Departamento Pessoal",
+        "DP_EXTERNO": "DP Externo",
+        "SESMT": "SESMT",
+        "TI": "TI",
+    }
+
+    STATUS_INFO = {
+        "APROVADO":     ("✅", "#2ECC71", "Aprovada",            "A etapa foi aprovada e o processo avançou."),
+        "REPROVADO":    ("❌", "#FF5252", "Reprovada/Encerrada", "O processo foi encerrado nesta etapa."),
+        "REENVIAR":     ("🔄", "#FFB830", "Reenvio Solicitado",  "Foi solicitado reenvio de documentação."),
+        "EM_ANDAMENTO": ("⏳", "#60A5FA", "Em Andamento",        "A etapa foi iniciada e está aguardando ação."),
+        "NAO_APLICAVEL":("⏭️", "#9AA3B2", "Não Aplicável",      "Esta etapa foi marcada como não aplicável."),
+    }
+
+    icone, cor, label_status, descricao = STATUS_INFO.get(
+        status_novo, ("ℹ️", BRAND_COLOR, status_novo, "Houve uma atualização no processo.")
+    )
+
+    dept_label = DEPT_LABELS.get(departamento, departamento)
+    subject = f"{icone} Admissão: {etapa_nome} → {label_status} | {candidato_nome}"
+
+    content = f"""
+<h2 style="margin:0 0 6px;font-size:22px;font-weight:800;color:#fff;">
+  Atualização no Processo de Admissão
+</h2>
+<p style="margin:0 0 20px;font-size:13px;color:rgba(255,106,0,0.8);
+          text-transform:uppercase;letter-spacing:2px;font-weight:600;">
+  Notificação Interna — {dept_label}
+</p>
+
+<!-- Badge de status -->
+<div style="text-align:center;margin:0 0 24px;">
+  <div style="display:inline-block;background:rgba(255,255,255,0.04);
+              border:2px solid {cor};border-radius:50px;padding:10px 28px;">
+    <span style="color:{cor};font-weight:800;font-size:16px;">
+      {icone} {label_status}
+    </span>
+  </div>
+</div>
+
+<!-- Card do candidato -->
+<div style="background:rgba(255,106,0,0.06);border:1px solid rgba(255,106,0,0.18);
+            border-left:3px solid {BRAND_COLOR};border-radius:12px;
+            padding:18px 22px;margin-bottom:20px;">
+  <p style="margin:0 0 4px;font-size:11px;color:{BRAND_COLOR};font-weight:700;
+            text-transform:uppercase;letter-spacing:2px;">Candidato</p>
+  <p style="margin:0;font-size:18px;font-weight:800;color:#fff;">{candidato_nome}</p>
+  <p style="margin:4px 0 0;font-size:13px;color:#A8A8B8;">🔧 {candidato_cargo}</p>
+</div>
+
+<!-- Detalhes da etapa -->
+<table cellpadding="0" cellspacing="0" width="100%"
+       style="border-collapse:separate;border-spacing:0 8px;margin-bottom:20px;">
+  <tr>
+    <td style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);
+               border-radius:8px;padding:10px 16px;width:38%;font-size:11px;
+               color:rgba(255,106,0,0.8);font-weight:700;text-transform:uppercase;letter-spacing:1.5px;">
+      Etapa
+    </td>
+    <td style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);
+               border-radius:8px;padding:10px 16px;color:#F4F5F7;font-size:14px;">
+      {etapa_nome}
+    </td>
+  </tr>
+  <tr>
+    <td style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);
+               border-radius:8px;padding:10px 16px;font-size:11px;
+               color:rgba(255,106,0,0.8);font-weight:700;text-transform:uppercase;letter-spacing:1.5px;">
+      Departamento
+    </td>
+    <td style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);
+               border-radius:8px;padding:10px 16px;color:#F4F5F7;font-size:14px;">
+      {dept_label}
+    </td>
+  </tr>
+  <tr>
+    <td style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);
+               border-radius:8px;padding:10px 16px;font-size:11px;
+               color:rgba(255,106,0,0.8);font-weight:700;text-transform:uppercase;letter-spacing:1.5px;">
+      Responsável
+    </td>
+    <td style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);
+               border-radius:8px;padding:10px 16px;color:#F4F5F7;font-size:14px;">
+      {responsavel or "—"}
+    </td>
+  </tr>
+</table>
+
+<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);
+            border-radius:10px;padding:14px 18px;margin-bottom:20px;">
+  <p style="margin:0;color:#A8A8B8;font-size:14px;line-height:1.6;">{descricao}</p>
+</div>
+
+<div style="text-align:center;margin:24px 0 8px;">
+  <a href="https://newrh.onrender.com/admissoes"
+     style="display:inline-block;background:linear-gradient(135deg,#FF8C2A,#FF6A00,#E55A00);
+            color:#000;font-weight:800;font-size:14px;text-decoration:none;
+            padding:12px 32px;border-radius:10px;
+            box-shadow:0 4px 20px rgba(255,106,0,0.35);">
+    🏗 Ver Processo de Admissão
+  </a>
+</div>
+
+<div style="border-top:1px solid rgba(255,255,255,0.06);margin:24px 0 0;"></div>
+<p style="color:#5A6478;font-size:12px;text-align:center;margin:0;">
+  Este é um aviso automático do sistema NewRH · Rezende Energia
+</p>"""
+
+    return subject, _base_template(subject, content)
+
+
+def notify_depts_etapa_atualizada(
+    candidatura,
+    etapa_nome: str,
+    departamento: str,
+    status_anterior: str,
+    status_novo: str,
+    responsavel: str,
+    processo_id: int,
+):
+    """
+    Notifica todos os departamentos relevantes (RH, DP, SESMT, TI) quando
+    uma etapa do processo de admissão é atualizada.
+
+    Estratégia:
+    - O departamento RESPONSÁVEL pela etapa recebe email direto (TO)
+    - RH e DP sempre recebem cópia (CC) — exceto quando já são o TO
+    - SESMT e TI recebem quando são responsáveis pela etapa ou quando
+      o processo conclui (LIBERADO_CAMPO)
+    """
+    try:
+        cand_nome  = getattr(candidatura, "full_name", "—")
+        cand_cargo = (candidatura.job.position if getattr(candidatura, "job", None) else "—")
+
+        subject, html = build_dept_etapa_email(
+            candidato_nome=cand_nome,
+            candidato_cargo=cand_cargo,
+            etapa_nome=etapa_nome,
+            departamento=departamento,
+            status_anterior=status_anterior,
+            status_novo=status_novo,
+            responsavel=responsavel,
+            processo_id=processo_id,
+        )
+
+        # Destinatários primários: emails do departamento responsável pela etapa
+        to_emails = list(DEPT_EMAILS.get(departamento, [EMAIL_RH]))
+
+        # CC: todos os demais (RH, DP, SESMT, TI) que NÃO estão no TO
+        all_dept_emails = [EMAIL_RH, EMAIL_DP, EMAIL_SESMT, EMAIL_TI]
+        cc_emails = [e for e in all_dept_emails if e not in to_emails]
+
+        # Envia para o primeiro TO e passa o resto como CC
+        primary_to = to_emails[0]
+        extra_to_as_cc = to_emails[1:]
+        full_cc = extra_to_as_cc + cc_emails
+
+        ok = send_email(primary_to, subject, html, cc=full_cc if full_cc else None)
+        if ok:
+            print(f"[EMAIL] Depts notificados: etapa '{etapa_nome}' → {status_novo} "
+                  f"| TO={primary_to} CC={full_cc}")
+        return ok
+    except Exception as e:
+        print(f"[EMAIL] Erro ao notificar departamentos: {e}")
+        return False
+
+
+def notify_depts_admissao_concluida(candidatura, processo_id: int, responsavel: str):
+    """
+    Notifica TODOS os departamentos quando o processo é completamente concluído
+    (colaborador admitido / Liberado para Campo).
+    """
+    try:
+        cand_nome  = getattr(candidatura, "full_name", "—")
+        cand_cargo = (candidatura.job.position if getattr(candidatura, "job", None) else "—")
+
+        subject = f"🎉 Colaborador Admitido: {cand_nome} — {cand_cargo}"
+
+        content = f"""
+<h2 style="margin:0 0 6px;font-size:22px;font-weight:800;color:#fff;">
+  🎉 Novo Colaborador Admitido!
+</h2>
+<p style="margin:0 0 20px;font-size:13px;color:rgba(255,106,0,0.8);
+          text-transform:uppercase;letter-spacing:2px;font-weight:600;">
+  Processo de Admissão Concluído
+</p>
+
+<div style="text-align:center;margin:0 0 24px;">
+  <div style="display:inline-block;background:#0D2E1A;border:2px solid #2ECC71;
+              border-radius:50px;padding:12px 32px;">
+    <span style="color:#2ECC71;font-weight:800;font-size:18px;">
+      ✅ Admissão Concluída com Sucesso
+    </span>
+  </div>
+</div>
+
+<div style="background:rgba(255,106,0,0.06);border:1px solid rgba(255,106,0,0.18);
+            border-left:3px solid {BRAND_COLOR};border-radius:12px;
+            padding:18px 22px;margin-bottom:20px;">
+  <p style="margin:0 0 4px;font-size:11px;color:{BRAND_COLOR};font-weight:700;
+            text-transform:uppercase;letter-spacing:2px;">Novo Colaborador</p>
+  <p style="margin:0;font-size:20px;font-weight:800;color:#fff;">{cand_nome}</p>
+  <p style="margin:4px 0 0;font-size:14px;color:#A8A8B8;">🔧 {cand_cargo}</p>
+</div>
+
+<p style="color:#A8A8B8;font-size:14px;line-height:1.7;margin:0 0 20px;">
+  Todas as etapas do processo de admissão foram concluídas com sucesso.
+  O colaborador está liberado para campo e pronto para integração à equipe.
+</p>
+
+<div style="text-align:center;margin:24px 0 8px;">
+  <a href="https://newrh.onrender.com/admissoes"
+     style="display:inline-block;background:linear-gradient(135deg,#FF8C2A,#FF6A00,#E55A00);
+            color:#000;font-weight:800;font-size:14px;text-decoration:none;
+            padding:12px 32px;border-radius:10px;">
+    📋 Ver Colaboradores Admitidos
+  </a>
+</div>"""
+
+        html = _base_template(subject, content)
+        # Todos os departamentos
+        all_emails = [EMAIL_RH, EMAIL_DP, EMAIL_SESMT, EMAIL_TI]
+        send_email(all_emails[0], subject, html, cc=all_emails[1:])
+        print(f"[EMAIL] Admissão concluída notificada para todos os depts: {cand_nome}")
+    except Exception as e:
+        print(f"[EMAIL] Erro ao notificar conclusão: {e}")
