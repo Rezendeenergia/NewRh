@@ -39,6 +39,7 @@ EQUIPE_DP_RH = {
     "kailany.castanha@rezendeenergia.com.br": "ROLE_VIEWER",
     "andreiaazevedo@rezendeenergia.com.br":   "ROLE_VIEWER",
     "davyd.reis@rezendeenergia.com.br":       "ROLE_VIEWER",
+    "jarlisson.souza@rezendeenergia.com.br":  "ROLE_VIEWER",
     "ana.tapajos@rezendeenergia.com.br":      "ROLE_VIEWER",
 }
 
