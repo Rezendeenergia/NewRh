@@ -8,19 +8,38 @@ import audit
 bp = Blueprint("jobs", __name__, url_prefix="/api/jobs")
 
 
+def _parse_colaborador(job):
+    """Extrai nome do colaborador da finalidade quando tipo == Mudança de Função."""
+    if job.tipo != "Mudança de Função" or not job.finalidade:
+        return None, None
+    lines = job.finalidade.splitlines()
+    for line in lines:
+        if line.startswith("Colaborador:"):
+            # Formato: "Colaborador: NOME (cargo atual: CARGO)"
+            rest = line[len("Colaborador:"):].strip()
+            if " (cargo atual: " in rest:
+                nome, cargo = rest.split(" (cargo atual: ", 1)
+                return nome.strip(), cargo.rstrip(")").strip()
+            return rest, None
+    return None, None
+
+
 def job_to_dict(job):
+    colab_nome, colab_cargo = _parse_colaborador(job)
     return {
-        "id":          job.id,
-        "position":    job.position,
-        "location":    job.location,
-        "tipo":        job.tipo,
-        "numVagas":    job.num_vagas,
-        "finalidade":  job.finalidade,
-        "responsavel": job.responsavel,
-        "emailResp":   job.email_resp,
-        "status":      job.status,
-        "expiresAt":   job.expires_at.isoformat() if job.expires_at else None,
-        "createdAt":   job.created_at.isoformat() if job.created_at else None,
+        "id":              job.id,
+        "position":       job.position,
+        "location":       job.location,
+        "tipo":           job.tipo,
+        "numVagas":       job.num_vagas,
+        "finalidade":     job.finalidade,
+        "responsavel":    job.responsavel,
+        "emailResp":      job.email_resp,
+        "status":         job.status,
+        "expiresAt":      job.expires_at.isoformat() if job.expires_at else None,
+        "createdAt":      job.created_at.isoformat() if job.created_at else None,
+        "colaboradorNome":  colab_nome,
+        "colaboradorCargo": colab_cargo,
     }
 
 
