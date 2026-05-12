@@ -528,11 +528,35 @@ def update_status(candidatura_id):
         if new_status == "APPROVED" and old_status != "APPROVED":
             try:
                 from routers.processos import criar_processo_para_candidatura
-                # Pega tipo_admissao do request se informado
                 tipo_admissao = data.get("tipoAdmissao", "ADMISSAO_NOVA") or "ADMISSAO_NOVA"
                 criar_processo_para_candidatura(c.id, db, tipo_admissao=tipo_admissao)
             except Exception as ex:
                 print(f"[PROCESSO] Erro ao criar processo: {ex}")
+
+        # Se reprovado (REJECTED) — cancela processo existente ou cria um cancelado
+        # para aparecer no Banco de Talentos
+        if new_status == "REJECTED" and old_status != "REJECTED":
+            try:
+                processo = db.query(models.ProcessoAdmissao).filter_by(
+                    candidatura_id=c.id
+                ).first()
+                if processo:
+                    # Cancela processo existente
+                    processo.status     = "CANCELADO"
+                    processo.etapa_atual = "Reprovado em: Candidatura"
+                    db.commit()
+                else:
+                    # Cria processo cancelado para ir ao Banco de Talentos
+                    processo = models.ProcessoAdmissao(
+                        candidatura_id=c.id,
+                        status="CANCELADO",
+                        etapa_atual="Reprovado em: Candidatura",
+                        tipo_admissao="ADMISSAO_NOVA",
+                    )
+                    db.add(processo)
+                    db.commit()
+            except Exception as ex:
+                print(f"[PROCESSO] Erro ao cancelar processo: {ex}")
 
         return jsonify(candidatura_to_dict(c, include_history=True))
     finally:
