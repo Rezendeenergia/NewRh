@@ -307,8 +307,7 @@ def _processar_decisao(db, sol, decision: str, motivo: str, decidido_por: str):
                 prefixo += f" (cargo atual: {sol.colaborador_cargo})"
             if finalidade_job:
                 if prefixo not in finalidade_job:
-                    finalidade_job = prefixo + "
-" + finalidade_job
+                    finalidade_job = prefixo + "\n" + finalidade_job
             else:
                 finalidade_job = prefixo
 
