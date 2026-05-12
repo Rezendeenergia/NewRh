@@ -275,6 +275,9 @@ class SolicitacaoVaga(Base):
     num_vagas         = Column(Integer, nullable=False, default=1)
     finalidade        = Column(Text, nullable=True)
     justificativa     = Column(Text, nullable=False)   # obrigatória
+    # Colaborador envolvido (obrigatório quando tipo == "Mudança de Função")
+    colaborador_nome  = Column(String(150), nullable=True)
+    colaborador_cargo = Column(String(100), nullable=True)
     # Quem pediu
     solicitante_nome  = Column(String(100), nullable=False)
     solicitante_email = Column(String(150), nullable=False)
