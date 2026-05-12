@@ -239,7 +239,7 @@ def build_new_application_email(candidatura, job) -> tuple[str, str]:
   <p style="margin:0 0 4px;font-size:11px;color:{BRAND_COLOR};font-weight:700;text-transform:uppercase;letter-spacing:2px;">Candidato</p>
   <p style="margin:0;font-size:18px;font-weight:800;color:#fff;">{candidatura.full_name}</p>
 </div>
-<table cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate;border-spacing:0 8px;">
+{colab_html}<table cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate;border-spacing:0 8px;">
   {rows}
 </table>
 <div style="border-top:1px solid rgba(255,255,255,0.06);margin:24px 0;"></div>
@@ -547,6 +547,18 @@ def notify_solicitacao_rafael(sol, rafael_email: str, base_url: str):
     link_rj = f"{base_url}/api/solicitacoes/revisar?token={token}&decision=REJEITADA"
 
     subject = f"📋 Aprovação necessária: Solicitação de Vaga — {sol.position} ({sol.location})"
+
+    # Linha de colaborador (só para Mudança de Função)
+    colab_html = ""
+    if sol.tipo == "Mudança de Função" and getattr(sol, "colaborador_nome", None):
+        cargo_txt = f" — cargo atual: {sol.colaborador_cargo}" if getattr(sol, "colaborador_cargo", None) else ""
+        colab_html = f"""
+<div style="background:rgba(255,165,0,0.08);border:1px solid rgba(255,165,0,0.25);
+            border-left:3px solid #FFA500;border-radius:10px;padding:14px 20px;margin:16px 0;">
+  <p style="margin:0 0 3px;font-size:10px;color:#FFA500;font-weight:700;text-transform:uppercase;letter-spacing:2px;">
+    👤 Colaborador a ser promovido</p>
+  <p style="margin:0;font-size:16px;font-weight:800;color:#fff;">{sol.colaborador_nome}{cargo_txt}</p>
+</div>"""
 
     rows = "".join(f"""  <tr>
     <td style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);
