@@ -591,6 +591,16 @@ const Portal = {
           ${job.expiresAt ? `<span class="tag tag--warning">⏱ Encerra ${new Date(job.expiresAt).toLocaleDateString('pt-BR')}</span>` : ''}
           <span class="tag tag--success">${job.numVagas} vaga${job.numVagas !== 1 ? 's' : ''}</span>
         </div>
+        ${job.tipo === 'Mudança de Função' && job.colaboradorNome ? `
+        <div style="display:flex;align-items:center;gap:8px;background:rgba(255,165,0,.08);
+                    border:1px solid rgba(255,165,0,.25);border-left:3px solid #FFA500;
+                    border-radius:8px;padding:8px 14px;margin:8px 0 4px;">
+          <span style="font-size:16px;">👤</span>
+          <div>
+            <span style="font-size:10px;color:#FFA500;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;">Colaborador</span><br>
+            <span style="font-size:14px;font-weight:700;color:#fff;">${job.colaboradorNome}${job.colaboradorCargo ? ' <span style='color:#9AA3B2;font-size:12px;'>— ' + job.colaboradorCargo + '</span>' : ''}</span>
+          </div>
+        </div>` : ''}
         <p class="job-card__description">
           ${job.finalidade
             ? job.finalidade.slice(0, 130) + (job.finalidade.length > 130 ? '...' : '')
@@ -1178,6 +1188,17 @@ const Manager = {
             <span class="tag tag--warning">👤 ${job.numVagas} vaga${job.numVagas !== 1 ? 's' : ''}</span>
             <span class="tag">📅 ${new Date(job.createdAt).toLocaleDateString('pt-BR')}</span>
           </div>
+          ${job.tipo === 'Mudança de Função' && job.colaboradorNome ? `
+          <div style="display:flex;align-items:center;gap:10px;background:rgba(255,165,0,.07);
+                      border:1px solid rgba(255,165,0,.22);border-left:3px solid #FFA500;
+                      border-radius:8px;padding:10px 16px;margin:10px 0 4px;">
+            <span style="font-size:18px;">👤</span>
+            <div>
+              <span style="font-size:10px;color:#FFA500;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;">Colaborador a ser promovido</span><br>
+              <span style="font-size:15px;font-weight:800;color:#fff;">${job.colaboradorNome}</span>
+              ${job.colaboradorCargo ? '<span style="color:#9AA3B2;font-size:12px;margin-left:6px;">— ' + job.colaboradorCargo + '</span>' : ''}
+            </div>
+          </div>` : ''}
           ${job.finalidade ? `<p class="manager-job__description">${job.finalidade.slice(0, 200)}${job.finalidade.length > 200 ? '...' : ''}</p>` : ''}
           <p class="manager-job__responsible">Responsável: ${job.responsavel} · ${job.emailResp}</p>
           <div class="manager-job__sharelink">
@@ -2007,6 +2028,8 @@ document.getElementById('create-job-form').addEventListener('submit', async func
       emailResp:    email,
       justificativa,
       expiresAt:    document.getElementById('job-expires').value || null,
+      colaboradorNome:  document.getElementById('colab-selecionado-nome')?.value.trim() || null,
+      colaboradorCargo: document.getElementById('colab-selecionado-cargo')?.value.trim() || null,
     })});
     showAlert('create-job-alert','✅ Solicitação enviada! Aguardando aprovação da diretoria.','success');
     showToast('Solicitação enviada!', `${position} — ${location}`, 'success');
