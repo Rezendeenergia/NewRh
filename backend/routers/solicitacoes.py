@@ -52,10 +52,16 @@ def criar_solicitacao():
     tipo          = (data.get("tipo") or "").strip()
     justificativa = (data.get("justificativa") or "").strip()
     nome          = (data.get("responsavel") or "").strip()
-    email         = (data.get("emailResp") or "").strip()
+    email             = (data.get("emailResp") or "").strip()
+    colaborador_nome  = (data.get("colaboradorNome") or "").strip() or None
+    colaborador_cargo = (data.get("colaboradorCargo") or "").strip() or None
 
     if not all([position, location, tipo, justificativa, nome, email]):
         return jsonify({"message": "Preencha todos os campos obrigatórios"}), 400
+
+    # Mudança de Função exige colaborador identificado
+    if tipo == "Mudança de Função" and not colaborador_nome:
+        return jsonify({"message": "Informe o colaborador a ser promovido para Mudança de Função"}), 400
 
     token = secrets.token_urlsafe(32)
 
@@ -73,6 +79,8 @@ def criar_solicitacao():
             solicitante_user  = user["sub"],
             status            = "PENDENTE",
             approval_token    = token,
+            colaborador_nome  = colaborador_nome,
+            colaborador_cargo = colaborador_cargo,
         )
         db.add(sol)
         db.commit()
@@ -128,6 +136,8 @@ def listar_solicitacoes():
                     "status":           s.status,
                     "motivoRejeicao":   s.motivo_rejeicao,
                     "jobId":            s.job_id,
+                    "colaboradorNome":  s.colaborador_nome,
+                    "colaboradorCargo": s.colaborador_cargo,
                     "decididoEm":       s.decidido_em.isoformat() if s.decidido_em else None,
                     "createdAt":        s.created_at.isoformat() if s.created_at else None,
                 })
@@ -209,6 +219,8 @@ def by_token():
             "numVagas":         sol.num_vagas,
             "finalidade":       sol.finalidade,
             "justificativa":    sol.justificativa,
+            "colaboradorNome":  sol.colaborador_nome,
+            "colaboradorCargo": sol.colaborador_cargo,
             "solicitanteNome":  sol.solicitante_nome,
             "solicitanteEmail": sol.solicitante_email,
             "status":           sol.status,
@@ -287,12 +299,25 @@ def _processar_decisao(db, sol, decision: str, motivo: str, decidido_por: str):
 
     job_id = None
     if decision == "APROVADA":
+        # Para Mudança de Função: armazena colaborador na finalidade se não houver outra
+        finalidade_job = sol.finalidade
+        if sol.tipo == "Mudança de Função" and sol.colaborador_nome:
+            prefixo = f"Colaborador: {sol.colaborador_nome}"
+            if sol.colaborador_cargo:
+                prefixo += f" (cargo atual: {sol.colaborador_cargo})"
+            if finalidade_job:
+                if prefixo not in finalidade_job:
+                    finalidade_job = prefixo + "
+" + finalidade_job
+            else:
+                finalidade_job = prefixo
+
         job = Job(
             position   = sol.position,
             location   = sol.location,
             tipo       = sol.tipo,
             num_vagas  = sol.num_vagas,
-            finalidade = sol.finalidade,
+            finalidade = finalidade_job,
             responsavel = sol.solicitante_nome,
             email_resp  = sol.solicitante_email,
             status      = "OPEN",
