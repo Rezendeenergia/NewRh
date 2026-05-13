@@ -598,7 +598,7 @@ const Portal = {
           <span style="font-size:16px;">👤</span>
           <div>
             <span style="font-size:10px;color:#FFA500;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;">Colaborador</span><br>
-            <span style="font-size:14px;font-weight:700;color:#fff;">${job.colaboradorNome}${job.colaboradorCargo ? ' <span style='color:#9AA3B2;font-size:12px;'>— ' + job.colaboradorCargo + '</span>' : ''}</span>
+            <span style="font-size:14px;font-weight:700;color:#fff;">${job.colaboradorNome}${job.colaboradorCargo ? ` <span style="color:#9AA3B2;font-size:12px;">— ${job.colaboradorCargo}</span>` : ''}</span>
           </div>
         </div>` : ''}
         <p class="job-card__description">
