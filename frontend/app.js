@@ -2028,7 +2028,7 @@ document.getElementById('create-job-form').addEventListener('submit', async func
       emailResp:    email,
       justificativa,
       expiresAt:    document.getElementById('job-expires').value || null,
-      colaboradorNome:  document.getElementById('colab-selecionado-nome')?.value.trim() || null,
+      colaboradorNome:  document.getElementById('colab-selecionado-nome')?.value.trim() || document.getElementById('colab-search')?.value.trim() || null,
       colaboradorCargo: document.getElementById('colab-selecionado-cargo')?.value.trim() || null,
     })});
     showAlert('create-job-alert','✅ Solicitação enviada! Aguardando aprovação da diretoria.','success');
