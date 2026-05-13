@@ -15,7 +15,7 @@ let allJobs         = [];   // cache para busca local
 const AppState = { role: null, username: null };
 
 // Emails autorizados a ver a aba "Área do Gestor"
-const EMAILS_GESTOR = ["leonardo@rezendeenergia.com.br", "gabrielle.lira@rezendeenergia.com.br", "pedrohueb@rezendeenergia.com.br", "demetrius.pereira@rezendeenergia.com.br", "pamella.macambira@rezendeenergia.com.br", "bruno@rezendeenergia.com.br", "rafael@rezendeenergia.com.br", "mariane.froz@rezendeenergia.com.br", "kailany.castanha@rezendeenergia.com.br", "andreiaazevedo@rezendeenergia.com.br", "davyd.reis@rezendeenergia.com.br", "ana.tapajos@rezendeenergia.com.br", "ti@rezendeenergia.com.br", "helio@rezendeenergia.com.br", "jose.lima@rezendeenergia.com.br", "viniciusamaral@rezendeenergia.com.br", "andre.sousa@rezendeenergia.com.br", "marcos.lopes@rezendeenergia.com.br"];
+const EMAILS_GESTOR = ["leonardo@rezendeenergia.com.br", "gabrielle.lira@rezendeenergia.com.br", "pedrohueb@rezendeenergia.com.br", "demetrius.pereira@rezendeenergia.com.br", "mara.chaves@rezendeenergia.com.br", "bruno@rezendeenergia.com.br", "rafael@rezendeenergia.com.br", "mariane.froz@rezendeenergia.com.br", "kailany.castanha@rezendeenergia.com.br", "andreiaazevedo@rezendeenergia.com.br", "davyd.reis@rezendeenergia.com.br", "ana.tapajos@rezendeenergia.com.br", "ti@rezendeenergia.com.br", "helio@rezendeenergia.com.br", "jose.lima@rezendeenergia.com.br", "viniciusamaral@rezendeenergia.com.br", "andre.sousa@rezendeenergia.com.br", "marcos.lopes@rezendeenergia.com.br"];
 
 function _mostrarTabGestor() {
   const tab = document.getElementById('nav-gestor-tab');
