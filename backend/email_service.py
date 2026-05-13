@@ -584,7 +584,7 @@ def notify_solicitacao_rafael(sol, rafael_email: str, base_url: str):
   <p style="margin:0;font-size:17px;font-weight:800;color:#fff;">{sol.solicitante_nome}</p>
   <p style="margin:4px 0 0;font-size:13px;color:#A8A8B8;">✉️ {sol.solicitante_email}</p>
 </div>
-<table cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate;border-spacing:0 8px;">
+{colab_html}<table cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate;border-spacing:0 8px;">
   {rows}
 </table>
 <div style="border-top:1px solid rgba(255,255,255,0.06);margin:28px 0;"></div>
