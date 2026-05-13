@@ -644,6 +644,19 @@ def notify_resultado_solicitacao(sol, base_url: str):
   <p style="font-size:14px;color:#F4F5F7;margin:0;">{sol.motivo_rejeicao}</p>
 </div>"""
 
+    # Bloco do colaborador (só para Mudança de Função)
+    colab_html = ""
+    if sol.tipo == "Mudança de Função" and getattr(sol, "colaborador_nome", None):
+        cargo_txt = f" — cargo atual: {sol.colaborador_cargo}" if getattr(sol, "colaborador_cargo", None) else ""
+        colab_html = (
+            '<div style="background:rgba(255,165,0,0.08);border:1px solid rgba(255,165,0,0.25);'
+            'border-left:3px solid #FFA500;border-radius:10px;padding:14px 20px;margin:16px 0;">'
+            '<p style="margin:0 0 3px;font-size:10px;color:#FFA500;font-weight:700;text-transform:uppercase;letter-spacing:2px;">'
+            '👤 Colaborador a ser promovido</p>'
+            f'<p style="margin:0;font-size:16px;font-weight:800;color:#fff;">{sol.colaborador_nome}{cargo_txt}</p>'
+            '</div>'
+        )
+
     subject = f"{icon} Solicitação de Vaga {status_pt} — {sol.position} ({sol.location})"
     content = f"""
 <h2 style="margin:0 0 6px;font-size:22px;font-weight:800;color:#fff;">{icon} Solicitação {status_pt}</h2>
@@ -656,6 +669,7 @@ def notify_resultado_solicitacao(sol, base_url: str):
   Olá, <strong style="color:#fff;">{sol.solicitante_nome}</strong>!</p>
 <p style="color:#A8A8B8;font-size:15px;line-height:1.7;margin:0;">{mensagem}</p>
 {motivo_html}
+{colab_html}
 <div style="border-top:1px solid rgba(255,255,255,0.06);margin:24px 0;"></div>
 <table cellpadding="0" cellspacing="0" width="100%">
   <tr><td style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);
@@ -699,6 +713,19 @@ def notify_solicitacao_gestor(sol, base_url: str):
             '</tr>'
         )
 
+    # Bloco do colaborador (só para Mudança de Função)
+    colab_html = ""
+    if sol.tipo == "Mudança de Função" and getattr(sol, "colaborador_nome", None):
+        cargo_txt = f" — cargo atual: {sol.colaborador_cargo}" if getattr(sol, "colaborador_cargo", None) else ""
+        colab_html = (
+            '<div style="background:rgba(255,165,0,0.08);border:1px solid rgba(255,165,0,0.25);'
+            'border-left:3px solid #FFA500;border-radius:10px;padding:14px 20px;margin:16px 0;">'
+            '<p style="margin:0 0 3px;font-size:10px;color:#FFA500;font-weight:700;text-transform:uppercase;letter-spacing:2px;">'
+            '👤 Colaborador a ser promovido</p>'
+            f'<p style="margin:0;font-size:16px;font-weight:800;color:#fff;">{sol.colaborador_nome}{cargo_txt}</p>'
+            '</div>'
+        )
+
     content = (
         '<h2 style="margin:0 0 6px;font-size:22px;font-weight:800;color:#fff;">Solicitação Enviada com Sucesso</h2>'
         '<p style="margin:0 0 20px;font-size:13px;color:rgba(255,106,0,0.8);text-transform:uppercase;'
@@ -711,6 +738,7 @@ def notify_solicitacao_gestor(sol, base_url: str):
         'style="border-collapse:separate;border-spacing:0 8px;margin-bottom:20px;">'
         + rows_html +
         '</table>'
+        + colab_html +
         '<div style="background:rgba(255,184,48,0.08);border:1px solid rgba(255,184,48,0.25);'
         'border-left:3px solid #FFB830;border-radius:10px;padding:14px 18px;text-align:center;">'
         '<span style="color:#FFB830;font-weight:700;font-size:14px;">⏳ Status: Pendente de Aprovação</span>'
