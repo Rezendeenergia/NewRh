@@ -1960,6 +1960,7 @@ const Solicitacoes = {
               <p style="font-size:16px;font-weight:800;color:#fff;margin:0 0 2px;">${s.position}</p>
               <p style="font-size:13px;color:#A8A8B8;margin:0;">📍 ${s.location} · ${s.numVagas} vaga(s) · ${s.tipo || ''}</p>
               ${isOwner ? `<p style="font-size:12px;color:#5A6478;margin:4px 0 0;">Solicitante: ${s.solicitanteNome} &lt;${s.solicitanteEmail}&gt;</p>` : ''}
+              ${s.tipo === 'Mudança de Função' && s.colaboradorNome ? '<p style="font-size:12px;color:#FFA500;margin:4px 0 0;">👤 Colaborador: <strong style="color:#fff;">' + s.colaboradorNome + (s.colaboradorCargo ? ' — ' + s.colaboradorCargo : '') + '</strong></p>' : ''}
               <p style="font-size:12px;color:#5A6478;margin:4px 0 0;">Justificativa: ${s.justificativa}</p>
             </div>
             <span style="background:rgba(0,0,0,.3);border:1px solid ${statusColor};color:${statusColor};border-radius:20px;padding:4px 14px;font-size:12px;font-weight:700;white-space:nowrap;">${statusLabel}</span>
