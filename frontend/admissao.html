@@ -288,7 +288,7 @@ const Adm = {
   renderEtapa(e, processoId) {
     const isAtiva    = e.status === 'EM_ANDAMENTO';
     const isAprovada = e.status === 'APROVADO';
-    const temDocs    = e.tipo === 'DOCUMENTO';
+    const temDocs    = e.tipo === 'DOCUMENTO' || e.codigo === 'PROVA_DEEP';
     const docsHtml   = e.documentos.length > 0 ? `
       <div class="docs-list">
         ${e.documentos.map(d => `
