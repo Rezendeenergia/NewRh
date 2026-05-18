@@ -1,28 +1,24 @@
-# gunicorn.conf.py — Configuração para alta concorrência (Render Standard)
+# gunicorn.conf.py — Alta concorrência com gevent + pg8000 compatível
+from gevent import monkey
+monkey.patch_all()  # deve rodar ANTES de qualquer import de rede/ssl
+
 import multiprocessing
 
-# Gevent: worker assíncrono — suporta centenas de conexões simultâneas
-# com 1 só processo, sem travar em I/O (banco, email, sharepoint)
 worker_class = "gevent"
-workers = 2                    # 2 workers gevent = centenas de conexões paralelas
-worker_connections = 500       # conexões simultâneas por worker
+workers = 2
+worker_connections = 500
 
-# Timeouts
-timeout = 60                   # requests devem responder em 60s
+timeout = 60
 graceful_timeout = 30
-keepalive = 10                 # mantém HTTP keepalive por 10s
+keepalive = 10
 
-# Performance
-max_requests = 1000            # recicla worker após 1000 requests (evita memory leak)
-max_requests_jitter = 100      # evita todos reciclarem ao mesmo tempo
+max_requests = 1000
+max_requests_jitter = 100
 
-# Bind
 bind = "0.0.0.0:10000"
 
-# Logging — só erros em produção
 accesslog = "-"
 errorlog  = "-"
 loglevel  = "warning"
 
-# Preload: carrega o app 1x, compartilhado (economiza memória e tempo de startup)
 preload_app = True
