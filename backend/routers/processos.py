@@ -10,6 +10,7 @@ from sqlalchemy.orm import joinedload, selectinload
 import models
 import audit
 import os
+import cache as _cache
 
 bp = Blueprint("processos", __name__, url_prefix="/api/processos")
 
@@ -224,6 +225,11 @@ def listar():
     page     = max(1, int(request.args.get("page", 1)))
     per_page = 30  # aumentado de 20 para 30
 
+    cache_key = f"lista:{status_f}:{dept_f}:{page}"
+    hit = _cache.get(cache_key)
+    if hit is not None:
+        return jsonify(hit)
+
     db = get_db()
     try:
         q = db.query(models.ProcessoAdmissao)
@@ -258,12 +264,14 @@ def listar():
             .all()
         )
 
-        return jsonify({
+        result = {
             "items":      [processo_to_dict_list(p) for p in rows],
             "total":      total,
             "page":       page,
             "totalPages": max(1, -(-total // per_page)),
-        })
+        }
+        _cache.set(cache_key, result, ttl=12)
+        return jsonify(result)
     finally:
         db.close()
 
@@ -271,6 +279,9 @@ def listar():
 @bp.get("/stats")
 @require_auth
 def stats():
+    hit = _cache.get("stats")
+    if hit is not None:
+        return jsonify(hit)
     db = get_db()
     try:
         # 1 query com CASE ao invés de 4 separadas
@@ -309,6 +320,9 @@ def stats():
 @bp.get("/<int:processo_id>")
 @require_auth
 def detalhe(processo_id):
+    hit = _cache.get(f"proc:{processo_id}")
+    if hit is not None:
+        return jsonify(hit)
     db = get_db()
     try:
         # Eager load completo: etapas + documentos em 1 query
@@ -325,7 +339,9 @@ def detalhe(processo_id):
         )
         if not p:
             return jsonify({"message": "Processo não encontrado"}), 404
-        return jsonify(processo_to_dict(p))
+        result = processo_to_dict(p)
+        _cache.set(f"proc:{processo_id}", result, ttl=20)
+        return jsonify(result)
     finally:
         db.close()
 
@@ -391,6 +407,9 @@ def atualizar_etapa(processo_id, etapa_id):
         audit.log(request.username, "ETAPA_ATUALIZADA", entity="processo",
                   entity_id=processo_id,
                   detail=f"{etapa_nome}: {old_status} → {novo_status}")
+
+        # Invalida cache para dados frescos na próxima leitura
+        _cache.invalidate_processo(processo_id)
 
         # ── Notificação ao candidato ──────────────────────────────────────────
         if novo_status in ("APROVADO", "REPROVADO", "REENVIAR"):
@@ -497,6 +516,7 @@ def upload_doc(processo_id, etapa_id):
         db.add(doc)
         db.commit()
         db.refresh(doc)
+        _cache.invalidate_processo(processo_id)
         doc_id   = doc.id
         cand     = p.candidatura
         cand_nome = cand.full_name
