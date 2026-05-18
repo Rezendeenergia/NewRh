@@ -1,28 +1,28 @@
-# gunicorn.conf.py — Configuração de performance para Rezende NewRH
+# gunicorn.conf.py — Configuração para alta concorrência (Render Standard)
 import multiprocessing
 
-# Workers: 2-4 para plano free do Render (1 vCPU)
-# Fórmula: (2 x CPUs) + 1, mínimo 2
-workers = 2
-worker_class = "sync"
+# Gevent: worker assíncrono — suporta centenas de conexões simultâneas
+# com 1 só processo, sem travar em I/O (banco, email, sharepoint)
+worker_class = "gevent"
+workers = 2                    # 2 workers gevent = centenas de conexões paralelas
+worker_connections = 500       # conexões simultâneas por worker
 
 # Timeouts
-timeout = 120          # requests pesados (export Excel, chart_stats)
+timeout = 60                   # requests devem responder em 60s
 graceful_timeout = 30
-keepalive = 5          # mantém conexão HTTP aberta por 5s (reduz overhead)
+keepalive = 10                 # mantém HTTP keepalive por 10s
 
 # Performance
-worker_connections = 100
-max_requests = 500     # recicla worker após 500 requests (evita memory leak)
-max_requests_jitter = 50  # evita todos reciclarem ao mesmo tempo
+max_requests = 1000            # recicla worker após 1000 requests (evita memory leak)
+max_requests_jitter = 100      # evita todos reciclarem ao mesmo tempo
 
 # Bind
 bind = "0.0.0.0:10000"
 
-# Logging
+# Logging — só erros em produção
 accesslog = "-"
-errorlog = "-"
-loglevel = "warning"   # só erros em produção (info é muito verboso)
+errorlog  = "-"
+loglevel  = "warning"
 
-# Preload app (carrega o código 1x, compartilhado entre workers)
+# Preload: carrega o app 1x, compartilhado (economiza memória e tempo de startup)
 preload_app = True
