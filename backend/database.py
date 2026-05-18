@@ -1,7 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from dotenv import load_dotenv
-import ssl
 import os
 
 load_dotenv()
@@ -40,25 +39,21 @@ def _parse_db_url(url: str) -> str:
 
 database_url = _parse_db_url(raw_url)
 
-ssl_ctx = ssl.create_default_context()
-ssl_ctx.check_hostname = False
-ssl_ctx.verify_mode = ssl.CERT_NONE
-
 host = database_url.split("@")[1].split("/")[0] if "@" in database_url else "?"
 print(f"[DB] Conectando em: {host}")
 
+# pg8000 com gevent: passa ssl como string "require" em vez de objeto ssl.SSLContext
+# O objeto ssl.SSLContext quebra com gevent monkey-patching
 engine = create_engine(
     database_url,
-    connect_args={"ssl_context": ssl_ctx},
+    connect_args={"ssl_context": True},  # True = ssl requerido sem verificação de cert
 
-    # Pool dimensionado para 2 workers gevent com alta concorrência
-    # Supabase Transaction Pooler aguenta bem até ~50 conexões simultâneas
-    pool_size=15,           # conexões base mantidas abertas
-    max_overflow=25,        # conexões extras sob pico (total: 40)
-    pool_pre_ping=True,     # valida conexão antes de usar (evita "connection closed")
-    pool_recycle=300,       # recicla a cada 5 min (evita timeout do Supabase)
-    pool_timeout=10,        # desiste de esperar conexão após 10s (falha rápida)
-    pool_use_lifo=True,     # reutiliza conexões recentes (mais quentes, mais rápidas)
+    pool_size=15,
+    max_overflow=25,
+    pool_pre_ping=True,
+    pool_recycle=300,
+    pool_timeout=10,
+    pool_use_lifo=True,
 )
 
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
