@@ -663,6 +663,15 @@ document.addEventListener('DOMContentLoaded', async () => {
        || sessionStorage.getItem('token')
        || '';
   await Promise.all([Adm.loadStats(), Adm.loadLista()]);
+
+  // Se veio com ?id= na URL (ex: clique em Admissões), abre o processo direto
+  const urlParams = new URLSearchParams(window.location.search);
+  const idParam = urlParams.get('id');
+  if (idParam) {
+    await Adm.loadProcesso(Number(idParam));
+    // Limpa o parâmetro da URL sem recarregar a página
+    window.history.replaceState({}, '', '/admissao');
+  }
 });
 </script>
 </body>
