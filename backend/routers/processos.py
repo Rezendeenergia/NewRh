@@ -19,7 +19,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 ETAPAS_FLUXO = [
     {"ordem": 1,  "codigo": "TRIAGEM",              "nome": "Triagem",                        "departamento": "RH",         "tipo": "APROVACAO",   "prazo_dias": 2},
     {"ordem": 2,  "codigo": "ENTREVISTA",            "nome": "Entrevista",                     "departamento": "RH",         "tipo": "ENTREVISTA",  "prazo_dias": 5},
-    {"ordem": 3,  "codigo": "CERTIFICADOS_NR",       "nome": "Verificação Certificados NRs",   "departamento": "SESMT",      "tipo": "DOCUMENTO",   "prazo_dias": 2},
+    {"ordem": 3,  "codigo": "CERTIFICADOS_NR",       "nome": "Verificação Certificados NRs",   "departamento": "RH",         "tipo": "DOCUMENTO",   "prazo_dias": 2},
     {"ordem": 4,  "codigo": "APROVACAO_FINAL",       "nome": "Aprovação Final",                "departamento": "RH",         "tipo": "APROVACAO",   "prazo_dias": 1},
     {"ordem": 5,  "codigo": "ASO",                   "nome": "Agendamento ASO",                "departamento": "RH",         "tipo": "DOCUMENTO",   "prazo_dias": 1},
     {"ordem": 6,  "codigo": "DP_EXTERNO",            "nome": "Admissão DP Externo",            "departamento": "DP_EXTERNO", "tipo": "DOCUMENTO",   "prazo_dias": 2},
