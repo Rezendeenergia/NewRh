@@ -78,13 +78,47 @@
 
 <script>
 // Cache simples para evitar re-fetch desnecessário
+// ── Request Manager: cache + fila + concorrência limitada ────
 const _cache = {};
-async function reqCached(url, ttl=10000) {
+const _inflight = {};   // deduplicação: mesma URL não dispara 2x ao mesmo tempo
+const _MAX_PARALLEL = 4;
+let _running = 0;
+const _queue = [];
+
+function _drainQueue() {
+  while (_queue.length > 0 && _running < _MAX_PARALLEL) {
+    const { url, resolve, reject } = _queue.shift();
+    _running++;
+    _fetchUrl(url)
+      .then(resolve).catch(reject)
+      .finally(() => { _running--; _drainQueue(); });
+  }
+}
+
+async function _fetchUrl(url) {
+  // Deduplicação: se já há um fetch em voo para essa URL, compartilha a promise
+  if (_inflight[url]) return _inflight[url];
+  const promise = req(url).finally(() => { delete _inflight[url]; });
+  _inflight[url] = promise;
+  return promise;
+}
+
+async function reqCached(url, ttl = 15000) {
   const now = Date.now();
   if (_cache[url] && (now - _cache[url].ts) < ttl) return _cache[url].data;
-  const data = await req(url);
-  _cache[url] = { data, ts: now };
+  // Encadeia na fila se já há muitas requisições paralelas
+  const data = await (_running < _MAX_PARALLEL
+    ? (_running++, _fetchUrl(url).finally(() => { _running--; _drainQueue(); }))
+    : new Promise((resolve, reject) => _queue.push({ url, resolve, reject })));
+  _cache[url] = { data, ts: Date.now() };
   return data;
+}
+
+function invalidateCache(processo_id) {
+  const key = `/api/processos/${processo_id}`;
+  delete _cache[key];
+  delete _cache['/api/processos/stats'];
+  Object.keys(_cache).forEach(k => { if (k.startsWith('/api/processos?')) delete _cache[k]; });
 }
 
 let TOKEN = localStorage.getItem('rz_token');
@@ -171,9 +205,12 @@ const Adm = {
     }
   },
 
-  async prefetch(id) {
-    // Pré-carrega no hover para resposta instantânea no clique
-    reqCached(`/api/processos/${id}`, 30000).catch(() => {});
+  prefetch(id) {
+    // Debounce de 250ms — só pré-carrega se o mouse ficar sobre o item
+    clearTimeout(Adm._prefetchTimer);
+    Adm._prefetchTimer = setTimeout(() => {
+      reqCached(`/api/processos/${id}`, 30000).catch(() => {});
+    }, 250);
   },
 
   async loadProcesso(id) {
@@ -421,9 +458,7 @@ const Adm = {
         })
       });
       // Invalida cache do processo e da lista para forçar dados frescos
-      delete _cache[`/api/processos/${processoId}`];
-      delete _cache[`/api/processos/stats`];
-      Object.keys(_cache).forEach(k => { if (k.startsWith('/api/processos?')) delete _cache[k]; });
+      invalidateCache(processoId);
       await Adm.loadProcesso(processoId);
       await Adm.loadStats();
       await Adm.loadLista();
