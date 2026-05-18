@@ -304,7 +304,7 @@ function renderTable() {
 
     const statusLabel = { EM_ANDAMENTO:'Em andamento', CONCLUIDO:'Concluído', CANCELADO:'Cancelado' };
 
-    return `<tr onclick="window.location='/admissao?id='+p.id">
+    return `<tr onclick="window.location='/admissao?id=${p.id}'">
       <td>
         <div class="td-name">${p.candidatura?.nome || '—'}</div>
         <div class="td-sub">${p.candidatura?.cpf || ''}</div>
@@ -326,7 +326,7 @@ function renderTable() {
       </td>
       <td>${prazoHtml}</td>
       <td><span class="pill pill--${p.status}">${statusLabel[p.status] || p.status}</span></td>
-      <td><button class="btn-open" onclick="event.stopPropagation();window.location='/admissao?id='+p.id">Abrir →</button></td>
+      <td><button class="btn-open" onclick="event.stopPropagation();window.location='/admissao?id=${p.id}'">Abrir →</button></td>
     </tr>`;
   }).join('');
 }
