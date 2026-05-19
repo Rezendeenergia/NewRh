@@ -184,7 +184,7 @@ def email_test_send():
 
     return jsonify(result)
 
-from routers import auth, jobs, candidaturas, processos, solicitacoes
+from routers import auth, jobs, candidaturas, processos, solicitacoes, menor_aprendiz
 from colaboradores_router import bp_colab
 app.register_blueprint(auth.bp)
 
@@ -199,6 +199,7 @@ app.register_blueprint(jobs.bp)
 app.register_blueprint(candidaturas.bp)
 app.register_blueprint(processos.bp)
 app.register_blueprint(solicitacoes.bp)
+app.register_blueprint(menor_aprendiz.bp)
 app.register_blueprint(bp_colab)
 
 @app.route("/revisar-solicitacao")
@@ -244,6 +245,11 @@ def candidato_definir_senha():
 @app.route("/pasta-colaborador")
 def pasta_colaborador_page():
     return send_from_directory(FRONTEND_FOLDER, "pasta-colaborador.html")
+
+
+@app.route("/menor-aprendiz")
+def menor_aprendiz_page():
+    return send_from_directory(FRONTEND_FOLDER, "menor-aprendiz.html")
 
 
 @app.route("/api/pasta-colaborador/estrutura")
