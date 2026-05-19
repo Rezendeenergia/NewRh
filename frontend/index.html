@@ -123,6 +123,31 @@
         </div></p>
       </div>
 
+      <!-- Banner Menor Aprendiz -->
+      <div style="background:linear-gradient(135deg,rgba(255,106,0,.12),rgba(255,184,48,.08));
+                  border:1px solid rgba(255,184,48,.25);border-radius:14px;
+                  padding:16px 20px;margin-bottom:20px;
+                  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div style="display:flex;align-items:center;gap:14px;">
+          <span style="font-size:28px;flex-shrink:0;">🌟</span>
+          <div>
+            <p style="margin:0 0 3px;font-size:15px;font-weight:800;color:#FFB830;">Programa Menor Aprendiz</p>
+            <p style="margin:0;font-size:13px;color:#9AA3B2;line-height:1.5;">
+              Tem entre 14 e 18 anos? Dê o primeiro passo na sua carreira elétrica com a Rezende Energia.
+            </p>
+          </div>
+        </div>
+        <a href="/menor-aprendiz" target="_blank"
+           style="display:inline-flex;align-items:center;gap:8px;
+                  background:linear-gradient(135deg,#FF8C2A,#FFB830);
+                  color:#000;font-size:13px;font-weight:800;
+                  border-radius:10px;padding:10px 20px;text-decoration:none;
+                  white-space:nowrap;transition:opacity .2s;"
+           onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+          📋 Inscrever-se
+        </a>
+      </div>
+
       <div class="info-bar">
         <span>💼</span>
         <span><strong>Como funciona:</strong> selecione uma vaga → preencha o formulário → envie.</span>
@@ -530,6 +555,7 @@
         <a href="/admissoes" class="subtab" style="text-decoration:none;">🏗 Admissões</a>
         <button class="subtab" data-subtab="banco-talentos">🏅 Banco de Talentos</button>
         <button class="subtab" data-subtab="colaboradores-admitidos">🎓 Colaboradores Admitidos</button>
+        <button class="subtab" data-subtab="menor-aprendiz">🌟 Menor Aprendiz <span class="subtab__count" id="count-aprendiz" style="display:none;background:#FFB830;color:#000;"></span></button>
       </div>
 
       <!-- Funil de Candidatos -->
@@ -631,6 +657,40 @@
             <div style="text-align:center;padding:40px;color:var(--ink-3);">
               <div style="font-size:40px;margin-bottom:12px;">⏳</div>
               <p>Carregando colaboradores...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Menor Aprendiz -->
+      <div class="subtab-panel" id="subtab-menor-aprendiz">
+        <div class="card">
+          <div class="card__header" style="flex-wrap:wrap;gap:12px;">
+            <span class="card__title">🌟 Inscrições — Menor Aprendiz</span>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <input id="aprendiz-search" type="text" placeholder="Buscar nome, CPF, escola..."
+                     oninput="MenorAprendiz.filtrar(this.value)"
+                     style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+                            color:#fff;border-radius:8px;padding:7px 14px;font-size:13px;width:220px;">
+              <select id="aprendiz-filter-status" onchange="MenorAprendiz.filtrar(document.getElementById('aprendiz-search').value)"
+                      style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+                             color:#fff;border-radius:8px;padding:7px 12px;font-size:13px;">
+                <option value="">Todos os status</option>
+                <option value="PENDENTE">Pendente</option>
+                <option value="EM_ANALISE">Em Análise</option>
+                <option value="APROVADO">Aprovado</option>
+                <option value="REJEITADO">Rejeitado</option>
+              </select>
+              <span id="aprendiz-count-badge"
+                    style="background:rgba(255,184,48,.15);border:1px solid rgba(255,184,48,.3);
+                           color:#FFB830;font-size:12px;font-weight:700;border-radius:20px;
+                           padding:4px 12px;white-space:nowrap;">0 inscrições</span>
+            </div>
+          </div>
+          <div class="card__body" id="aprendiz-body" style="padding:20px;">
+            <div style="text-align:center;padding:40px;color:var(--ink-3);">
+              <div style="font-size:40px;margin-bottom:12px;">⏳</div>
+              <p>Carregando inscrições...</p>
             </div>
           </div>
         </div>
