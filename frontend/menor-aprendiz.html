@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Programa Menor Aprendiz — Rezende Energia</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    body { background: var(--bg-base, #0F1117); color: #F4F5F7; font-family: 'Inter', system-ui, sans-serif; margin: 0; }
+
+    .ma-hero {
+      background: linear-gradient(135deg, #1a0a00 0%, #0F1117 50%, #0a1a1a 100%);
+      border-bottom: 1px solid rgba(255,106,0,.15);
+      padding: 40px 20px 32px;
+      text-align: center;
+    }
+    .ma-hero__badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,106,0,.12); border: 1px solid rgba(255,106,0,.3);
+      color: #FF8C2A; font-size: 12px; font-weight: 700;
+      border-radius: 20px; padding: 5px 14px; margin-bottom: 16px;
+      text-transform: uppercase; letter-spacing: 1px;
+    }
+    .ma-hero__title { font-size: clamp(24px, 5vw, 38px); font-weight: 900; margin: 0 0 10px; }
+    .ma-hero__title span { color: #FF6A00; }
+    .ma-hero__desc { color: #9AA3B2; font-size: 15px; max-width: 520px; margin: 0 auto 20px; line-height: 1.7; }
+    .ma-hero__back { font-size: 13px; color: rgba(255,106,0,.7); text-decoration: none; border-bottom: 1px solid rgba(255,106,0,.3); }
+    .ma-hero__back:hover { color: #FF6A00; }
+
+    .ma-info-strip {
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;
+      padding: 20px; background: rgba(255,255,255,.02); border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .ma-info-chip {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);
+      border-radius: 10px; padding: 8px 14px; font-size: 13px; color: #D0D4DE;
+    }
+    .ma-info-chip strong { color: #fff; }
+
+    .ma-container { max-width: 720px; margin: 0 auto; padding: 32px 20px 60px; }
+
+    .ma-card {
+      background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+      border-radius: 16px; overflow: hidden; margin-bottom: 24px;
+    }
+    .ma-card__header {
+      padding: 16px 24px; border-bottom: 1px solid rgba(255,255,255,.07);
+      background: rgba(255,106,0,.04);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .ma-card__title { font-size: 14px; font-weight: 700; color: #FF8C2A; text-transform: uppercase; letter-spacing: .5px; }
+    .ma-card__body { padding: 24px; }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 520px) { .form-grid { grid-template-columns: 1fr; } }
+    .form-field--full { grid-column: 1 / -1; }
+
+    .form-field__label {
+      display: block; font-size: 12px; font-weight: 600;
+      color: #9AA3B2; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px;
+    }
+    .required-mark { color: #FF6A00; }
+    .form-field__input, .form-field__select, .form-field__textarea {
+      width: 100%; box-sizing: border-box;
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+      color: #F4F5F7; border-radius: 8px; padding: 10px 12px; font-size: 14px;
+      transition: border-color .2s;
+    }
+    .form-field__input:focus, .form-field__select:focus, .form-field__textarea:focus {
+      outline: none; border-color: rgba(255,106,0,.5);
+    }
+    .form-field__select option { background: #1A1D27; color: #F4F5F7; }
+    .form-field__textarea { min-height: 100px; resize: vertical; }
+
+    .section-label {
+      font-size: 11px; font-weight: 700; color: #5A6478;
+      text-transform: uppercase; letter-spacing: 1px;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      padding-bottom: 8px; margin: 20px 0 16px;
+    }
+    .section-label:first-child { margin-top: 0; }
+
+    .file-drop {
+      border: 2px dashed rgba(255,106,0,.25); border-radius: 10px;
+      padding: 24px 16px; text-align: center; cursor: pointer;
+      transition: border-color .2s, background .2s;
+    }
+    .file-drop:hover { border-color: rgba(255,106,0,.5); background: rgba(255,106,0,.04); }
+    .file-drop__icon { font-size: 28px; margin-bottom: 6px; }
+    .file-drop__text { font-size: 13px; color: #9AA3B2; margin: 0; }
+    .file-drop__hint { font-size: 11px; color: #5A6478; margin: 4px 0 0; }
+    .file-drop--selected { border-color: rgba(46,204,113,.4); background: rgba(46,204,113,.04); }
+    .file-drop--selected .file-drop__text { color: #2ECC71; }
+
+    .lgpd-box {
+      background: rgba(91,141,239,.06); border: 1px solid rgba(91,141,239,.2);
+      border-radius: 10px; padding: 16px 18px; margin-top: 20px;
+    }
+    .lgpd-box__label { font-size: 11px; font-weight: 700; color: #9AA3B2; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 8px; }
+    .lgpd-box__text { font-size: 12px; color: #A8A8B8; line-height: 1.7; margin: 0 0 12px; }
+    .lgpd-checkbox { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+    .lgpd-checkbox input { margin-top: 2px; accent-color: #FF6A00; width: 15px; height: 15px; flex-shrink: 0; }
+    .lgpd-checkbox span { font-size: 12px; color: #C0C4CF; line-height: 1.5; }
+
+    .btn-submit {
+      width: 100%; padding: 14px 20px; margin-top: 20px;
+      background: linear-gradient(135deg, #FF6A00, #FF8C2A);
+      color: #fff; font-size: 16px; font-weight: 700;
+      border: none; border-radius: 10px; cursor: pointer;
+      transition: opacity .2s, transform .1s;
+    }
+    .btn-submit:hover { opacity: .9; }
+    .btn-submit:active { transform: scale(.99); }
+    .btn-submit:disabled { opacity: .5; cursor: not-allowed; }
+
+    .alert {
+      padding: 12px 16px; border-radius: 8px; font-size: 13px;
+      margin-top: 12px; display: none;
+    }
+    .alert--success { background: rgba(46,204,113,.12); border: 1px solid rgba(46,204,113,.3); color: #2ECC71; }
+    .alert--error   { background: rgba(255,82,82,.12);  border: 1px solid rgba(255,82,82,.3);  color: #FF5252; }
+
+    /* Sucesso overlay */
+    .ma-success {
+      display: none; text-align: center; padding: 60px 24px;
+    }
+    .ma-success__icon { font-size: 60px; margin-bottom: 16px; }
+    .ma-success__title { font-size: 24px; font-weight: 800; color: #2ECC71; margin: 0 0 10px; }
+    .ma-success__text { color: #9AA3B2; font-size: 15px; max-width: 480px; margin: 0 auto 24px; line-height: 1.7; }
+    .ma-success__back { display: inline-block; padding: 10px 24px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); border-radius: 8px; color: #9AA3B2; text-decoration: none; font-size: 14px; }
+    .ma-success__back:hover { background: rgba(255,255,255,.1); color: #fff; }
+  </style>
+</head>
+<body>
+
+<header style="background: rgba(255,255,255,.02); border-bottom: 1px solid rgba(255,255,255,.06); padding: 12px 24px; display:flex; align-items:center; gap:12px;">
+  <img src="/logo-rezende.png" alt="Rezende Energia" style="height:32px; object-fit:contain;">
+  <span style="color:#5A6478; font-size:13px;">Portal de Talentos</span>
+</header>
+
+<div class="ma-hero">
+  <div class="ma-hero__badge">⚡ Programa Jovem Aprendiz</div>
+  <h1 class="ma-hero__title">Menor <span>Aprendiz</span></h1>
+  <p class="ma-hero__desc">
+    Dê o primeiro passo na sua carreira profissional. O Programa de Menor Aprendiz da Rezende Energia
+    oferece aprendizado prático, mentoria e crescimento real no setor de energia elétrica.
+  </p>
+  <a href="/" class="ma-hero__back">← Voltar ao Portal de Vagas</a>
+</div>
+
+<div class="ma-info-strip">
+  <div class="ma-info-chip">🎂 <span>Idade: <strong>14 a 18 anos</strong></span></div>
+  <div class="ma-info-chip">📚 <span>Deve estar <strong>matriculado na escola</strong></span></div>
+  <div class="ma-info-chip">⏰ <span>Jornada <strong>parcial (4h/dia)</strong></span></div>
+  <div class="ma-info-chip">📍 <span>Regiões: <strong>Santarém e entorno</strong></span></div>
+</div>
+
+<div class="ma-container">
+
+  <!-- Sucesso -->
+  <div class="ma-success" id="ma-success">
+    <div class="ma-success__icon">🎉</div>
+    <div class="ma-success__title">Inscrição Enviada!</div>
+    <p class="ma-success__text">
+      Recebemos a sua inscrição com sucesso! Nossa equipe de RH vai analisar o seu perfil
+      e entrará em contato pelo telefone ou e-mail informado em breve.
+    </p>
+    <a href="/" class="ma-success__back">← Voltar ao Portal</a>
+  </div>
+
+  <!-- Formulário -->
+  <div id="ma-form-wrap">
+    <form id="ma-form" novalidate>
+
+      <div class="ma-card">
+        <div class="ma-card__header">
+          <span style="font-size:18px;">👤</span>
+          <span class="ma-card__title">01 — Dados Pessoais</span>
+        </div>
+        <div class="ma-card__body">
+          <div class="form-grid">
+            <div class="form-field form-field--full">
+              <label class="form-field__label" for="ma-name">Nome Completo <strong class="required-mark">*</strong></label>
+              <input id="ma-name" type="text" class="form-field__input" placeholder="Seu nome completo" required>
+            </div>
+            <div class="form-field">
+              <label class="form-field__label" for="ma-cpf">CPF <strong class="required-mark">*</strong></label>
+              <input id="ma-cpf" type="text" class="form-field__input" placeholder="000.000.000-00" maxlength="14" required>
+            </div>
+            <div class="form-field">
+              <label class="form-field__label" for="ma-nascimento">Data de Nascimento <strong class="required-mark">*</strong></label>
+              <input id="ma-nascimento" type="date" class="form-field__input" required>
+            </div>
+            <div class="form-field form-field--full">
+              <label class="form-field__label" for="ma-responsavel">Nome do Responsável (pai/mãe/responsável legal) <strong class="required-mark">*</strong></label>
+              <input id="ma-responsavel" type="text" class="form-field__input" placeholder="Nome completo do responsável" required>
+            </div>
+            <div class="form-field">
+              <label class="form-field__label" for="ma-cidade">Cidade Atual <strong class="required-mark">*</strong></label>
+              <input id="ma-cidade" type="text" class="form-field__input" placeholder="Ex.: Santarém/PA" required>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ma-card">
+        <div class="ma-card__header">
+          <span style="font-size:18px;">📞</span>
+          <span class="ma-card__title">02 — Contato</span>
+        </div>
+        <div class="ma-card__body">
+          <div class="form-grid">
+            <div class="form-field">
+              <label class="form-field__label" for="ma-phone">WhatsApp / Telefone <strong class="required-mark">*</strong></label>
+              <input id="ma-phone" type="tel" class="form-field__input" placeholder="(93) 9 0000-0000" required>
+            </div>
+            <div class="form-field">
+              <label class="form-field__label" for="ma-email">E-mail <strong class="required-mark">*</strong></label>
+              <input id="ma-email" type="email" class="form-field__input" placeholder="seu@email.com" required>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ma-card">
+        <div class="ma-card__header">
+          <span style="font-size:18px;">🎓</span>
+          <span class="ma-card__title">03 — Escola</span>
+        </div>
+        <div class="ma-card__body">
+          <div class="form-grid">
+            <div class="form-field form-field--full">
+              <label class="form-field__label" for="ma-escola">Escola Atual <strong class="required-mark">*</strong></label>
+              <input id="ma-escola" type="text" class="form-field__input" placeholder="Nome da escola onde está matriculado" required>
+            </div>
+            <div class="form-field">
+              <label class="form-field__label" for="ma-periodo">Período / Série</label>
+              <select id="ma-periodo" class="form-field__select">
+                <option value="">Selecione</option>
+                <optgroup label="Ensino Fundamental">
+                  <option>6º Ano</option><option>7º Ano</option>
+                  <option>8º Ano</option><option>9º Ano</option>
+                </optgroup>
+                <optgroup label="Ensino Médio">
+                  <option>1º Ano</option><option>2º Ano</option><option>3º Ano</option>
+                </optgroup>
+                <optgroup label="Técnico / EJA">
+                  <option>Curso Técnico</option><option>EJA</option>
+                </optgroup>
+              </select>
+            </div>
+            <div class="form-field">
+              <label class="form-field__label" for="ma-turno">Turno Escolar</label>
+              <select id="ma-turno" class="form-field__select">
+                <option value="">Selecione</option>
+                <option>Manhã</option>
+                <option>Tarde</option>
+                <option>Noite</option>
+                <option>Integral</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ma-card">
+        <div class="ma-card__header">
+          <span style="font-size:18px;">⚡</span>
+          <span class="ma-card__title">04 — Interesse & Motivação</span>
+        </div>
+        <div class="ma-card__body">
+          <div class="form-grid">
+            <div class="form-field form-field--full">
+              <label class="form-field__label" for="ma-area">Área de Interesse</label>
+              <select id="ma-area" class="form-field__select">
+                <option value="">Selecione (opcional)</option>
+                <option>Elétrica / Energia</option>
+                <option>Administrativo / Escritório</option>
+                <option>Tecnologia da Informação</option>
+                <option>Segurança do Trabalho</option>
+                <option>Recursos Humanos</option>
+                <option>Financeiro</option>
+                <option>Logística / Suprimentos</option>
+                <option>Não tenho preferência</option>
+              </select>
+            </div>
+            <div class="form-field form-field--full">
+              <label class="form-field__label" for="ma-motivation">Por que quer fazer parte da Rezende Energia?</label>
+              <textarea id="ma-motivation" class="form-field__textarea"
+                placeholder="Conte um pouco sobre você, seus sonhos e por que quer aprender nessa empresa..."></textarea>
+            </div>
+            <div class="form-field form-field--full">
+              <label class="form-field__label">Currículo (PDF, opcional)</label>
+              <div class="file-drop" id="ma-resume-zone" onclick="document.getElementById('ma-resume').click()">
+                <input type="file" id="ma-resume" accept=".pdf" style="display:none;" onchange="handleResumeFile(this)">
+                <div class="file-drop__icon">📄</div>
+                <p class="file-drop__text">Clique para selecionar o PDF</p>
+                <p class="file-drop__hint">Máx. 5 MB — não obrigatório</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="lgpd-box">
+            <p class="lgpd-box__label">📋 Autorização LGPD</p>
+            <p class="lgpd-box__text">
+              Ao enviar esta inscrição, você e seu responsável legal autorizam a
+              <strong style="color:#fff;">Rezende Construção e Manutenção Ltda.</strong>
+              a coletar, armazenar e utilizar estes dados exclusivamente para fins de seleção
+              do Programa de Menor Aprendiz, conforme a
+              <strong style="color:#fff;">Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018)</strong>.
+            </p>
+            <label class="lgpd-checkbox">
+              <input type="checkbox" id="ma-lgpd" required>
+              <span>Li e concordo com o uso dos meus dados para este processo seletivo.</span>
+            </label>
+          </div>
+
+          <div class="alert alert--error" id="ma-alert"></div>
+
+          <button type="button" class="btn-submit" id="ma-submit-btn" onclick="submitForm()">
+            ✅ Enviar Inscrição
+          </button>
+        </div>
+      </div>
+
+    </form>
+  </div>
+
+</div>
+
+<script>
+  // Máscara CPF
+  document.getElementById('ma-cpf').addEventListener('input', function () {
+    let v = this.value.replace(/\D/g, '').slice(0, 11);
+    if (v.length > 9)      v = v.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4');
+    else if (v.length > 6) v = v.replace(/^(\d{3})(\d{3})(\d+)/, '$1.$2.$3');
+    else if (v.length > 3) v = v.replace(/^(\d{3})(\d+)/, '$1.$2');
+    this.value = v;
+  });
+
+  function handleResumeFile(input) {
+    const zone = document.getElementById('ma-resume-zone');
+    if (input.files && input.files[0]) {
+      const f = input.files[0];
+      zone.classList.add('file-drop--selected');
+      zone.querySelector('.file-drop__text').textContent = '✅ ' + f.name;
+      zone.querySelector('.file-drop__hint').textContent = (f.size / 1024 / 1024).toFixed(2) + ' MB';
+    }
+  }
+
+  function showAlert(msg) {
+    const el = document.getElementById('ma-alert');
+    el.textContent = msg;
+    el.style.display = 'block';
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function hideAlert() {
+    document.getElementById('ma-alert').style.display = 'none';
+  }
+
+  async function submitForm() {
+    hideAlert();
+    const btn = document.getElementById('ma-submit-btn');
+
+    const name        = document.getElementById('ma-name').value.trim();
+    const cpf         = document.getElementById('ma-cpf').value.trim();
+    const nascimento  = document.getElementById('ma-nascimento').value;
+    const responsavel = document.getElementById('ma-responsavel').value.trim();
+    const cidade      = document.getElementById('ma-cidade').value.trim();
+    const phone       = document.getElementById('ma-phone').value.trim();
+    const email       = document.getElementById('ma-email').value.trim();
+    const escola      = document.getElementById('ma-escola').value.trim();
+    const lgpd        = document.getElementById('ma-lgpd').checked;
+
+    if (!name)        return showAlert('Informe o nome completo.');
+    if (!cpf)         return showAlert('Informe o CPF.');
+    if (!nascimento)  return showAlert('Informe a data de nascimento.');
+    if (!responsavel) return showAlert('Informe o nome do responsável legal.');
+    if (!cidade)      return showAlert('Informe a cidade atual.');
+    if (!phone)       return showAlert('Informe o telefone/WhatsApp.');
+    if (!email)       return showAlert('Informe o e-mail.');
+    if (!escola)      return showAlert('Informe a escola atual.');
+    if (!lgpd)        return showAlert('Você precisa aceitar o termo de consentimento LGPD.');
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Enviando...';
+
+    try {
+      const fd = new FormData();
+      fd.append('fullName',       name);
+      fd.append('cpf',            cpf);
+      fd.append('dataNascimento', nascimento);
+      fd.append('nomeResponsavel',responsavel);
+      fd.append('cidadeAtual',    cidade);
+      fd.append('phone',          phone);
+      fd.append('email',          email);
+      fd.append('escolaAtual',    escola);
+      fd.append('periodoEscolar', document.getElementById('ma-periodo').value);
+      fd.append('turnoEscolar',   document.getElementById('ma-turno').value);
+      fd.append('areaInteresse',  document.getElementById('ma-area').value);
+      fd.append('motivation',     document.getElementById('ma-motivation').value.trim());
+
+      const resumeFile = document.getElementById('ma-resume').files[0];
+      if (resumeFile) fd.append('resume', resumeFile);
+
+      const resp = await fetch('/api/menor-aprendiz', { method: 'POST', body: fd });
+      const data = await resp.json();
+
+      if (!resp.ok) {
+        btn.disabled = false;
+        btn.textContent = '✅ Enviar Inscrição';
+        return showAlert(data.message || 'Erro ao enviar. Tente novamente.');
+      }
+
+      // Sucesso
+      document.getElementById('ma-form-wrap').style.display = 'none';
+      document.getElementById('ma-success').style.display   = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = '✅ Enviar Inscrição';
+      showAlert('Erro de conexão. Verifique sua internet e tente novamente.');
+    }
+  }
+</script>
+
+</body>
+</html>
