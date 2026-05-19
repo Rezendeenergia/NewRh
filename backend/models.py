@@ -325,3 +325,29 @@ class CandidatoDocumento(Base):
     enviado_em     = Column(DateTime, server_default=func.now())
 
     candidatura = relationship("Candidatura", backref="documentos_extras")
+
+
+# ── Menor Aprendiz ────────────────────────────────────────────
+class MenorAprendiz(Base):
+    """Inscrição de menor aprendiz (formulário simplificado, sem vaga específica)."""
+    __tablename__ = "menor_aprendiz"
+
+    id                  = Column(Integer, primary_key=True, index=True)
+    full_name           = Column(String(150), nullable=False)
+    cpf                 = Column(String(14),  nullable=False)
+    data_nascimento     = Column(Date,        nullable=True)
+    nome_responsavel    = Column(String(150), nullable=True)   # pai/mãe/responsável legal
+    phone               = Column(String(20),  nullable=False)
+    email               = Column(String(150), nullable=False)
+    cidade_atual        = Column(String(100), nullable=True)
+    escola_atual        = Column(String(150), nullable=True)   # escola/curso que está cursando
+    periodo_escolar     = Column(String(50),  nullable=True)   # 6º ano, 1º EM, etc.
+    turno_escolar       = Column(String(20),  nullable=True)   # Manhã / Tarde / Noite
+    area_interesse      = Column(String(200), nullable=True)   # área de interesse
+    motivation          = Column(Text,        nullable=True)   # por que quer trabalhar aqui
+    resume_name         = Column(String(200), nullable=True)   # currículo opcional (PDF)
+    status              = Column(String(20),  nullable=False, default="PENDENTE")
+    # PENDENTE | EM_ANALISE | APROVADO | REJEITADO
+    observacoes_gestor  = Column(Text,        nullable=True)
+    created_at          = Column(DateTime,    server_default=func.now())
+    updated_at          = Column(DateTime,    server_default=func.now(), onupdate=func.now())
