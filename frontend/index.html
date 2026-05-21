@@ -189,6 +189,34 @@
     </div>
 
     <!-- Formulário de candidatura -->
+
+    <!-- Detalhe da vaga -->
+    <div id="job-detail-view" style="display:none;">
+      <button class="btn btn--ghost" onclick="Portal.backToJobList()">← Voltar às vagas</button>
+
+      <div class="job-banner" id="detail-job-banner">
+        <div class="job-banner__glow"></div>
+        <h2 class="job-banner__title" id="detail-job-title"></h2>
+        <div class="job-banner__tags" id="detail-job-tags"></div>
+      </div>
+
+      <div class="card" style="margin-top:20px;">
+        <div class="card__header">
+          <span class="card__title">📋 Sobre a Vaga</span>
+        </div>
+        <div class="card__body">
+          <div id="detail-job-description"
+               style="color:#C8D0DC;font-size:15px;line-height:1.75;white-space:pre-wrap;"></div>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;margin-top:20px;">
+        <button class="btn btn--primary" onclick="Portal.goToApplyForm()" style="padding:14px 36px;font-size:16px;">
+          Candidatar-se →
+        </button>
+      </div>
+    </div>
+
     <div id="apply-form-view" style="display:none;">
       <button class="btn btn--ghost" onclick="Portal.backToJobList()">← Voltar às vagas</button>
 
