@@ -209,7 +209,27 @@ def detalhe(aprendiz_id):
         db.close()
 
 
-# ── Abrir currículo (redireciona para SharePoint) ─────────────
+
+
+# -- URL do curriculo (frontend abre via window.open) ----------
+
+@bp.get("/<int:aprendiz_id>/resume-url")
+@require_auth
+def get_resume_url(aprendiz_id):
+    db = get_db()
+    try:
+        a = db.query(models.MenorAprendiz).filter_by(id=aprendiz_id).first()
+        if not a or not a.resume_name:
+            return jsonify({"message": "Curriculo nao encontrado"}), 404
+        if not getattr(a, "resume_url", None):
+            return jsonify({"message": "URL do arquivo nao disponivel"}), 404
+        return jsonify({"url": a.resume_url, "name": a.resume_name})
+    finally:
+        db.close()
+
+
+# -- Download proxy (baixa do SharePoint e serve ao browser) ---
+# Evita CORS: o backend busca o arquivo e entrega diretamente.
 
 @bp.get("/<int:aprendiz_id>/resume")
 @require_auth
@@ -218,16 +238,34 @@ def download_resume(aprendiz_id):
     try:
         a = db.query(models.MenorAprendiz).filter_by(id=aprendiz_id).first()
         if not a or not a.resume_name:
-            return jsonify({"message": "Currículo não encontrado"}), 404
+            return jsonify({"message": "Curriculo nao encontrado"}), 404
+        if not getattr(a, "resume_url", None):
+            return jsonify({"message": "Arquivo nao disponivel"}), 404
 
-        # Se tiver URL salva, redireciona direto para o SharePoint
-        if getattr(a, "resume_url", None):
-            return redirect(a.resume_url)
-
-        return jsonify({"message": "Arquivo não disponível"}), 404
+        try:
+            from sharepoint_service import _get_token
+            import requests as http
+            import io
+            token = _get_token()
+            r = http.get(
+                a.resume_url,
+                headers={"Authorization": f"Bearer {token}"},
+                timeout=30,
+                allow_redirects=True,
+            )
+            if not r.ok:
+                return jsonify({"message": "Nao foi possivel recuperar o arquivo"}), 502
+            return send_file(
+                io.BytesIO(r.content),
+                mimetype="application/pdf",
+                as_attachment=False,
+                download_name=a.resume_name,
+            )
+        except Exception as e:
+            print(f"[MENOR_APRENDIZ] Erro proxy resume: {e}")
+            return jsonify({"message": "Erro ao recuperar arquivo"}), 500
     finally:
         db.close()
-
 
 # ── Atualizar status ──────────────────────────────────────────
 
