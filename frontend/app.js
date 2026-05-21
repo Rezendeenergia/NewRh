@@ -644,17 +644,36 @@ const Portal = {
       } catch (err) { showToast('Erro', err.message, 'error'); return; }
     }
 
-    document.getElementById('apply-job-title').textContent = selectedJob.position;
-    document.getElementById('apply-job-tags').innerHTML = `
-      <span class="tag">📍 ${selectedJob.location}</span>
-      ${selectedJob.tipo ? `<span class="tag">${selectedJob.tipo}</span>` : ''}
-      <span class="tag">${selectedJob.numVagas} vaga${selectedJob.numVagas !== 1 ? 's' : ''}</span>`;
-
+    // Atualiza URL
     const url = new URL(window.location.href);
     url.searchParams.set('vaga', jobId);
     window.history.pushState({}, '', url);
 
+    // Preenche tela de detalhe
+    document.getElementById('detail-job-title').textContent = selectedJob.position;
+    document.getElementById('detail-job-tags').innerHTML = `
+      <span class="tag">📍 ${selectedJob.location}</span>
+      ${selectedJob.tipo ? `<span class="tag">${selectedJob.tipo}</span>` : ''}
+      <span class="tag tag--success">${selectedJob.numVagas} vaga${selectedJob.numVagas !== 1 ? 's' : ''}</span>`;
+    document.getElementById('detail-job-description').textContent =
+      selectedJob.finalidade || 'Sem descrição disponível.';
+
+    // Mostra tela de detalhe
     document.getElementById('job-list').style.display        = 'none';
+    document.getElementById('apply-form-view').style.display = 'none';
+    document.getElementById('job-detail-view').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  },
+
+  goToApplyForm() {
+    if (!selectedJob) return;
+    document.getElementById('apply-job-title').textContent = selectedJob.position;
+    document.getElementById('apply-job-tags').innerHTML = `
+      <span class="tag">📍 ${selectedJob.location}</span>
+      ${selectedJob.tipo ? `<span class="tag">${selectedJob.tipo}</span>` : ''}
+      <span class="tag tag--success">${selectedJob.numVagas} vaga${selectedJob.numVagas !== 1 ? 's' : ''}</span>`;
+
+    document.getElementById('job-detail-view').style.display = 'none';
     document.getElementById('apply-form-view').style.display = 'block';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   },
@@ -666,6 +685,7 @@ const Portal = {
     window.history.pushState({}, '', url);
 
     document.getElementById('apply-form-view').style.display = 'none';
+    document.getElementById('job-detail-view').style.display = 'none';
     document.getElementById('job-list').style.display        = 'block';
     document.getElementById('apply-form').reset();
     document.querySelectorAll('#apply-form input[type="checkbox"]').forEach(cb => cb.checked = false);
@@ -2210,9 +2230,14 @@ const MenorAprendiz = {
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
               <span style="background:${sc.bg};border:1px solid ${sc.border};color:${sc.color};
                            font-size:10px;font-weight:700;border-radius:20px;padding:2px 10px;">${sc.label.toUpperCase()}</span>
-              ${a.hasResume ? `<button onclick="MenorAprendiz.downloadResume(${a.id},'${(a.resumeName||'curriculo.pdf')}')"
-                style="background:rgba(255,106,0,.08);border:1px solid rgba(255,106,0,.2);color:#FF8C2A;
-                       font-size:10px;font-weight:700;border-radius:20px;padding:2px 10px;cursor:pointer;background:transparent;">📄 Currículo</button>` : ''}
+              ${a.hasResume ? (a.resumeUrl
+                ? `<a href="${a.resumeUrl}" target="_blank"
+                     style="background:rgba(255,106,0,.08);border:1px solid rgba(255,106,0,.2);color:#FF8C2A;
+                            font-size:10px;font-weight:700;border-radius:20px;padding:2px 10px;text-decoration:none;">📄 Currículo</a>`
+                : `<button onclick="MenorAprendiz.downloadResume(${a.id},'${a.resumeName||'curriculo.pdf'}')"
+                     style="background:rgba(255,106,0,.08);border:1px solid rgba(255,106,0,.2);color:#FF8C2A;
+                            font-size:10px;font-weight:700;border-radius:20px;padding:2px 10px;cursor:pointer;">📄 Currículo</button>`
+              ) : ''}
             </div>
             <p style="margin:0 0 2px;font-size:16px;font-weight:800;color:#fff;">${a.fullName}</p>
             <p style="margin:0;font-size:12px;color:#9AA3B2;">
