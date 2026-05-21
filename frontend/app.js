@@ -2230,14 +2230,9 @@ const MenorAprendiz = {
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
               <span style="background:${sc.bg};border:1px solid ${sc.border};color:${sc.color};
                            font-size:10px;font-weight:700;border-radius:20px;padding:2px 10px;">${sc.label.toUpperCase()}</span>
-              ${a.hasResume ? (a.resumeUrl
-                ? `<a href="${a.resumeUrl}" target="_blank"
-                     style="background:rgba(255,106,0,.08);border:1px solid rgba(255,106,0,.2);color:#FF8C2A;
-                            font-size:10px;font-weight:700;border-radius:20px;padding:2px 10px;text-decoration:none;">📄 Currículo</a>`
-                : `<button onclick="MenorAprendiz.downloadResume(${a.id},'${a.resumeName||'curriculo.pdf'}')"
-                     style="background:rgba(255,106,0,.08);border:1px solid rgba(255,106,0,.2);color:#FF8C2A;
-                            font-size:10px;font-weight:700;border-radius:20px;padding:2px 10px;cursor:pointer;">📄 Currículo</button>`
-              ) : ''}
+              ${a.hasResume ? `<button onclick="MenorAprendiz.downloadResume(${a.id},'${a.resumeName||'curriculo.pdf'}')"
+                style="background:rgba(255,106,0,.08);border:1px solid rgba(255,106,0,.2);color:#FF8C2A;
+                       font-size:10px;font-weight:700;border-radius:20px;padding:2px 10px;cursor:pointer;">📄 Currículo</button>` : ''}
             </div>
             <p style="margin:0 0 2px;font-size:16px;font-weight:800;color:#fff;">${a.fullName}</p>
             <p style="margin:0;font-size:12px;color:#9AA3B2;">
@@ -2292,16 +2287,13 @@ const MenorAprendiz = {
 
   async downloadResume(id, filename) {
     try {
-      const r = await fetch(`${API_BASE}/api/menor-aprendiz/${id}/resume`, {
+      // Busca a URL do SharePoint via backend (autenticado) e abre numa nova aba
+      const r = await fetch(`${API_BASE}/api/menor-aprendiz/${id}/resume-url`, {
         headers: { 'Authorization': 'Bearer ' + sessionToken },
       });
-      if (!r.ok) throw new Error('Arquivo não encontrado');
-      const blob = await r.blob();
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = filename || 'curriculo.pdf';
-      a.click();
-      URL.revokeObjectURL(a.href);
+      if (!r.ok) throw new Error('Currículo não encontrado');
+      const { url } = await r.json();
+      window.open(url, '_blank');
     } catch (err) {
       showToast('Erro', err.message, 'error');
     }
