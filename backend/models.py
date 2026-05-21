@@ -346,6 +346,7 @@ class MenorAprendiz(Base):
     area_interesse      = Column(String(200), nullable=True)   # área de interesse
     motivation          = Column(Text,        nullable=True)   # por que quer trabalhar aqui
     resume_name         = Column(String(200), nullable=True)   # currículo opcional (PDF)
+    resume_url          = Column(String(1000), nullable=True)  # URL SharePoint do currículo
     status              = Column(String(20),  nullable=False, default="PENDENTE")
     # PENDENTE | EM_ANALISE | APROVADO | REJEITADO
     observacoes_gestor  = Column(Text,        nullable=True)
