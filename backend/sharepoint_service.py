@@ -18,6 +18,7 @@ SCOPES     = ["https://graph.microsoft.com/.default"]
 
 # Caminho base já existente no SharePoint
 BASE_PATH  = "ADMINISTRAÇÃO/Departamento de Gestão de Pessoas/RH/CANDIDATURAS"
+BASE_PATH_APRENDIZ = "ADMINISTRAÇÃO/Departamento de Gestão de Pessoas/RH/MENOR APRENDIZ"
 
 
 def _get_token():
@@ -123,6 +124,33 @@ def _criar_estrutura_recursiva(drive_id: str, caminho_base: str, estrutura: dict
                 )
         except Exception as e:
             print(f"[SHAREPOINT] Erro ao criar {nome_pasta}: {e}")
+
+
+
+def upload_bytes(file_bytes: bytes, nome_arquivo: str, caminho_pasta: str,
+                 content_type: str = "application/pdf") -> str | None:
+    """
+    Faz upload de bytes diretamente para o SharePoint (sem escrever em disco).
+    caminho_pasta: caminho relativo a partir da raiz do drive.
+    Ex: "ADMINISTRAÇÃO/.../MENOR APRENDIZ"
+    Retorna a webUrl do arquivo ou None em caso de erro.
+    """
+    try:
+        site_id  = _get_site_id()
+        drive_id = _get_drive_id(site_id)
+        upload_url = f"{GRAPH_BASE}/drives/{drive_id}/root:/{caminho_pasta}/{nome_arquivo}:/content"
+        headers = {
+            "Authorization": f"Bearer {_get_token()}",
+            "Content-Type":  content_type,
+        }
+        r = requests.put(upload_url, headers=headers, data=file_bytes, timeout=60)
+        r.raise_for_status()
+        url = r.json().get("webUrl", "")
+        print(f"[SHAREPOINT] upload_bytes OK → {caminho_pasta}/{nome_arquivo}")
+        return url
+    except Exception as e:
+        print(f"[SHAREPOINT] Erro upload_bytes: {e}")
+        return None
 
 
 def criar_pasta_colaborador(nome: str, cpf: str) -> dict:
