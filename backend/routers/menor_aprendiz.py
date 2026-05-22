@@ -73,15 +73,15 @@ def inscrever():
         if not data.get(field):
             return jsonify({"message": f"Campo obrigatório: {field}"}), 400
 
-    # Validação de idade (14–18 anos)
+    # Validação de idade (14–24 anos)
     if data.get("dataNascimento"):
         try:
             dn    = date.fromisoformat(data["dataNascimento"])
             hoje  = date.today()
             idade = hoje.year - dn.year - ((hoje.month, hoje.day) < (dn.month, dn.day))
-            if idade < 14 or idade > 18:
+            if idade < 14 or idade > 24:
                 return jsonify({
-                    "message": "O Programa Menor Aprendiz é destinado a jovens com idade entre 14 e 18 anos."
+                    "message": "O Programa Menor Aprendiz é destinado a jovens com idade entre 14 e 24 anos."
                 }), 400
         except ValueError:
             pass
