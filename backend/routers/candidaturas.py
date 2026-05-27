@@ -153,7 +153,8 @@ def submit():
 
         duplicate = db.query(models.Candidatura).filter_by(job_id=job.id, cpf=data["cpf"]).first()
         if duplicate:
-            return jsonify({"message": "CPF já cadastrado para esta vaga"}), 409
+            msg = "Você já se inscreveu nesta vaga. Aguarde o contato do RH." if job.tipo == "Mudança de Função" else "CPF já cadastrado para esta vaga"
+            return jsonify({"message": msg}), 409
 
         recent_cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
         if db.query(models.Candidatura).filter(
