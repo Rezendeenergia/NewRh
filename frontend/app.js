@@ -673,6 +673,42 @@ const Portal = {
       ${selectedJob.tipo ? `<span class="tag">${selectedJob.tipo}</span>` : ''}
       <span class="tag tag--success">${selectedJob.numVagas} vaga${selectedJob.numVagas !== 1 ? 's' : ''}</span>`;
 
+    // ── Mudança de Função: pré-preenche nome e mostra aviso ──
+    const nameField = document.getElementById('apply-full-name');
+    let bannerEl = document.getElementById('mudanca-funcao-banner');
+
+    if (selectedJob.tipo === 'Mudança de Função' && selectedJob.colaboradorNome) {
+      nameField.value    = selectedJob.colaboradorNome;
+      nameField.readOnly = true;
+      nameField.style.background  = 'rgba(255,165,0,0.08)';
+      nameField.style.borderColor = '#FFA500';
+      nameField.style.color       = '#FFF';
+
+      if (!bannerEl) {
+        bannerEl = document.createElement('div');
+        bannerEl.id = 'mudanca-funcao-banner';
+        nameField.closest('.form-field--full').insertAdjacentElement('afterend', bannerEl);
+      }
+      bannerEl.style.cssText = 'display:flex;align-items:flex-start;gap:12px;background:rgba(255,165,0,0.1);border:1px solid rgba(255,165,0,0.35);border-left:4px solid #FFA500;border-radius:10px;padding:14px 18px;margin:0 0 16px;grid-column:1/-1;';
+      bannerEl.innerHTML = `
+        <span style="font-size:22px;line-height:1;">🔒</span>
+        <div>
+          <p style="margin:0 0 4px;font-size:13px;font-weight:800;color:#FFA500;text-transform:uppercase;letter-spacing:1px;">Vaga exclusiva — Mudança de Função</p>
+          <p style="margin:0;font-size:14px;color:#E0E0E0;line-height:1.5;">
+            Esta vaga foi criada especificamente para
+            <strong style="color:#fff;">${selectedJob.colaboradorNome}</strong>.
+            O nome já foi preenchido automaticamente e não pode ser alterado.
+            Preencha os demais campos com seus dados pessoais e clique em <strong style="color:#FFA500;">Enviar Candidatura</strong>.
+          </p>
+        </div>`;
+    } else {
+      nameField.readOnly = false;
+      nameField.style.background  = '';
+      nameField.style.borderColor = '';
+      nameField.style.color       = '';
+      if (bannerEl) bannerEl.remove();
+    }
+
     document.getElementById('job-detail-view').style.display = 'none';
     document.getElementById('apply-form-view').style.display = 'block';
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -683,6 +719,17 @@ const Portal = {
     const url = new URL(window.location.href);
     url.searchParams.delete('vaga');
     window.history.pushState({}, '', url);
+
+    // Limpa estado de Mudança de Função no campo nome
+    const nameField = document.getElementById('apply-full-name');
+    if (nameField) {
+      nameField.readOnly = false;
+      nameField.style.background  = '';
+      nameField.style.borderColor = '';
+      nameField.style.color       = '';
+    }
+    const bannerEl = document.getElementById('mudanca-funcao-banner');
+    if (bannerEl) bannerEl.remove();
 
     document.getElementById('apply-form-view').style.display = 'none';
     document.getElementById('job-detail-view').style.display = 'none';
