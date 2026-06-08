@@ -11,10 +11,64 @@ import audit
 import csv
 import io
 import os
+import threading
 
 load_dotenv()
 
 bp = Blueprint("candidaturas", __name__, url_prefix="/api/candidaturas")
+
+
+# ── Background: email + SharePoint após candidatura salva ────
+def _pos_candidatura(candidatura_id: int, job_id: int, resume_filename: str):
+    """
+    Executa notificações e integração SharePoint em thread separada,
+    sem bloquear a resposta HTTP ao candidato.
+    """
+    from database import SessionLocal
+    db = SessionLocal()
+    try:
+        candidatura = db.query(models.Candidatura).filter_by(id=candidatura_id).first()
+        job         = db.query(models.Job).filter_by(id=job_id).first()
+        if not candidatura or not job:
+            print(f"[BG] Candidatura {candidatura_id} ou vaga {job_id} não encontrada.")
+            return
+
+        # ── E-mails ──────────────────────────────────────────
+        try:
+            notify_new_application(candidatura, job)
+        except Exception as e:
+            print(f"[BG] Erro ao notificar RH: {e}")
+
+        try:
+            notify_application_confirmation(candidatura, job)
+        except Exception as e:
+            print(f"[BG] Erro ao confirmar para candidato: {e}")
+
+        # ── SharePoint ───────────────────────────────────────
+        try:
+            from sharepoint_service import criar_pasta_colaborador, upload_documento
+            print(f"[BG][SHAREPOINT] Criando pasta para {candidatura.full_name}...")
+            result = criar_pasta_colaborador(candidatura.full_name, candidatura.cpf)
+            if result.get("url"):
+                print(f"[BG][SHAREPOINT] Pasta criada: {result['url']}")
+                if resume_filename:
+                    pasta = result.get("pasta") or \
+                            f"{candidatura.full_name} - {candidatura.cpf.replace('.','').replace('-','')}"
+                    resume_path = os.path.join(UPLOAD_FOLDER, resume_filename)
+                    sp_url = upload_documento(resume_path, resume_filename, pasta, sub_pasta="Curriculo")
+                    if sp_url:
+                        print(f"[BG][SHAREPOINT] Curriculo enviado: {sp_url}")
+                    else:
+                        print(f"[BG][SHAREPOINT] Upload retornou None")
+            else:
+                print(f"[BG][SHAREPOINT] Falha ao criar pasta: {result.get('erro')}")
+        except Exception as e:
+            print(f"[BG][SHAREPOINT] Erro: {e}")
+
+    except Exception as e:
+        print(f"[BG] Erro inesperado em _pos_candidatura: {e}")
+    finally:
+        db.close()
 
 DELIMITER     = ";"
 UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "uploads"))
@@ -208,28 +262,13 @@ def submit():
         audit.log("sistema", audit.NEW_APPLICATION, entity="candidatura",
                   entity_id=candidatura.id,
                   detail=f"{candidatura.full_name} → {job.position} ({job.location})")
-        notify_new_application(candidatura, job)
-        notify_application_confirmation(candidatura, job)  # confirmação para o candidato
 
-        # Cria pasta no SharePoint e faz upload do currículo
-        try:
-            from sharepoint_service import criar_pasta_colaborador, upload_documento
-            print(f"[SHAREPOINT] Criando pasta para {candidatura.full_name}...")
-            result = criar_pasta_colaborador(candidatura.full_name, candidatura.cpf)
-            if result.get("url"):
-                print(f"[SHAREPOINT] Pasta criada: {result['url']}")
-                if resume_filename:
-                    pasta = result.get("pasta") or f"{candidatura.full_name} - {candidatura.cpf.replace('.','').replace('-','')}"
-                    resume_path = os.path.join(UPLOAD_FOLDER, resume_filename)
-                    sp_url = upload_documento(resume_path, resume_filename, pasta, sub_pasta="Curriculo")
-                    if sp_url:
-                        print(f"[SHAREPOINT] Curriculo enviado: {sp_url}")
-                    else:
-                        print(f"[SHAREPOINT] Curriculo: upload retornou None")
-            else:
-                print(f"[SHAREPOINT] Falha ao criar pasta: {result.get('erro')}")
-        except Exception as e:
-            print(f"[SHAREPOINT] Erro: {e}")
+        # Dispara email + SharePoint em background — não bloqueia o response
+        threading.Thread(
+            target=_pos_candidatura,
+            args=(candidatura.id, job.id, resume_filename),
+            daemon=True,
+        ).start()
 
         return jsonify(candidatura_to_dict(candidatura)), 201
     finally:
