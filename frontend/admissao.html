@@ -373,7 +373,7 @@ const Adm = {
           </div>`).join('')}
       </div>` : '';
 
-    const uploadHtml = temDocs ? `
+    const uploadHtml = (temDocs && isAtiva) ? `
       <div class="upload-zone" id="zone-${e.id}" onclick="document.getElementById('upload-${e.id}').click()"
            style="cursor:pointer;">
         <input type="file" id="upload-${e.id}" style="display:none"
