@@ -323,7 +323,10 @@ const Adm = {
   },
 
   renderEtapa(e, processoId) {
-    const isAtiva    = e.status === 'EM_ANDAMENTO';
+    // Etapa está "operável" se EM_ANDAMENTO; ou se PENDENTE mas é do tipo DOCUMENTO/CHECKLIST
+    // (permite gestores anexar/aprovar mesmo que o fluxo ainda não tenha avançado oficialmente)
+    const isEmAndamento = e.status === 'EM_ANDAMENTO';
+    const isAtiva    = isEmAndamento || (e.status === 'PENDENTE' && (e.tipo === 'DOCUMENTO' || e.tipo === 'CHECKLIST' || e.codigo === 'PROVA_DEEP'));
     const isAprovada = e.status === 'APROVADO';
     const temDocs    = e.tipo === 'DOCUMENTO' || e.codigo === 'PROVA_DEEP';
     const docsHtml   = e.documentos.length > 0 ? `
@@ -592,7 +595,7 @@ const Adm = {
     const txt   = document.getElementById(`comentario-${docId}`)?.value || '';
     const saved = document.getElementById(`acao-saved-${docId}`);
     try {
-      await req(`/api/processos/${Adm.processoAtual}/etapas/${etapaId}/documentos/${docId}/comentar`, {
+      await req(`/api/processos/${currentProcessoId}/etapas/${etapaId}/documentos/${docId}/comentar`, {
         method: 'PATCH',
         body: JSON.stringify({ comentario: txt }),
       });
@@ -611,12 +614,12 @@ const Adm = {
     fd.append('arquivo', file);
     fd.append('motivo', motivo);
     try {
-      const r = await fetch(`/api/processos/${Adm.processoAtual}/etapas/${etapaId}/documentos/${docId}/substituir`, {
-        method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd,
+      const r = await fetch(`/api/processos/${currentProcessoId}/etapas/${etapaId}/documentos/${docId}/substituir`, {
+        method: 'POST', headers: { 'Authorization': 'Bearer ' + TOKEN }, body: fd,
       });
       if (!r.ok) throw new Error((await r.json()).message);
       alert('✅ Documento substituído! O arquivo antigo foi removido do SharePoint.');
-      await Adm.loadProcesso(Adm.processoAtual);
+      await Adm.loadProcesso(currentProcessoId);
     } catch(e) { alert('Erro ao substituir: ' + e.message); }
     input.value = '';
   },
