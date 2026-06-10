@@ -48,14 +48,16 @@ DEPT_LABEL = {
 
 def doc_to_dict(d):
     return {
-        "id":            d.id,
-        "nome":          d.nome,
-        "arquivo":       d.arquivo,
-        "sharepointUrl": d.sharepoint_url,
-        "enviadoPor":    d.enviado_por,
-        "status":        d.status,
-        "observacao":    d.observacao,
-        "createdAt":     d.created_at.isoformat() if d.created_at else None,
+        "id":                d.id,
+        "nome":              d.nome,
+        "arquivo":           d.arquivo,
+        "sharepointUrl":     d.sharepoint_url,
+        "enviadoPor":        d.enviado_por,
+        "status":            d.status,
+        "observacao":        d.observacao,
+        "comentarioInterno": getattr(d, "comentario_interno", None) or "",
+        "versao":            getattr(d, "versao", 1) or 1,
+        "createdAt":         d.created_at.isoformat() if d.created_at else None,
     }
 
 
