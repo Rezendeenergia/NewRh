@@ -209,6 +209,10 @@ class ProcessoAdmissao(Base):
     sharepoint_url   = Column(Text, nullable=True)
     created_at       = Column(DateTime, server_default=func.now())
     updated_at       = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    concluido_em     = Column(DateTime, nullable=True)
+    # concluido_em: setado uma única vez quando o processo vira CONCLUIDO.
+    # Não usar updated_at para "data de admissão": updated_at muda a cada
+    # edição futura do processo, o que inflaria o contador de dias.
 
     candidatura = relationship("Candidatura", backref="processo")
     etapas      = relationship("EtapaProcesso", back_populates="processo",
