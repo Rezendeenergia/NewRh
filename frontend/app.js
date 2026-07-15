@@ -1125,7 +1125,7 @@ const Manager = {
         <div style="padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.05);">
           <div style="display:flex;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:4px;">
             <div>
-              <span style="font-size:10px;color:#5A6478;text-transform:uppercase;letter-spacing:1px;">Candidatou-se</span>
+              <span style="font-size:10px;color:#5A6478;text-transform:uppercase;letter-spacing:1px;">Aprovado (Triagem)</span>
               <p style="margin:2px 0 0;font-size:13px;font-weight:700;color:#F4F5F7;">${fmtData(c.dtCandidatura)}</p>
             </div>
             <span style="font-size:18px;color:#FF6A00;align-self:center;">→</span>
