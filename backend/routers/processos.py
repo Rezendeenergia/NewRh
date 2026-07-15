@@ -813,12 +813,16 @@ def colaboradores_admitidos():
                     continue
                 j = getattr(c, "job", None)
 
-                # Data de candidatura (applied_at) e data de conclusão do processo.
-                # Usa concluido_em (setado uma única vez, no momento da conclusão) em vez
-                # de updated_at, que muda a cada edição futura do processo já concluído
-                # e inflaria o contador de dias indevidamente. Fallback para updated_at
-                # apenas em processos antigos, concluídos antes dessa coluna existir.
-                dt_candidatura = getattr(c, "applied_at", None) or p.created_at
+                # Data de início da contagem = quando o candidato foi APROVADO
+                # na Triagem (1ª etapa), e não a data de candidatura/abertura
+                # da vaga. Isso reflete "dias desde que foi aprovado
+                # inicialmente como candidato" até a conclusão do processo.
+                triagem = next((e for e in p.etapas if e.codigo == "TRIAGEM"), None)
+                dt_aprovacao_inicial = None
+                if triagem and triagem.status == "APROVADO":
+                    dt_aprovacao_inicial = triagem.concluido_em or triagem.iniciado_em
+                # Fallback (ex.: processos antigos sem Triagem registrada corretamente)
+                dt_candidatura = dt_aprovacao_inicial or getattr(c, "applied_at", None) or p.created_at
                 dt_admitido    = p.concluido_em or p.updated_at
 
                 # Tempo total em dias
