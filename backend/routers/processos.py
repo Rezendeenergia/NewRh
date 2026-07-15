@@ -166,6 +166,8 @@ def _avancar_etapa(processo, db):
     else:
         processo.status      = "CONCLUIDO"
         processo.etapa_atual = "Concluído"
+        if not processo.concluido_em:
+            processo.concluido_em = datetime.now(timezone.utc)
     db.commit()
 
 
@@ -811,9 +813,13 @@ def colaboradores_admitidos():
                     continue
                 j = getattr(c, "job", None)
 
-                # Data de candidatura (applied_at) e data de conclusão (updated_at do processo)
+                # Data de candidatura (applied_at) e data de conclusão do processo.
+                # Usa concluido_em (setado uma única vez, no momento da conclusão) em vez
+                # de updated_at, que muda a cada edição futura do processo já concluído
+                # e inflaria o contador de dias indevidamente. Fallback para updated_at
+                # apenas em processos antigos, concluídos antes dessa coluna existir.
                 dt_candidatura = getattr(c, "applied_at", None) or p.created_at
-                dt_admitido    = p.updated_at  # última atualização = conclusão
+                dt_admitido    = p.concluido_em or p.updated_at
 
                 # Tempo total em dias
                 if dt_candidatura and dt_admitido:
