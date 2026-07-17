@@ -226,10 +226,12 @@ def criar_processo_para_candidatura(candidatura_id: int, db,
 def listar():
     status_f = request.args.get("status", "").upper()
     dept_f   = request.args.get("departamento", "").upper()
+    local_f  = request.args.get("local", "").strip()
+    nome_f   = request.args.get("nome", "").strip()
     page     = max(1, int(request.args.get("page", 1)))
     per_page = 30  # aumentado de 20 para 30
 
-    cache_key = f"lista:{status_f}:{dept_f}:{page}"
+    cache_key = f"lista:{status_f}:{dept_f}:{local_f}:{nome_f}:{page}"
     hit = _cache.get(cache_key)
     if hit is not None:
         return jsonify(hit)
@@ -252,6 +254,22 @@ def listar():
                 (models.EtapaProcesso.status == "EM_ANDAMENTO") &
                 (models.EtapaProcesso.departamento == dept_f)
             )
+
+        # Filtro por regional (local da vaga) e/ou nome do candidato
+        if local_f or nome_f:
+            q = q.join(
+                models.Candidatura,
+                models.Candidatura.id == models.ProcessoAdmissao.candidatura_id
+            )
+            if local_f:
+                q = q.join(
+                    models.Job, models.Job.id == models.Candidatura.job_id
+                ).filter(models.Job.location == local_f)
+            if nome_f:
+                q = q.filter(models.Candidatura.full_name.ilike(f"%{nome_f}%"))
+
+        if dept_f and (local_f or nome_f):
+            q = q.distinct()
 
         total = q.count()
 
