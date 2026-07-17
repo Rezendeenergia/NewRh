@@ -168,6 +168,16 @@
         <option value="SESMT">SESMT</option>
         <option value="TI">TI</option>
       </select>
+      <select id="f-local" onchange="renderTable()">
+        <option value="">Todas as regionais</option>
+        <option>Santarém</option><option>Mojuí dos Campos</option>
+        <option>Barcarena</option><option>Juruti</option>
+        <option>Lago Grande</option><option>Almeirim</option>
+        <option>Itaituba</option><option>Terra Preta do Salé</option>
+        <option>Vila Gorete</option><option>Curuaí</option>
+        <option>Vila Brasil</option><option>Membeca</option>
+        <option>Ilha das Onças</option>
+      </select>
     </div>
 
     <div class="table-wrap">
@@ -261,12 +271,14 @@ function renderTable() {
   const search  = document.getElementById('f-search').value.toLowerCase();
   const fStatus = document.getElementById('f-status').value;
   const fDept   = document.getElementById('f-dept').value;
+  const fLocal  = document.getElementById('f-local').value;
 
   let filtered = allProcessos.filter(p => {
     const nome  = (p.candidatura?.nome  || '').toLowerCase();
     const cargo = (p.candidatura?.cargo || '').toLowerCase();
     if (search  && !nome.includes(search) && !cargo.includes(search)) return false;
     if (fStatus && p.status !== fStatus) return false;
+    if (fLocal  && p.candidatura?.local !== fLocal) return false;
     if (fDept) {
       const etapaAtual = (p.etapas || []).find(e => e.status === 'EM_ANDAMENTO' || e.status === 'PENDENTE');
       if (!etapaAtual || etapaAtual.departamento !== fDept) return false;
