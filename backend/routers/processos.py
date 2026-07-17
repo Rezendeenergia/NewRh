@@ -45,6 +45,18 @@ DEPT_LABEL = {
     "TI": "TI",
 }
 
+# Etapas que exigem validação de um SEGUNDO departamento antes de avançar de fato.
+# Fluxo: o departamento "dono" da etapa (ex: RH) anexa/confere e clica "Aprovar" →
+# em vez de avançar para a próxima etapa, ela é ENCAMINHADA para o departamento
+# validador (aqui: SESMT), que passa a enxergar a mesma etapa (com os mesmos
+# documentos) na fila dele. Só quando o validador aprova é que o processo avança
+# de verdade. Se o validador pedir reenvio, a etapa volta para o departamento de
+# origem. Para adicionar outra etapa com o mesmo comportamento, basta incluir o
+# código dela aqui.
+ETAPAS_VALIDACAO_DUPLA = {
+    "CERTIFICADOS_NR": "SESMT",
+}
+
 
 def doc_to_dict(d):
     return {
@@ -62,6 +74,11 @@ def doc_to_dict(d):
 
 
 def etapa_to_dict(e):
+    validador = ETAPAS_VALIDACAO_DUPLA.get(e.codigo)
+    # Ainda não chegou no validador final (ex: está com RH, falta ir pro SESMT)
+    handoff_para = validador if (validador and e.departamento != validador) else None
+    # Já está com o validador final, aguardando a decisão dele
+    em_validacao_final = bool(validador and e.departamento == validador and e.status == "EM_ANDAMENTO")
     return {
         "id":           e.id,
         "ordem":        e.ordem,
@@ -76,6 +93,9 @@ def etapa_to_dict(e):
         "nota":         e.nota,
         "notaExterna":  getattr(e, "nota_externa", None) or "",
         "responsavel":  e.responsavel,
+        "handoffPara":       handoff_para,
+        "handoffParaLabel":  DEPT_LABEL.get(handoff_para) if handoff_para else None,
+        "emValidacaoFinal":  em_validacao_final,
         "iniciadoEm":   e.iniciado_em.isoformat() if e.iniciado_em else None,
         "concluidoEm":  e.concluido_em.isoformat() if e.concluido_em else None,
         "documentos":   [doc_to_dict(d) for d in e.documentos],
@@ -400,6 +420,7 @@ def atualizar_etapa(processo_id, etapa_id):
 
         old_status = e.status
         etapa_nome = e.nome
+        old_departamento = e.departamento
 
         cand       = p.candidatura
         cand_email = cand.email
@@ -407,6 +428,24 @@ def atualizar_etapa(processo_id, etapa_id):
         cand_cpf   = cand.cpf
         cand_cargo = cand.job.position if cand.job else "—"
         sp_url     = p.sharepoint_url
+
+        # ── Validação dupla (ex: RH confere, SESMT valida) ────────────────
+        validador_final = ETAPAS_VALIDACAO_DUPLA.get(e.codigo)
+        # Departamento de origem "dono" da etapa é sempre o do fluxo padrão
+        origem_padrao = next(
+            (x["departamento"] for x in ETAPAS_FLUXO if x["codigo"] == e.codigo),
+            old_departamento
+        )
+        # RH (origem) está aprovando, mas ainda falta passar pelo validador
+        is_handoff_para_validador = (
+            novo_status == "APROVADO" and validador_final
+            and old_departamento != validador_final
+        )
+        # Validador (SESMT) pediu reenvio — devolve para o departamento de origem
+        is_devolucao_do_validador = (
+            novo_status == "REENVIAR" and validador_final
+            and old_departamento == validador_final
+        )
 
         e.status       = novo_status
         e.nota         = data.get("nota", e.nota)
@@ -417,9 +456,23 @@ def atualizar_etapa(processo_id, etapa_id):
         nota_externa   = getattr(e, "nota_externa", None) or ""
         nota_texto     = e.nota
 
+        detail_extra = ""
         if novo_status == "REPROVADO":
             p.status      = "CANCELADO"
             p.etapa_atual = f"Reprovado em: {etapa_nome}"
+            db.commit()
+        elif is_handoff_para_validador:
+            # Não avança de etapa ainda — só troca o "dono" para o validador
+            e.status       = "EM_ANDAMENTO"
+            e.departamento = validador_final
+            e.concluido_em = None
+            detail_extra   = f" — encaminhado para {DEPT_LABEL.get(validador_final, validador_final)} validar"
+            db.commit()
+        elif is_devolucao_do_validador:
+            e.status       = "EM_ANDAMENTO"
+            e.departamento = origem_padrao
+            e.concluido_em = None
+            detail_extra   = f" — devolvido para {DEPT_LABEL.get(origem_padrao, origem_padrao)} corrigir"
             db.commit()
         elif novo_status in ("APROVADO", "NAO_APLICAVEL"):
             _avancar_etapa(p, db)
@@ -428,13 +481,15 @@ def atualizar_etapa(processo_id, etapa_id):
 
         audit.log(request.username, "ETAPA_ATUALIZADA", entity="processo",
                   entity_id=processo_id,
-                  detail=f"{etapa_nome}: {old_status} → {novo_status}")
+                  detail=f"{etapa_nome}: {old_status} → {novo_status}{detail_extra}")
 
         # Invalida cache para dados frescos na próxima leitura
         _cache.invalidate_processo(processo_id)
 
         # ── Notificação ao candidato ──────────────────────────────────────────
-        if novo_status in ("APROVADO", "REPROVADO", "REENVIAR"):
+        # (não notifica o candidato no handoff RH→SESMT: para ele, a etapa
+        # ainda não terminou de fato — só quando o validador final aprovar)
+        if novo_status in ("APROVADO", "REPROVADO", "REENVIAR") and not is_handoff_para_validador:
             try:
                 from email_service import notify_etapa_candidato
                 class _Cand:
@@ -466,12 +521,15 @@ def atualizar_etapa(processo_id, etapa_id):
             cd.job       = jd
 
             # Notifica depts sobre a mudança de etapa
+            # (no handoff RH→SESMT, o e-mail interno reflete "em andamento",
+            # não "aprovado" — a etapa ainda não terminou de fato)
+            status_novo_email = "EM_ANDAMENTO" if is_handoff_para_validador else novo_status
             notify_depts_etapa_atualizada(
                 candidatura   = cd,
                 etapa_nome    = etapa_nome,
                 departamento  = e.departamento,
                 status_anterior = old_status,
-                status_novo   = novo_status,
+                status_novo   = status_novo_email,
                 responsavel   = request.username,
                 processo_id   = processo_id,
             )
