@@ -410,6 +410,18 @@ const Adm = {
       </div>` : '';
 
     const actionsHtml = isAtiva ? `
+      ${e.handoffPara ? `
+      <p style="font-size:.78rem;color:#FBBF24;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);
+                border-radius:8px;padding:8px 10px;margin:0 0 10px;">
+        ⚠️ Ao aprovar, esta etapa será encaminhada para validação do <strong>${e.handoffParaLabel}</strong>
+        — o processo só avança depois que ${e.handoffParaLabel} confirmar.
+      </p>` : ''}
+      ${e.emValidacaoFinal ? `
+      <p style="font-size:.78rem;color:#5B8DEF;background:rgba(91,141,239,.08);border:1px solid rgba(91,141,239,.25);
+                border-radius:8px;padding:8px 10px;margin:0 0 10px;">
+        🔎 Aguardando validação final do <strong>${e.deptLabel}</strong>. Se algo precisar trocar, use "Reenviar Doc." —
+        a etapa volta para quem anexou os documentos.
+      </p>` : ''}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
         <div>
           <label style="display:block;font-size:11px;font-weight:700;color:#9AA3B2;text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;">
@@ -433,7 +445,7 @@ const Adm = {
         </div>
       </div>
       <div class="etapa-actions">
-        <button class="btn btn-aprovar btn--small" onclick="Adm.atualizarEtapa(${processoId},${e.id},'APROVADO')">✅ Aprovar</button>
+        <button class="btn btn-aprovar btn--small" onclick="Adm.atualizarEtapa(${processoId},${e.id},'APROVADO')">${e.handoffPara ? `✅ Aprovar e enviar p/ ${e.handoffParaLabel}` : '✅ Aprovar'}</button>
         <button class="btn btn-reenviar btn--small" onclick="Adm.atualizarEtapa(${processoId},${e.id},'REENVIAR')">🔄 Reenviar Doc.</button>
         <button class="btn btn-reprovar btn--small" onclick="Adm.atualizarEtapa(${processoId},${e.id},'REPROVADO')">❌ Reprovar</button>
         <button class="btn btn--small" style="background:rgba(90,100,120,.15);color:#9AA3B2;border:1px solid rgba(90,100,120,.3);" onclick="Adm.atualizarEtapa(${processoId},${e.id},'NAO_APLICAVEL')" title="Marcar como Não Aplicável — etapa será pulada">🚫 N/A</button>
@@ -474,8 +486,13 @@ const Adm = {
   },
 
   async atualizarEtapa(processoId, etapaId, status) {
-    const nota = document.getElementById(`nota-${etapaId}`)?.value || '';
-    const labels = { APROVADO:'Aprovar esta etapa?', REPROVADO:'⚠️ Reprovar cancela o processo. Confirmar?', REENVIAR:'Solicitar reenvio de documentação?' };
+    const nota  = document.getElementById(`nota-${etapaId}`)?.value || '';
+    const etapa = (currentProcesso?.etapas || []).find(x => x.id === etapaId);
+    const labels = {
+      APROVADO:  etapa?.handoffPara ? `Aprovar e enviar para validação do ${etapa.handoffParaLabel}?` : 'Aprovar esta etapa?',
+      REPROVADO: '⚠️ Reprovar cancela o processo. Confirmar?',
+      REENVIAR:  etapa?.emValidacaoFinal ? 'Devolver para quem anexou os documentos corrigir/reenviar?' : 'Solicitar reenvio de documentação?'
+    };
     if (!confirm(labels[status])) return;
     try {
       await req(`/api/processos/${processoId}/etapas/${etapaId}`, {
