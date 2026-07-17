@@ -33,19 +33,34 @@
       <div class="s-stat"><div class="s-stat__n" id="stat-concluidos">—</div><div class="s-stat__l">Concluídos</div></div>
     </div>
 
-    <div class="sidebar-filter" style="display:flex;gap:6px;">
-      <select id="filter-status" class="form-field__select" style="flex:1;padding:6px 8px;font-size:.78rem;" onchange="Adm.loadLista()">
-        <option value="">Todos</option>
-        <option value="EM_ANDAMENTO" selected>Em andamento</option>
-        <option value="CONCLUIDO">Concluídos</option>
-        <option value="CANCELADO">Cancelados</option>
-      </select>
-      <select id="filter-dept" class="form-field__select" style="flex:1;padding:6px 8px;font-size:.78rem;" onchange="Adm.loadLista()">
-        <option value="">Todos depts</option>
-        <option value="RH">RH</option>
-        <option value="DP">Depto Pessoal</option>
-        <option value="DP_EXTERNO">DP Externo</option>
-        <option value="SESMT">SESMT</option>
+    <div class="sidebar-filter" style="display:flex;flex-direction:column;gap:6px;">
+      <input type="text" id="filter-nome" class="form-field__input" placeholder="🔍 Buscar por nome..."
+             style="width:100%;padding:6px 8px;font-size:.78rem;box-sizing:border-box;" oninput="Adm.onFilterNomeInput()">
+      <div style="display:flex;gap:6px;">
+        <select id="filter-status" class="form-field__select" style="flex:1;padding:6px 8px;font-size:.78rem;" onchange="Adm.loadLista()">
+          <option value="">Todos</option>
+          <option value="EM_ANDAMENTO" selected>Em andamento</option>
+          <option value="CONCLUIDO">Concluídos</option>
+          <option value="CANCELADO">Cancelados</option>
+        </select>
+        <select id="filter-dept" class="form-field__select" style="flex:1;padding:6px 8px;font-size:.78rem;" onchange="Adm.loadLista()">
+          <option value="">Todos depts</option>
+          <option value="RH">RH</option>
+          <option value="DP">Depto Pessoal</option>
+          <option value="DP_EXTERNO">DP Externo</option>
+          <option value="SESMT">SESMT</option>
+          <option value="TI">TI</option>
+        </select>
+      </div>
+      <select id="filter-local" class="form-field__select" style="width:100%;padding:6px 8px;font-size:.78rem;box-sizing:border-box;" onchange="Adm.loadLista()">
+        <option value="">Todas as regionais</option>
+        <option>Santarém</option><option>Mojuí dos Campos</option>
+        <option>Barcarena</option><option>Juruti</option>
+        <option>Lago Grande</option><option>Almeirim</option>
+        <option>Itaituba</option><option>Terra Preta do Salé</option>
+        <option>Vila Gorete</option><option>Curuaí</option>
+        <option>Vila Brasil</option><option>Membeca</option>
+        <option>Ilha das Onças</option>
       </select>
     </div>
 
@@ -166,9 +181,17 @@ const Adm = {
     } catch(e) { console.error(e); }
   },
 
+  onFilterNomeInput() {
+    // Debounce de 350ms para não disparar uma busca a cada tecla
+    clearTimeout(Adm._nomeTimer);
+    Adm._nomeTimer = setTimeout(() => Adm.loadLista(), 350);
+  },
+
   async loadLista() {
     const status = document.getElementById('filter-status').value;
     const dept   = document.getElementById('filter-dept').value;
+    const local  = document.getElementById('filter-local').value;
+    const nome   = document.getElementById('filter-nome').value.trim();
     const list   = document.getElementById('processo-list');
     // Skeleton animado enquanto carrega
     list.innerHTML = [1,2,3].map(() => `
@@ -181,6 +204,8 @@ const Adm = {
       const params = new URLSearchParams();
       if (status) params.set('status', status);
       if (dept)   params.set('departamento', dept);
+      if (local)  params.set('local', local);
+      if (nome)   params.set('nome', nome);
       // cache de 15s para não re-buscar ao trocar filtros rapidamente
       const data = await reqCached(`/api/processos?${params}`, 15000);
       if (data.items.length === 0) {
