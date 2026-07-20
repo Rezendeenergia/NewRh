@@ -22,7 +22,7 @@ ETAPAS_FLUXO = [
     {"ordem": 2,  "codigo": "ENTREVISTA",            "nome": "Entrevista",                     "departamento": "RH",         "tipo": "ENTREVISTA",  "prazo_dias": 5},
     {"ordem": 3,  "codigo": "CERTIFICADOS_NR",       "nome": "Verificação Certificados NRs",   "departamento": "RH",         "tipo": "DOCUMENTO",   "prazo_dias": 2},
     {"ordem": 4,  "codigo": "APROVACAO_FINAL",       "nome": "Aprovação Final",                "departamento": "RH",         "tipo": "APROVACAO",   "prazo_dias": 1},
-    {"ordem": 5,  "codigo": "ASO",                   "nome": "Agendamento ASO",                "departamento": "RH",         "tipo": "DOCUMENTO",   "prazo_dias": 1},
+    {"ordem": 5,  "codigo": "ASO",                   "nome": "Agendamento ASO",                "departamento": "DP",         "tipo": "DOCUMENTO",   "prazo_dias": 1},
     {"ordem": 6,  "codigo": "DP_EXTERNO",            "nome": "Admissão DP Externo",            "departamento": "DP_EXTERNO", "tipo": "DOCUMENTO",   "prazo_dias": 2},
     {"ordem": 7,  "codigo": "CADASTRO_GPM",          "nome": "Cadastro no GPM",                "departamento": "TI",         "tipo": "CHECKLIST",   "prazo_dias": 1},
     {"ordem": 8,  "codigo": "ACESSO_TI",             "nome": "Criação de Email/Sistema",       "departamento": "TI",         "tipo": "CHECKLIST",   "prazo_dias": 1},
@@ -32,9 +32,9 @@ ETAPAS_FLUXO = [
     {"ordem": 12, "codigo": "PROVA_DEEP",            "nome": "POP's de Segurança",             "departamento": "SESMT",      "tipo": "APROVACAO",   "prazo_dias": 3},
     {"ordem": 13, "codigo": "ASSINATURAS",           "nome": "Coleta de Assinaturas",          "departamento": "DP",         "tipo": "DOCUMENTO",   "prazo_dias": 1},
     {"ordem": 14, "codigo": "BEMHOEFT",              "nome": "Inclusão Prontuário Bemhoeft",   "departamento": "DP",         "tipo": "DOCUMENTO",   "prazo_dias": 3},
-    {"ordem": 15, "codigo": "GRAFICA_CRACHA",        "nome": "Confecção do Crachá",            "departamento": "RH",         "tipo": "CHECKLIST",   "prazo_dias": 1},
-    {"ordem": 16, "codigo": "INTEGRACAO_EQUATORIAL", "nome": "Integração Equatorial",          "departamento": "RH",         "tipo": "DOCUMENTO",   "prazo_dias": 1},
-    {"ordem": 17, "codigo": "LIBERADO_CAMPO",        "nome": "Liberação para Campo",           "departamento": "RH",         "tipo": "APROVACAO",   "prazo_dias": 1},
+    {"ordem": 15, "codigo": "GRAFICA_CRACHA",        "nome": "Confecção do Crachá",            "departamento": "DP",         "tipo": "CHECKLIST",   "prazo_dias": 1},
+    {"ordem": 16, "codigo": "INTEGRACAO_EQUATORIAL", "nome": "Integração Equatorial",          "departamento": "DP",         "tipo": "DOCUMENTO",   "prazo_dias": 1},
+    {"ordem": 17, "codigo": "LIBERADO_CAMPO",        "nome": "Liberação para Campo",           "departamento": "DP",         "tipo": "APROVACAO",   "prazo_dias": 1},
 ]
 
 DEPT_LABEL = {
