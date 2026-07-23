@@ -303,6 +303,8 @@ def get_all():
     search        = request.args.get("search", "").strip()
     status_filter = request.args.get("status", "").strip().upper()
     job_filter    = request.args.get("jobId",  "").strip()
+    position_filter = request.args.get("position", "").strip()
+    location_filter = request.args.get("location", "").strip()
     page          = max(1, int(request.args.get("page", 1)))
 
     db = get_db()
@@ -319,7 +321,15 @@ def get_all():
         if status_filter in ("PENDING", "APPROVED", "REJECTED"):
             query = query.filter(models.Candidatura.status == status_filter)
         if job_filter:
+            # Vaga específica (uma rodada só)
             query = query.filter(models.Candidatura.job_id == int(job_filter))
+        elif position_filter or location_filter:
+            # Cargo e/ou local, agregando candidatos de todas as rodadas (vagas duplicadas)
+            query = query.join(models.Job, models.Candidatura.job_id == models.Job.id)
+            if position_filter:
+                query = query.filter(models.Job.position == position_filter)
+            if location_filter:
+                query = query.filter(models.Job.location == location_filter)
 
         total = query.count()
         rows  = query.order_by(models.Candidatura.applied_at.desc()) \
