@@ -1278,7 +1278,9 @@ const Manager = {
       container.innerHTML = `<div class="empty-state"><div class="empty-state__icon">🔍</div><h3>Nenhuma vaga encontrada</h3><p>Ajuste a busca ou o filtro de status.</p></div>`;
       return;
     }
-    container.innerHTML = jobs.map(job => `
+    container.innerHTML = jobs.map(job => {
+      const rodada = this._rodadaInfo(job);
+      return `
         <div class="manager-job" id="manager-job-${job.id}">
           <div class="manager-job__top">
             <div class="manager-job__title">${job.position}</div>
@@ -1287,6 +1289,10 @@ const Manager = {
               <button class="btn btn--small ${job.status === 'OPEN' ? 'btn--danger' : 'btn--success'}"
                       onclick="Manager.toggleJobStatus(${job.id})">
                 ${job.status === 'OPEN' ? '⏸ Fechar' : '▶ Reabrir'}
+              </button>
+              <button class="btn btn--small btn--outline"
+                      onclick="Manager.duplicateJob(${job.id})" title="Abre uma vaga nova com os mesmos dados. Os currículos desta vaga não são movidos.">
+                🔁 Nova rodada
               </button>
               <button class="btn btn--small btn--outline"
                       onclick="Manager.deleteJob(${job.id}, '${job.position.replace(/'/g,"\\'")}')">🗑</button>
@@ -1301,6 +1307,7 @@ const Manager = {
             </span>
             <span class="tag tag--warning">👤 ${job.numVagas} vaga${job.numVagas !== 1 ? 's' : ''}</span>
             <span class="tag">📅 ${new Date(job.createdAt).toLocaleDateString('pt-BR')}</span>
+            ${rodada.total > 1 ? `<span class="tag" title="Esta vaga faz parte de ${rodada.total} aberturas de ${job.position} · ${job.location}">🔁 Rodada ${rodada.index} de ${rodada.total}</span>` : ''}
           </div>
           ${job.tipo === 'Mudança de Função' && job.colaboradorNome ? `
           <div style="display:flex;align-items:center;gap:10px;background:rgba(255,165,0,.07);
@@ -1323,7 +1330,50 @@ const Manager = {
               📋 Copiar
             </button>
           </div>
-        </div>`).join('');
+        </div>`;
+    }).join('');
+  },
+
+  // Calcula em que "rodada" (abertura) esta vaga está, entre todas as vagas
+  // com o mesmo cargo + local (ordenadas por data de criação).
+  _rodadaInfo(job) {
+    const key = `${(job.position||'').trim().toLowerCase()}|${(job.location||'').trim().toLowerCase()}`;
+    const irmas = allManagerJobs
+      .filter(j => `${(j.position||'').trim().toLowerCase()}|${(j.location||'').trim().toLowerCase()}` === key)
+      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    const index = irmas.findIndex(j => j.id === job.id) + 1;
+    return { index, total: irmas.length };
+  },
+
+  // Preenche o formulário "Solicitar Vaga" com os dados de uma vaga existente,
+  // para abrir uma nova rodada sem misturar candidaturas com a vaga anterior.
+  duplicateJob(jobId) {
+    const job = allManagerJobs.find(j => j.id === jobId);
+    if (!job) return;
+
+    document.querySelector('.subtab[data-subtab="create-job"]')?.click();
+
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+    setVal('job-position', job.position);
+    setVal('job-location', job.location);
+    setVal('job-num-vagas', job.numVagas || 1);
+    setVal('job-manager-name', job.responsavel);
+    setVal('job-manager-email', job.emailResp);
+
+    // Não copia "Mudança de Função": era vinculada a um colaborador específico da rodada anterior.
+    const tipo = job.tipo === 'Mudança de Função' ? '' : (job.tipo || '');
+    setVal('job-tipo', tipo);
+    this.onTipoVagaChange(tipo);
+
+    const finalidade = (job.finalidade || '').replace(/^Colaborador:.*(\n|$)/, '').trim();
+    setVal('job-description', finalidade);
+
+    setVal('job-justificativa',
+      `Nova rodada de seleção para ${job.position} (${job.location}) — vaga anterior #${job.id} encerrada; ` +
+      `currículos daquela rodada permanecem preservados na vaga original.`);
+
+    showToast('Dados preenchidos', 'Revise a justificativa e envie para aprovação. Os currículos da vaga anterior não são movidos.', 'info');
+    document.getElementById('job-justificativa')?.focus();
   },
 
   async toggleJobStatus(jobId) {
@@ -1430,21 +1480,52 @@ const Manager = {
 
       const groups = {};
       result.items.forEach(app => {
-        const id = app.job?.id ?? 'x';
-        if (!groups[id]) {
-          const j = jobs.find(j => j.id === app.job?.id);
-          groups[id] = { title: j?.position ?? 'Vaga', location: j?.location ?? '', items: [] };
+        const j   = jobs.find(j => j.id === app.job?.id);
+        const key = j ? `${j.position.trim().toLowerCase()}|${j.location.trim().toLowerCase()}` : 'x';
+        if (!groups[key]) {
+          groups[key] = { title: j?.position ?? 'Vaga', location: j?.location ?? '', items: [], jobIds: new Set() };
         }
-        groups[id].items.push(app);
+        groups[key].items.push(app);
+        if (j) groups[key].jobIds.add(j.id);
       });
 
-      container.innerHTML = Object.values(groups).map(g => `
-        <div class="job-group">
-          <div class="job-group__header">
-            <div class="job-group__title">⚡ ${g.title} <span class="tag">${g.location}</span></div>
-            <span class="tag tag--warning">${g.items.length} candidato${g.items.length !== 1 ? 's' : ''}</span>
-          </div>
-          ${g.items.map(app => `
+      container.innerHTML = Object.values(groups).map(g => {
+        const multiplasVagas = g.jobIds.size > 1;
+
+        // Quando há mais de uma vaga (rodada) no grupo, organiza os candidatos
+        // por rodada (mais recente primeiro) em vez de misturar tudo.
+        let bodyHtml;
+        if (multiplasVagas) {
+          const jobsDoGrupo = [...g.jobIds]
+            .map(id => jobs.find(j => j.id === id))
+            .filter(Boolean)
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+          bodyHtml = jobsDoGrupo.map((j, i) => {
+            const itemsDaRodada = g.items.filter(app => app.job?.id === j.id);
+            if (!itemsDaRodada.length) return '';
+            const rodadaNum = jobsDoGrupo.length - i; // rodada 1 = mais antiga
+            return `
+              <div class="job-group__rodada">
+                <div class="job-group__rodada-label">
+                  🔁 Rodada ${rodadaNum} · ${new Date(j.createdAt).toLocaleDateString('pt-BR')}
+                  <span class="tag ${j.status === 'OPEN' ? 'tag--success' : 'tag--error'}" style="margin-left:6px;">
+                    ${j.status === 'OPEN' ? '🟢 Aberta (atual)' : '🔴 Fechada'}
+                  </span>
+                </div>
+                ${itemsDaRodada.map(app => `
+                  <div class="application-row" onclick="Manager.showApplicationModal(${app.id})">
+                    <div class="application-row__avatar">${(app.fullName||'?').charAt(0).toUpperCase()}</div>
+                    <div class="application-row__info">
+                      <div class="application-row__name">${app.fullName}</div>
+                      <div class="application-row__details">📧 ${app.email} · 📱 ${app.phone} · 🏠 ${app.cidadeAtual ?? '—'}</div>
+                    </div>
+                    <span class="status-badge status-badge--${app.status}">${statusLabel(app.status)}</span>
+                  </div>`).join('')}
+              </div>`;
+          }).join('');
+        } else {
+          bodyHtml = g.items.map(app => `
             <div class="application-row" onclick="Manager.showApplicationModal(${app.id})">
               <div class="application-row__avatar">${(app.fullName||'?').charAt(0).toUpperCase()}</div>
               <div class="application-row__info">
@@ -1452,8 +1533,20 @@ const Manager = {
                 <div class="application-row__details">📧 ${app.email} · 📱 ${app.phone} · 🏠 ${app.cidadeAtual ?? '—'}</div>
               </div>
               <span class="status-badge status-badge--${app.status}">${statusLabel(app.status)}</span>
-            </div>`).join('')}
-        </div>`).join('');
+            </div>`).join('');
+        }
+
+        return `
+        <div class="job-group">
+          <div class="job-group__header">
+            <div class="job-group__title">⚡ ${g.title} <span class="tag">${g.location}</span>
+              ${multiplasVagas ? `<span class="tag tag--warning" title="Estas candidaturas vêm de ${g.jobIds.size} aberturas diferentes da mesma vaga (mesmo cargo e local)">🔁 ${g.jobIds.size} rodadas</span>` : ''}
+            </div>
+            <span class="tag tag--warning">${g.items.length} candidato${g.items.length !== 1 ? 's' : ''}</span>
+          </div>
+          ${bodyHtml}
+        </div>`;
+      }).join('');
     } catch (err) {
       container.innerHTML = `<p style="color:var(--error);padding:20px;">${err.message}</p>`;
     }
