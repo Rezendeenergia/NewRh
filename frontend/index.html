@@ -958,6 +958,22 @@
       </div>
       <!-- Subtab: lista de vagas -->
       <div class="subtab-panel" id="subtab-job-list">
+        <!-- Busca de vagas (gestão) -->
+        <div class="job-search-bar" id="manager-job-search-bar">
+          <div class="job-search-bar__field">
+            <span class="job-search-bar__icon">🔍</span>
+            <input id="manager-job-search-input" type="text" class="job-search-bar__input"
+                   placeholder="Buscar por cargo, local, responsável ou colaborador..."
+                   oninput="Manager.filterJobList()">
+          </div>
+          <select id="manager-job-filter-status" class="form-field__select job-search-bar__select" onchange="Manager.filterJobList()">
+            <option value="">Todos os status</option>
+            <option value="OPEN">🟢 Abertas</option>
+            <option value="CLOSED">🔴 Fechadas</option>
+          </select>
+          <button class="btn btn--ghost btn--small" onclick="Manager.clearJobListFilters()">✕ Limpar</button>
+          <span id="manager-job-search-count" class="job-search-bar__count"></span>
+        </div>
         <div id="manager-job-list"></div>
       </div>
 
