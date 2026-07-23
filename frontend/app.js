@@ -9,7 +9,8 @@ let sessionUsername = null;
 let selectedJob     = null;
 let currentPage     = 1;
 let chartInstances  = {};
-let allJobs         = [];   // cache para busca local
+let allJobs         = [];   // cache para busca local (portal do candidato)
+let allManagerJobs  = [];   // cache para busca local (painel do gestor)
 
 // Estado global do usuário logado
 const AppState = { role: null, username: null };
@@ -1226,12 +1227,58 @@ const Manager = {
     const container = document.getElementById('manager-job-list');
     container.innerHTML = '<div class="loading-state"><div class="spinner"></div></div>';
     try {
-      const jobs = await request('/api/jobs/all');
-      if (!jobs.length) {
-        container.innerHTML = `<div class="empty-state"><div class="empty-state__icon">📋</div><h3>Nenhuma vaga criada</h3><p>Crie sua primeira vaga na aba "Nova Vaga".</p></div>`;
-        return;
-      }
-      container.innerHTML = jobs.map(job => `
+      allManagerJobs = await request('/api/jobs/all');
+      this.filterJobList();
+    } catch (err) {
+      container.innerHTML = `<p style="color:var(--error);padding:20px;">${err.message}</p>`;
+    }
+  },
+
+  filterJobList() {
+    const search = (document.getElementById('manager-job-search-input')?.value || '').toLowerCase().trim();
+    const status = document.getElementById('manager-job-filter-status')?.value || '';
+
+    const filtered = allManagerJobs.filter(job => {
+      const haystack = [
+        job.position, job.location, job.responsavel, job.emailResp,
+        job.colaboradorNome, job.colaboradorCargo, job.tipo
+      ].filter(Boolean).join(' ').toLowerCase();
+      const matchSearch = !search || haystack.includes(search);
+      const matchStatus = !status || job.status === status;
+      return matchSearch && matchStatus;
+    });
+
+    this.renderManagerJobList(filtered);
+  },
+
+  clearJobListFilters() {
+    const s = document.getElementById('manager-job-search-input');
+    const st = document.getElementById('manager-job-filter-status');
+    if (s) s.value = '';
+    if (st) st.value = '';
+    this.renderManagerJobList(allManagerJobs);
+  },
+
+  renderManagerJobList(jobs) {
+    const container = document.getElementById('manager-job-list');
+    const count = document.getElementById('manager-job-search-count');
+
+    if (count) {
+      const total = allManagerJobs.length;
+      count.textContent = jobs.length === total
+        ? `${total} vaga${total !== 1 ? 's' : ''}`
+        : `${jobs.length} de ${total} vaga${total !== 1 ? 's' : ''}`;
+    }
+
+    if (!allManagerJobs.length) {
+      container.innerHTML = `<div class="empty-state"><div class="empty-state__icon">📋</div><h3>Nenhuma vaga criada</h3><p>Crie sua primeira vaga na aba "Nova Vaga".</p></div>`;
+      return;
+    }
+    if (!jobs.length) {
+      container.innerHTML = `<div class="empty-state"><div class="empty-state__icon">🔍</div><h3>Nenhuma vaga encontrada</h3><p>Ajuste a busca ou o filtro de status.</p></div>`;
+      return;
+    }
+    container.innerHTML = jobs.map(job => `
         <div class="manager-job" id="manager-job-${job.id}">
           <div class="manager-job__top">
             <div class="manager-job__title">${job.position}</div>
@@ -1277,9 +1324,6 @@ const Manager = {
             </button>
           </div>
         </div>`).join('');
-    } catch (err) {
-      container.innerHTML = `<p style="color:var(--error);padding:20px;">${err.message}</p>`;
-    }
   },
 
   async toggleJobStatus(jobId) {
