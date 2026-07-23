@@ -1416,51 +1416,76 @@ const Manager = {
 
   // ── Candidaturas ──────────────────────────────────────────
 
-  async loadApplications(search = '', statusFilter = '', jobFilter = '', page = 1) {
+  async loadApplications(filters = {}, page = 1) {
+    const { search = '', status = '', position = '', location = '', jobId = '' } = filters;
     currentPage = page;
     const container = document.getElementById('manager-applications');
 
+    const jobs = await request('/api/jobs/all');
+    // Cargos e locais únicos, para não repetir a mesma vaga várias vezes no filtro
+    const posicoes = [...new Set(jobs.map(j => j.position))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    const locais    = [...new Set(jobs.map(j => j.location))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    // Rodadas (vagas específicas) que batem com o cargo/local já selecionados
+    const rodadas = (position || location)
+      ? jobs.filter(j => (!position || j.position === position) && (!location || j.location === location))
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      : [];
+
     if (!document.getElementById('applications-filter-bar')) {
-      const jobs = await request('/api/jobs/all');
-      const bar  = document.createElement('div');
+      const bar = document.createElement('div');
       bar.id = 'applications-filter-bar';
       bar.className = 'filter-bar';
-      bar.innerHTML = `
+      container.parentElement.insertBefore(bar, container);
+    }
+    const bar = document.getElementById('applications-filter-bar');
+    bar.innerHTML = `
         <input id="filter-search" type="text" class="form-field__input filter-bar__search"
                placeholder="🔍 Buscar por nome, CPF ou e-mail..." value="${search}">
         <select id="filter-status" class="form-field__select filter-bar__select">
           <option value="">Todos os status</option>
-          <option value="PENDING"  ${statusFilter==='PENDING'  ?'selected':''}>⏳ Pendente</option>
-          <option value="APPROVED" ${statusFilter==='APPROVED' ?'selected':''}>✅ Aprovado</option>
-          <option value="REJECTED" ${statusFilter==='REJECTED' ?'selected':''}>❌ Reprovado</option>
+          <option value="PENDING"  ${status==='PENDING'  ?'selected':''}>⏳ Pendente</option>
+          <option value="APPROVED" ${status==='APPROVED' ?'selected':''}>✅ Aprovado</option>
+          <option value="REJECTED" ${status==='REJECTED' ?'selected':''}>❌ Reprovado</option>
         </select>
-        <select id="filter-job" class="form-field__select filter-bar__select">
-          <option value="">Todas as vagas</option>
-          ${jobs.map(j => `<option value="${j.id}" ${jobFilter==j.id?'selected':''}>${j.position}</option>`).join('')}
+        <select id="filter-position" class="form-field__select filter-bar__select">
+          <option value="">Todos os cargos</option>
+          ${posicoes.map(p => `<option value="${p}" ${position===p?'selected':''}>${p}</option>`).join('')}
         </select>
+        <select id="filter-location" class="form-field__select filter-bar__select">
+          <option value="">Todos os locais</option>
+          ${locais.map(l => `<option value="${l}" ${location===l?'selected':''}>${l}</option>`).join('')}
+        </select>
+        ${rodadas.length > 1 ? `
+        <select id="filter-jobid" class="form-field__select filter-bar__select">
+          <option value="">Todas as rodadas (${rodadas.length})</option>
+          ${rodadas.map((j, i) => `<option value="${j.id}" ${jobId==j.id?'selected':''}>
+            Rodada ${rodadas.length - i} · ${new Date(j.createdAt).toLocaleDateString('pt-BR')} · ${j.status === 'OPEN' ? '🟢 Aberta' : '🔴 Fechada'}
+          </option>`).join('')}
+        </select>` : ''}
         <button class="btn btn--outline btn--small" onclick="Manager.clearFilters()">✕ Limpar</button>`;
-      container.parentElement.insertBefore(bar, container);
 
-      let dt;
-      document.getElementById('filter-search').addEventListener('input', () => {
-        clearTimeout(dt); dt = setTimeout(() => Manager.applyFilters(), 400);
-      });
-      document.getElementById('filter-status').addEventListener('change', () => Manager.applyFilters());
-      document.getElementById('filter-job').addEventListener('change',    () => Manager.applyFilters());
-    }
+    let dt;
+    document.getElementById('filter-search').addEventListener('input', () => {
+      clearTimeout(dt); dt = setTimeout(() => Manager.applyFilters(), 400);
+    });
+    document.getElementById('filter-status').addEventListener('change', () => Manager.applyFilters());
+    document.getElementById('filter-position').addEventListener('change', () => Manager.applyFilters());
+    document.getElementById('filter-location').addEventListener('change', () => Manager.applyFilters());
+    document.getElementById('filter-jobid')?.addEventListener('change', () => Manager.applyFilters());
 
     container.innerHTML = '<div class="loading-state"><div class="spinner"></div></div>';
 
     try {
       const params = new URLSearchParams({ page });
-      if (search)       params.set('search', search);
-      if (statusFilter) params.set('status', statusFilter);
-      if (jobFilter)    params.set('jobId',  jobFilter);
+      if (search)   params.set('search',   search);
+      if (status)   params.set('status',   status);
+      if (jobId)    params.set('jobId',    jobId);
+      else {
+        if (position) params.set('position', position);
+        if (location) params.set('location', location);
+      }
 
-      const [result, jobs] = await Promise.all([
-        request('/api/candidaturas?' + params),
-        request('/api/jobs/all'),
-      ]);
+      const result = await request('/api/candidaturas?' + params);
 
       const bar = document.getElementById('pagination-bar');
       if (result.totalPages > 1) {
@@ -1468,7 +1493,7 @@ const Manager = {
         document.getElementById('page-info').textContent = `Página ${page} de ${result.totalPages} · ${result.total} registros`;
         document.getElementById('page-prev').disabled = page <= 1;
         document.getElementById('page-next').disabled = page >= result.totalPages;
-        bar._meta = { totalPages: result.totalPages, search, statusFilter, jobFilter };
+        bar._meta = { search, status, position, location, jobId, totalPages: result.totalPages };
       } else {
         bar.style.display = 'none';
       }
@@ -1557,23 +1582,23 @@ const Manager = {
     if (!meta) return;
     const np = currentPage + delta;
     if (np < 1 || np > meta.totalPages) return;
-    this.loadApplications(meta.search, meta.statusFilter, meta.jobFilter, np);
+    this.loadApplications(meta, np);
   },
 
   applyFilters() {
-    this.loadApplications(
-      document.getElementById('filter-search')?.value || '',
-      document.getElementById('filter-status')?.value || '',
-      document.getElementById('filter-job')?.value    || '',
-      1
-    );
+    const position = document.getElementById('filter-position')?.value || '';
+    const location = document.getElementById('filter-location')?.value || '';
+    // Se o cargo/local mudou, a lista de rodadas muda — não mantém uma rodada de outro cargo/local selecionada.
+    const jobId = document.getElementById('filter-jobid')?.value || '';
+    this.loadApplications({
+      search:   document.getElementById('filter-search')?.value || '',
+      status:   document.getElementById('filter-status')?.value || '',
+      position, location, jobId,
+    }, 1);
   },
 
   clearFilters() {
-    ['filter-search','filter-status','filter-job'].forEach(id => {
-      const el = document.getElementById(id); if (el) el.value = '';
-    });
-    this.loadApplications('','','',1);
+    this.loadApplications({}, 1);
   },
 
   // ── Modal do candidato ────────────────────────────────────
