@@ -241,53 +241,66 @@ def _pasta_para_etapa(codigo_etapa: str) -> str | None:
 def upload_documento(arquivo_path: str, nome_arquivo: str,
                      pasta_colaborador: str,
                      sub_pasta: str = None,
-                     codigo_etapa: str = None) -> str:
+                     codigo_etapa: str = None,
+                     max_tentativas: int = 3) -> dict:
     """
     Faz upload para a pasta correta baseado no código da etapa.
     Se codigo_etapa for fornecido, usa o mapeamento oficial.
     Caso contrário, usa sub_pasta como fallback.
+
+    Tenta até `max_tentativas` vezes (backoff simples) antes de desistir.
+    Retorna {"url": str|None, "erro": str|None}.
     """
-    try:
-        site_id  = _get_site_id()
-        drive_id = _get_drive_id(site_id)
-        caminho_base = f"{BASE_PATH}/{pasta_colaborador}"
+    import time
 
-        # Determina pasta destino
-        pasta_destino = None
-        if codigo_etapa:
-            pasta_destino = _pasta_para_etapa(codigo_etapa)
+    ultimo_erro = None
+    for tentativa in range(1, max_tentativas + 1):
+        try:
+            site_id  = _get_site_id()
+            drive_id = _get_drive_id(site_id)
+            caminho_base = f"{BASE_PATH}/{pasta_colaborador}"
 
-        if pasta_destino:
-            # Garante que toda a hierarquia existe
-            partes = pasta_destino.split("/")
-            caminho_atual = caminho_base
-            for parte in partes:
-                _criar_pasta(drive_id, caminho_atual, parte)
-                caminho_atual = f"{caminho_atual}/{parte}"
-            caminho_final = caminho_atual
-        elif sub_pasta:
-            _criar_pasta(drive_id, caminho_base, sub_pasta)
-            caminho_final = f"{caminho_base}/{sub_pasta}"
-        else:
-            caminho_final = caminho_base
+            # Determina pasta destino
+            pasta_destino = None
+            if codigo_etapa:
+                pasta_destino = _pasta_para_etapa(codigo_etapa)
 
-        with open(arquivo_path, "rb") as f:
-            file_content = f.read()
+            if pasta_destino:
+                # Garante que toda a hierarquia existe
+                partes = pasta_destino.split("/")
+                caminho_atual = caminho_base
+                for parte in partes:
+                    _criar_pasta(drive_id, caminho_atual, parte)
+                    caminho_atual = f"{caminho_atual}/{parte}"
+                caminho_final = caminho_atual
+            elif sub_pasta:
+                _criar_pasta(drive_id, caminho_base, sub_pasta)
+                caminho_final = f"{caminho_base}/{sub_pasta}"
+            else:
+                caminho_final = caminho_base
 
-        upload_url = f"{GRAPH_BASE}/drives/{drive_id}/root:/{caminho_final}/{nome_arquivo}:/content"
-        headers    = {
-            "Authorization": f"Bearer {_get_token()}",
-            "Content-Type":  "application/octet-stream",
-        }
-        r = requests.put(upload_url, headers=headers, data=file_content, timeout=30)
-        r.raise_for_status()
-        url = r.json().get("webUrl", "")
-        print(f"[SHAREPOINT] Upload OK → {caminho_final}/{nome_arquivo}")
-        return url
+            with open(arquivo_path, "rb") as f:
+                file_content = f.read()
 
-    except Exception as e:
-        print(f"[SHAREPOINT] Erro no upload: {e}")
-        return None
+            upload_url = f"{GRAPH_BASE}/drives/{drive_id}/root:/{caminho_final}/{nome_arquivo}:/content"
+            headers    = {
+                "Authorization": f"Bearer {_get_token()}",
+                "Content-Type":  "application/octet-stream",
+            }
+            # timeout maior para arquivos grandes (scans do CamScanner etc.)
+            r = requests.put(upload_url, headers=headers, data=file_content, timeout=120)
+            r.raise_for_status()
+            url = r.json().get("webUrl", "")
+            print(f"[SHAREPOINT] Upload OK (tentativa {tentativa}) → {caminho_final}/{nome_arquivo}")
+            return {"url": url, "erro": None}
+
+        except Exception as e:
+            ultimo_erro = str(e)
+            print(f"[SHAREPOINT] Erro no upload (tentativa {tentativa}/{max_tentativas}): {e}")
+            if tentativa < max_tentativas:
+                time.sleep(2 * tentativa)  # backoff: 2s, 4s...
+
+    return {"url": None, "erro": ultimo_erro}
 
 
 def criar_subpasta_etapa(pasta_colaborador: str, etapa_nome: str) -> str:
