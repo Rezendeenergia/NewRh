@@ -378,8 +378,9 @@ def enviar_documento():
                 except Exception as ex:
                     print(f"[SHAREPOINT] Subpasta: {ex}")
 
-                sp_url = upload_documento(dest, safe_name, pasta,
+                resultado_doc = upload_documento(dest, safe_name, pasta,
                                           sub_pasta="01 DOCUMENTO PESSOAL/1.1 PESSOAL")
+                sp_url = resultado_doc.get("url")
                 if sp_url:
                     db2 = get_db()
                     try:
