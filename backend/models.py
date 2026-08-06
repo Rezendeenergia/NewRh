@@ -254,6 +254,7 @@ class DocumentoEtapa(Base):
     nome         = Column(String(200), nullable=False)
     arquivo      = Column(String(300), nullable=True)   # path local
     sharepoint_url = Column(Text, nullable=True)        # URL no SharePoint
+    sharepoint_erro = Column(Text, nullable=True)       # última mensagem de erro do upload (se falhou)
     enviado_por  = Column(String(100), nullable=True)   # username
     status       = Column(String(20), nullable=False, default="PENDENTE")
     # status: PENDENTE | APROVADO | REPROVADO | REENVIAR
