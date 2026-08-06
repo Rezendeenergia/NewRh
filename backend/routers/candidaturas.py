@@ -55,11 +55,12 @@ def _pos_candidatura(candidatura_id: int, job_id: int, resume_filename: str):
                     pasta = result.get("pasta") or \
                             f"{candidatura.full_name} - {candidatura.cpf.replace('.','').replace('-','')}"
                     resume_path = os.path.join(UPLOAD_FOLDER, resume_filename)
-                    sp_url = upload_documento(resume_path, resume_filename, pasta, sub_pasta="Curriculo")
+                    resultado_cv = upload_documento(resume_path, resume_filename, pasta, sub_pasta="Curriculo")
+                    sp_url = resultado_cv.get("url")
                     if sp_url:
                         print(f"[BG][SHAREPOINT] Curriculo enviado: {sp_url}")
                     else:
-                        print(f"[BG][SHAREPOINT] Upload retornou None")
+                        print(f"[BG][SHAREPOINT] Upload falhou: {resultado_cv.get('erro')}")
             else:
                 print(f"[BG][SHAREPOINT] Falha ao criar pasta: {result.get('erro')}")
         except Exception as e:
