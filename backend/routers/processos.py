@@ -64,6 +64,7 @@ def doc_to_dict(d):
         "nome":              d.nome,
         "arquivo":           d.arquivo,
         "sharepointUrl":     d.sharepoint_url,
+        "sharepointErro":    getattr(d, "sharepoint_erro", None),
         "enviadoPor":        d.enviado_por,
         "status":            d.status,
         "observacao":        d.observacao,
@@ -629,24 +630,105 @@ def upload_doc(processo_id, etapa_id):
                         finally:
                             db2.close()
 
-                sp_url = upload_documento(dest, safe_name, pasta, sub_pasta=etapa_nome, codigo_etapa=etapa_codigo)
-                if sp_url:
-                    db3 = get_db()
-                    try:
-                        d = db3.query(models.DocumentoEtapa).filter_by(id=doc_id).first()
-                        if d:
+                resultado = upload_documento(dest, safe_name, pasta, sub_pasta=etapa_nome, codigo_etapa=etapa_codigo)
+                sp_url = resultado.get("url")
+                sp_erro = resultado.get("erro")
+                db3 = get_db()
+                try:
+                    d = db3.query(models.DocumentoEtapa).filter_by(id=doc_id).first()
+                    if d:
+                        if sp_url:
                             d.sharepoint_url = sp_url
-                            db3.commit()
-                        print(f"[SHAREPOINT] Upload concluído em background: {sp_url}")
-                    finally:
-                        db3.close()
+                            d.sharepoint_erro = None
+                            print(f"[SHAREPOINT] Upload concluído em background: {sp_url}")
+                        else:
+                            d.sharepoint_erro = sp_erro or "Falha desconhecida no upload"
+                            print(f"[SHAREPOINT] Upload falhou definitivamente: {sp_erro}")
+                        db3.commit()
+                finally:
+                    db3.close()
             except Exception as ex:
                 print(f"[SHAREPOINT] Upload background falhou: {ex}")
+                try:
+                    db4 = get_db()
+                    try:
+                        d = db4.query(models.DocumentoEtapa).filter_by(id=doc_id).first()
+                        if d:
+                            d.sharepoint_erro = str(ex)
+                            db4.commit()
+                    finally:
+                        db4.close()
+                except Exception:
+                    pass
 
         threading.Thread(target=_upload_sp, daemon=True).start()
 
         # 4. Retorna imediatamente sem esperar SharePoint
         return jsonify(doc_to_dict(doc)), 201
+    finally:
+        db.close()
+
+
+# ── Reenvio manual ao SharePoint (quando o upload em background falhou) ──
+
+@bp.post("/<int:processo_id>/etapas/<int:etapa_id>/documentos/<int:doc_id>/reenviar-sharepoint")
+@require_auth
+def reenviar_sharepoint(processo_id, etapa_id, doc_id):
+    db = get_db()
+    try:
+        p = db.query(models.ProcessoAdmissao).filter_by(id=processo_id).first()
+        if not p:
+            return jsonify({"message": "Processo não encontrado"}), 404
+
+        e = db.query(models.EtapaProcesso).filter_by(id=etapa_id, processo_id=processo_id).first()
+        if not e:
+            return jsonify({"message": "Etapa não encontrada"}), 404
+
+        d = db.query(models.DocumentoEtapa).filter_by(id=doc_id, etapa_id=etapa_id).first()
+        if not d:
+            return jsonify({"message": "Documento não encontrado"}), 404
+
+        if not d.arquivo or not os.path.exists(d.arquivo):
+            return jsonify({"message": "Arquivo local não existe mais neste servidor. "
+                                        "Peça para substituir o documento reenviando o PDF novamente."}), 409
+
+        cand = p.candidatura
+        cand_nome = cand.full_name
+        cand_cpf  = cand.cpf
+        etapa_nome   = e.nome
+        etapa_codigo = e.codigo
+        sp_url_atual = p.sharepoint_url
+        dest = d.arquivo
+        safe_name = os.path.basename(dest)
+        doc_id_local = d.id
+
+        audit.log(request.username, "REENVIO_MANUAL_SHAREPOINT", entity="processo",
+                  entity_id=processo_id, detail=f"Doc '{d.nome}' (id {doc_id}) reenviado manualmente ao SharePoint")
+
+        from sharepoint_service import criar_pasta_colaborador, upload_documento
+        cpf_c = cand_cpf.replace('.', '').replace('-', '')
+        pasta = f"{cand_nome} - {cpf_c}"
+
+        if not sp_url_atual:
+            result = criar_pasta_colaborador(cand_nome, cand_cpf)
+            if result.get("url"):
+                p.sharepoint_url = result["url"]
+                db.commit()
+
+        resultado = upload_documento(dest, safe_name, pasta, sub_pasta=etapa_nome, codigo_etapa=etapa_codigo)
+        sp_url = resultado.get("url")
+        sp_erro = resultado.get("erro")
+
+        d2 = db.query(models.DocumentoEtapa).filter_by(id=doc_id_local).first()
+        if sp_url:
+            d2.sharepoint_url = sp_url
+            d2.sharepoint_erro = None
+            db.commit()
+            return jsonify({"ok": True, "sharepointUrl": sp_url}), 200
+        else:
+            d2.sharepoint_erro = sp_erro or "Falha desconhecida no upload"
+            db.commit()
+            return jsonify({"ok": False, "message": f"Reenvio falhou: {sp_erro}"}), 502
     finally:
         db.close()
 
@@ -793,8 +875,10 @@ def substituir_doc(processo_id, etapa_id, doc_id):
                 codigo     = etapa.codigo if etapa else ""
 
                 # Upload do novo arquivo
-                sp_url = upload_documento(dest, safe_name, pasta,
+                resultado_sp = upload_documento(dest, safe_name, pasta,
                                           sub_pasta=etapa_nome, codigo_etapa=codigo)
+                sp_url = resultado_sp.get("url")
+                sp_erro = resultado_sp.get("erro")
 
                 # Tenta apagar o arquivo antigo do SharePoint
                 if sp_url_antigo:
@@ -818,17 +902,31 @@ def substituir_doc(processo_id, etapa_id, doc_id):
                     except Exception as ex:
                         print(f"[SP] Erro ao apagar antigo: {ex}")
 
-                if sp_url:
-                    db4 = get_db()
-                    try:
-                        d = db4.query(models.DocumentoEtapa).filter_by(id=doc_novo_id).first()
-                        if d:
+                db4 = get_db()
+                try:
+                    d = db4.query(models.DocumentoEtapa).filter_by(id=doc_novo_id).first()
+                    if d:
+                        if sp_url:
                             d.sharepoint_url = sp_url
-                            db4.commit()
-                    finally:
-                        db4.close()
+                            d.sharepoint_erro = None
+                        else:
+                            d.sharepoint_erro = sp_erro or "Falha desconhecida no upload"
+                        db4.commit()
+                finally:
+                    db4.close()
             except Exception as ex:
                 print(f"[SP] Erro substituição: {ex}")
+                try:
+                    db5 = get_db()
+                    try:
+                        d = db5.query(models.DocumentoEtapa).filter_by(id=doc_novo_id).first()
+                        if d:
+                            d.sharepoint_erro = str(ex)
+                            db5.commit()
+                    finally:
+                        db5.close()
+                except Exception:
+                    pass
 
         threading.Thread(target=_substituir_sp, daemon=True).start()
 
