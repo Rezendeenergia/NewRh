@@ -362,7 +362,16 @@ const Adm = {
               <span>📄</span>
               <span class="doc-item__name" style="flex:1;min-width:0;">${d.nome}${d.versao>1?`<span style="font-size:10px;background:rgba(91,141,239,.2);color:#5B8DEF;border-radius:4px;padding:1px 5px;margin-left:4px;">v${d.versao}</span>`:''}</span>
               <span class="pill pill--${d.status}" style="font-size:.68rem;flex-shrink:0;">${STATUS_LABEL[d.status]||d.status}</span>
-              ${d.sharepointUrl ? `<a href="${d.sharepointUrl}" target="_blank" style="color:var(--fire);font-size:.75rem;text-decoration:none;flex-shrink:0;">SP ↗</a>` : '<span style="color:#5A6478;font-size:.7rem;flex-shrink:0;">SP...</span>'}
+              ${d.sharepointUrl
+                ? `<a href="${d.sharepointUrl}" target="_blank" style="color:var(--fire);font-size:.75rem;text-decoration:none;flex-shrink:0;">SP ↗</a>`
+                : `<button onclick="Adm.reenviarSharepoint(${processoId},${e.id},${d.id})"
+                           id="btn-sp-${d.id}"
+                           title="${d.sharepointErro ? 'Falha: ' + d.sharepointErro.replace(/"/g,'&quot;') + ' — clique para tentar novamente' : 'Ainda não sincronizado com o SharePoint — clique para tentar agora'}"
+                           style="background:none;border:1px solid ${d.sharepointErro ? 'rgba(231,76,60,.4)' : 'rgba(255,255,255,.12)'};
+                                  color:${d.sharepointErro ? '#E74C3C' : '#5A6478'};font-size:.68rem;flex-shrink:0;
+                                  border-radius:5px;padding:1px 6px;cursor:pointer;">
+                    ${d.sharepointErro ? '⚠️ SP falhou · tentar' : '🔄 SP...'}
+                  </button>`}
               ${isAtiva && d.status === 'PENDENTE' ? `
                 <button class="btn btn--ghost btn--small" onclick="Adm.revisarDoc(${processoId},${e.id},${d.id},'APROVADO')" title="Aprovar">✅</button>
                 <button class="btn btn--ghost btn--small" onclick="Adm.revisarDoc(${processoId},${e.id},${d.id},'REENVIAR')" title="Pedir reenvio">🔄</button>
@@ -545,6 +554,20 @@ const Adm = {
       });
       await Adm.loadProcesso(processoId);
     } catch(e) { alert('Erro: ' + e.message); }
+  },
+
+  async reenviarSharepoint(processoId, etapaId, docId) {
+    const btn = document.getElementById(`btn-sp-${docId}`);
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ enviando...'; }
+    try {
+      await req(`/api/processos/${processoId}/etapas/${etapaId}/documentos/${docId}/reenviar-sharepoint`, {
+        method: 'POST'
+      });
+    } catch(e) {
+      alert('Falha ao reenviar: ' + e.message);
+    } finally {
+      await Adm.loadProcesso(processoId);
+    }
   },
 
   closeModal() { document.getElementById('action-modal').style.display = 'none'; },
