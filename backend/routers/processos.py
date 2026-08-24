@@ -230,7 +230,8 @@ def criar_processo_para_candidatura(candidatura_id: int, db,
         cand = db.query(models.Candidatura).filter_by(id=candidatura_id).first()
         if cand:
             from sharepoint_service import criar_pasta_colaborador
-            result = criar_pasta_colaborador(cand.full_name, cand.cpf)
+            cand_cargo = cand.job.position if cand.job else None
+            result = criar_pasta_colaborador(cand.full_name, cand.cpf, cand_cargo)
             if result.get("url"):
                 processo.sharepoint_url = result["url"]
                 db.commit()
@@ -550,7 +551,7 @@ def atualizar_etapa(processo_id, etapa_id):
         if not sp_url:
             try:
                 from sharepoint_service import criar_pasta_colaborador
-                result = criar_pasta_colaborador(cand_nome, cand_cpf)
+                result = criar_pasta_colaborador(cand_nome, cand_cpf, cand_cargo)
                 if result.get("url"):
                     db2 = get_db()
                     try:
@@ -607,6 +608,7 @@ def upload_doc(processo_id, etapa_id):
         cand     = p.candidatura
         cand_nome = cand.full_name
         cand_cpf  = cand.cpf
+        cand_cargo = cand.job.position if cand.job else None
         etapa_nome   = e.nome
         etapa_codigo = e.codigo
         sp_url_atual = p.sharepoint_url
@@ -618,13 +620,12 @@ def upload_doc(processo_id, etapa_id):
         import threading
         def _upload_sp():
             try:
-                from sharepoint_service import criar_pasta_colaborador, upload_documento
-                cpf_c = cand_cpf.replace('.','').replace('-','')
-                pasta = f"{cand_nome} - {cpf_c}"
+                from sharepoint_service import criar_pasta_colaborador, upload_documento, montar_nome_pasta
+                pasta = montar_nome_pasta(cand_nome, cand_cpf, cand_cargo)
 
                 sp_url = None
                 if not sp_url_atual:
-                    result = criar_pasta_colaborador(cand_nome, cand_cpf)
+                    result = criar_pasta_colaborador(cand_nome, cand_cpf, cand_cargo)
                     if result.get("url"):
                         db2 = get_db()
                         try:
@@ -700,6 +701,7 @@ def reenviar_sharepoint(processo_id, etapa_id, doc_id):
         cand = p.candidatura
         cand_nome = cand.full_name
         cand_cpf  = cand.cpf
+        cand_cargo = cand.job.position if cand.job else None
         etapa_nome   = e.nome
         etapa_codigo = e.codigo
         sp_url_atual = p.sharepoint_url
@@ -710,12 +712,11 @@ def reenviar_sharepoint(processo_id, etapa_id, doc_id):
         audit.log(request.username, "REENVIO_MANUAL_SHAREPOINT", entity="processo",
                   entity_id=processo_id, detail=f"Doc '{d.nome}' (id {doc_id}) reenviado manualmente ao SharePoint")
 
-        from sharepoint_service import criar_pasta_colaborador, upload_documento
-        cpf_c = cand_cpf.replace('.', '').replace('-', '')
-        pasta = f"{cand_nome} - {cpf_c}"
+        from sharepoint_service import criar_pasta_colaborador, upload_documento, montar_nome_pasta
+        pasta = montar_nome_pasta(cand_nome, cand_cpf, cand_cargo)
 
         if not sp_url_atual:
-            result = criar_pasta_colaborador(cand_nome, cand_cpf)
+            result = criar_pasta_colaborador(cand_nome, cand_cpf, cand_cargo)
             if result.get("url"):
                 p.sharepoint_url = result["url"]
                 db.commit()
