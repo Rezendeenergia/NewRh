@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Banco de Talentos — Rezende Energia</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    body { background: var(--bg-base, #0F1117); color: #F4F5F7; font-family: 'Inter', system-ui, sans-serif; margin: 0; }
+
+    .bt-hero {
+      background: linear-gradient(135deg, #1a0a00 0%, #0F1117 50%, #0a1a1a 100%);
+      border-bottom: 1px solid rgba(255,106,0,.15);
+      padding: 40px 20px 32px;
+      text-align: center;
+    }
+    .bt-hero__badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,106,0,.12); border: 1px solid rgba(255,106,0,.3);
+      color: #FF8C2A; font-size: 12px; font-weight: 700;
+      border-radius: 20px; padding: 5px 14px; margin-bottom: 16px;
+      text-transform: uppercase; letter-spacing: 1px;
+    }
+    .bt-hero__title { font-size: clamp(24px, 5vw, 38px); font-weight: 900; margin: 0 0 10px; }
+    .bt-hero__title span { color: #FF6A00; }
+    .bt-hero__desc { color: #9AA3B2; font-size: 15px; max-width: 560px; margin: 0 auto 20px; line-height: 1.7; }
+    .bt-hero__back { font-size: 13px; color: rgba(255,106,0,.7); text-decoration: none; border-bottom: 1px solid rgba(255,106,0,.3); }
+    .bt-hero__back:hover { color: #FF6A00; }
+
+    .bt-info-strip {
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;
+      padding: 20px; background: rgba(255,255,255,.02); border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .bt-info-chip {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);
+      border-radius: 10px; padding: 8px 14px; font-size: 13px; color: #D0D4DE;
+    }
+    .bt-info-chip strong { color: #fff; }
+
+    .bt-container { max-width: 720px; margin: 0 auto; padding: 32px 20px 60px; }
+
+    .bt-card {
+      background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+      border-radius: 16px; overflow: hidden; margin-bottom: 24px;
+    }
+    .bt-card__header {
+      padding: 16px 24px; border-bottom: 1px solid rgba(255,255,255,.07);
+      background: rgba(255,106,0,.04);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .bt-card__title { font-size: 14px; font-weight: 700; color: #FF8C2A; text-transform: uppercase; letter-spacing: .5px; }
+    .bt-card__body { padding: 24px; }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 520px) { .form-grid { grid-template-columns: 1fr; } }
+    .form-field--full { grid-column: 1 / -1; }
+
+    .form-field__label {
+      display: block; font-size: 12px; font-weight: 600;
+      color: #9AA3B2; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px;
+    }
+    .required-mark { color: #FF6A00; }
+    .form-field__input, .form-field__select, .form-field__textarea {
+      width: 100%; box-sizing: border-box;
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+      color: #F4F5F7; border-radius: 8px; padding: 10px 12px; font-size: 14px;
+      transition: border-color .2s;
+    }
+    .form-field__input:focus, .form-field__select:focus, .form-field__textarea:focus {
+      outline: none; border-color: rgba(255,106,0,.5);
+    }
+    .form-field__select option { background: #1A1D27; color: #F4F5F7; }
+    .form-field__textarea { min-height: 100px; resize: vertical; }
+
+    .file-drop {
+      border: 2px dashed rgba(255,106,0,.25); border-radius: 10px;
+      padding: 24px 16px; text-align: center; cursor: pointer;
+      transition: border-color .2s, background .2s;
+    }
+    .file-drop:hover { border-color: rgba(255,106,0,.5); background: rgba(255,106,0,.04); }
+    .file-drop__icon { font-size: 28px; margin-bottom: 6px; }
+    .file-drop__text { font-size: 13px; color: #9AA3B2; margin: 0; }
+    .file-drop__hint { font-size: 11px; color: #5A6478; margin: 4px 0 0; }
+    .file-drop--selected { border-color: rgba(46,204,113,.4); background: rgba(46,204,113,.04); }
+    .file-drop--selected .file-drop__text { color: #2ECC71; }
+
+    .lgpd-box {
+      background: rgba(91,141,239,.06); border: 1px solid rgba(91,141,239,.2);
+      border-radius: 10px; padding: 16px 18px; margin-top: 20px;
+    }
+    .lgpd-box__label { font-size: 11px; font-weight: 700; color: #9AA3B2; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 8px; }
+    .lgpd-box__text { font-size: 12px; color: #A8A8B8; line-height: 1.7; margin: 0 0 12px; }
+    .lgpd-checkbox { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+    .lgpd-checkbox input { margin-top: 2px; accent-color: #FF6A00; width: 15px; height: 15px; flex-shrink: 0; }
+    .lgpd-checkbox span { font-size: 12px; color: #C0C4CF; line-height: 1.5; }
+
+    .btn-submit {
+      width: 100%; padding: 14px 20px; margin-top: 20px;
+      background: linear-gradient(135deg, #FF6A00, #FF8C2A);
+      color: #fff; font-size: 16px; font-weight: 700;
+      border: none; border-radius: 10px; cursor: pointer;
+      transition: opacity .2s, transform .1s;
+    }
+    .btn-submit:hover { opacity: .9; }
+    .btn-submit:active { transform: scale(.99); }
+    .btn-submit:disabled { opacity: .5; cursor: not-allowed; }
+
+    .alert {
+      padding: 12px 16px; border-radius: 8px; font-size: 13px;
+      margin-top: 12px; display: none;
+    }
+    .alert--error { background: rgba(255,82,82,.12); border: 1px solid rgba(255,82,82,.3); color: #FF5252; }
+
+    /* Sucesso overlay */
+    .bt-success { display: none; text-align: center; padding: 60px 24px; }
+    .bt-success__icon { font-size: 60px; margin-bottom: 16px; }
+    .bt-success__title { font-size: 24px; font-weight: 800; color: #2ECC71; margin: 0 0 10px; }
+    .bt-success__text { color: #9AA3B2; font-size: 15px; max-width: 480px; margin: 0 auto 24px; line-height: 1.7; }
+    .bt-success__back { display: inline-block; padding: 10px 24px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); border-radius: 8px; color: #9AA3B2; text-decoration: none; font-size: 14px; }
+    .bt-success__back:hover { background: rgba(255,255,255,.1); color: #fff; }
+  </style>
+</head>
+<body>
+
+<header style="background: rgba(255,255,255,.02); border-bottom: 1px solid rgba(255,255,255,.06); padding: 12px 24px; display:flex; align-items:center; gap:12px;">
+  <img src="/logo-rezende.png" alt="Rezende Energia" style="height:32px; object-fit:contain;">
+  <span style="color:#5A6478; font-size:13px;">Portal de Talentos</span>
+</header>
+
+<div class="bt-hero">
+  <div class="bt-hero__badge">🏅 Banco de Talentos</div>
+  <h1 class="bt-hero__title">Banco de <span>Talentos</span></h1>
+  <p class="bt-hero__desc">
+    Não encontrou uma vaga aberta agora? Cadastre seu perfil no nosso Banco de Talentos e
+    seja um dos primeiros a ser chamado quando surgir uma oportunidade na sua área na Rezende Energia.
+  </p>
+  <a href="/" class="bt-hero__back">← Voltar ao Portal de Vagas</a>
+</div>
+
+<div class="bt-info-strip">
+  <div class="bt-info-chip">⚡ <span>Cadastro <strong>rápido e sem vaga específica</strong></span></div>
+  <div class="bt-info-chip">📄 <span>Currículo em <strong>PDF (opcional)</strong></span></div>
+  <div class="bt-info-chip">📍 <span>Regiões: <strong>Nordeste e Oeste do Pará</strong></span></div>
+</div>
+
+<div class="bt-container">
+
+  <!-- Sucesso -->
+  <div class="bt-success" id="bt-success">
+    <div class="bt-success__icon">🎉</div>
+    <div class="bt-success__title">Cadastro Enviado!</div>
+    <p class="bt-success__text">
+      Recebemos o seu cadastro no Banco de Talentos! Assim que surgir uma vaga compatível
+      com o seu perfil, nossa equipe de RH entrará em contato pelo telefone ou e-mail informado.
+    </p>
+    <a href="/" class="bt-success__back">← Voltar ao Portal</a>
+  </div>
+
+  <!-- Formulário -->
+  <div id="bt-form-wrap">
+    <form id="bt-form" novalidate>
+
+      <div class="bt-card">
+        <div class="bt-card__header">
+          <span style="font-size:18px;">👤</span>
+          <span class="bt-card__title">01 — Dados Pessoais</span>
+        </div>
+        <div class="bt-card__body">
+          <div class="form-grid">
+            <div class="form-field form-field--full">
+              <label class="form-field__label" for="bt-name">Nome Completo <strong class="required-mark">*</strong></label>
+              <input id="bt-name" type="text" class="form-field__input" placeholder="Seu nome completo" required>
+            </div>
+            <div class="form-field">
+              <label class="form-field__label" for="bt-cpf">CPF <strong class="required-mark">*</strong></label>
+              <input id="bt-cpf" type="text" class="form-field__input" placeholder="000.000.000-00" maxlength="14" required>
+            </div>
+            <div class="form-field">
+              <label class="form-field__label" for="bt-nascimento">Data de Nascimento</label>
+              <input id="bt-nascimento" type="date" class="form-field__input">
+            </div>
+            <div class="form-field">
+              <label class="form-field__label" for="bt-cidade">Cidade Atual</label>
+              <input id="bt-cidade" type="text" class="form-field__input" placeholder="Ex.: Santarém/PA">
+            </div>
+            <div class="form-field">
+              <label class="form-field__label" for="bt-linkedin">LinkedIn</label>
+              <input id="bt-linkedin" type="url" class="form-field__input" placeholder="https://linkedin.com/in/...">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bt-card">
+        <div class="bt-card__header">
+          <span style="font-size:18px;">📞</span>
+          <span class="bt-card__title">02 — Contato</span>
+        </div>
+        <div class="bt-card__body">
+          <div class="form-grid">
+            <div class="form-field">
+              <label class="form-field__label" for="bt-phone">WhatsApp / Telefone <strong class="required-mark">*</strong></label>
+              <input id="bt-phone" type="tel" class="form-field__input" placeholder="(93) 9 0000-0000" required>
+            </div>
+            <div class="form-field">
+              <label class="form-field__label" for="bt-email">E-mail <strong class="required-mark">*</strong></label>
+              <input id="bt-email" type="email" class="form-field__input" placeholder="seu@email.com" required>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bt-card">
+        <div class="bt-card__header">
+          <span style="font-size:18px;">🎓</span>
+          <span class="bt-card__title">03 — Formação & Experiência</span>
+        </div>
+        <div class="bt-card__body">
+          <div class="form-grid">
+            <div class="form-field">
+              <label class="form-field__label" for="bt-education">Formação</label>
+              <select id="bt-education" class="form-field__select">
+                <option value="">Selecione</option>
+                <option>Ensino Fundamental Incompleto</option>
+                <option>Ensino Fundamental Completo</option>
+                <option>Ensino Médio Incompleto</option>
+                <option>Ensino Médio Completo</option>
+                <option>Ensino Superior Incompleto</option>
+                <option>Ensino Superior Completo</option>
+                <option>Técnico</option>
+                <option>Pós-Graduação</option>
+                <option>Mestrado</option>
+                <option>Doutorado</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label class="form-field__label" for="bt-experience">Experiência na Área</label>
+              <select id="bt-experience" class="form-field__select">
+                <option value="">Selecione</option>
+                <option>Nenhuma experiência</option>
+                <option>Até 1 ano</option>
+                <option>1 a 2 anos</option>
+                <option>3 a 5 anos</option>
+                <option>6 a 10 anos</option>
+                <option>Mais de 10 anos</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label class="form-field__label" for="bt-travel">Disponibilidade para Viagem</label>
+              <select id="bt-travel" class="form-field__select">
+                <option value="">Selecione</option>
+                <option>Sim</option><option>Não</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bt-card">
+        <div class="bt-card__header">
+          <span style="font-size:18px;">🏅</span>
+          <span class="bt-card__title">04 — Interesse & Motivação</span>
+        </div>
+        <div class="bt-card__body">
+          <div class="form-grid">
+            <div class="form-field form-field--full">
+              <label class="form-field__label" for="bt-vaga">Vaga / Área de Interesse</label>
+              <select id="bt-vaga" class="form-field__select">
+                <option value="">Carregando vagas...</option>
+              </select>
+            </div>
+            <div class="form-field form-field--full">
+              <label class="form-field__label" for="bt-motivation">Conte um pouco sobre você e sua experiência profissional</label>
+              <textarea id="bt-motivation" class="form-field__textarea"
+                placeholder="Fale sobre suas habilidades, experiências anteriores e por que quer fazer parte da Rezende Energia..."></textarea>
+            </div>
+            <div class="form-field form-field--full">
+              <label class="form-field__label">Currículo (PDF, opcional)</label>
+              <div class="file-drop" id="bt-resume-zone" onclick="document.getElementById('bt-resume').click()">
+                <input type="file" id="bt-resume" accept=".pdf" style="display:none;" onchange="handleResumeFile(this)">
+                <div class="file-drop__icon">📄</div>
+                <p class="file-drop__text">Clique para selecionar o PDF</p>
+                <p class="file-drop__hint">Máx. 5 MB — não obrigatório</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="lgpd-box">
+            <p class="lgpd-box__label">📋 Autorização LGPD</p>
+            <p class="lgpd-box__text">
+              Ao enviar este cadastro, você autoriza a
+              <strong style="color:#fff;">Rezende Construção e Manutenção Ltda.</strong>
+              a coletar, armazenar e utilizar estes dados exclusivamente para fins de composição
+              do nosso Banco de Talentos e futuros processos seletivos, conforme a
+              <strong style="color:#fff;">Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018)</strong>.
+            </p>
+            <label class="lgpd-checkbox">
+              <input type="checkbox" id="bt-lgpd" required>
+              <span>Li e concordo com o uso dos meus dados para este fim.</span>
+            </label>
+          </div>
+
+          <div class="alert alert--error" id="bt-alert"></div>
+
+          <button type="button" class="btn-submit" id="bt-submit-btn" onclick="submitForm()">
+            ✅ Enviar Cadastro
+          </button>
+        </div>
+      </div>
+
+    </form>
+  </div>
+
+</div>
+
+<script>
+  // Máscara CPF
+  document.getElementById('bt-cpf').addEventListener('input', function () {
+    let v = this.value.replace(/\D/g, '').slice(0, 11);
+    if (v.length > 9)      v = v.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4');
+    else if (v.length > 6) v = v.replace(/^(\d{3})(\d{3})(\d+)/, '$1.$2.$3');
+    else if (v.length > 3) v = v.replace(/^(\d{3})(\d+)/, '$1.$2');
+    this.value = v;
+  });
+
+  // Popula a lista de vagas de interesse a partir das nossas vagas normais abertas
+  async function carregarVagasInteresse() {
+    const select = document.getElementById('bt-vaga');
+    try {
+      const resp = await fetch('/api/jobs');
+      const jobs = await resp.json();
+
+      const cargos = [...new Set((jobs || []).map(j => j.position).filter(Boolean))].sort();
+
+      select.innerHTML = '<option value="">Selecione (opcional)</option>';
+      if (cargos.length) {
+        const grp = document.createElement('optgroup');
+        grp.label = 'Vagas abertas no momento';
+        cargos.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c; opt.textContent = c;
+          grp.appendChild(opt);
+        });
+        select.appendChild(grp);
+      }
+      const outras = [
+        'Elétrica / Energia', 'Administrativo / Escritório', 'Tecnologia da Informação',
+        'Segurança do Trabalho', 'Recursos Humanos', 'Financeiro', 'Logística / Suprimentos',
+        'Operacional / Campo', 'Não tenho preferência',
+      ];
+      const grp2 = document.createElement('optgroup');
+      grp2.label = 'Outras áreas';
+      outras.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c; opt.textContent = c;
+        grp2.appendChild(opt);
+      });
+      select.appendChild(grp2);
+    } catch (err) {
+      select.innerHTML = '<option value="">Selecione (opcional)</option><option>Não tenho preferência</option>';
+    }
+  }
+  carregarVagasInteresse();
+
+  function handleResumeFile(input) {
+    const zone = document.getElementById('bt-resume-zone');
+    if (input.files && input.files[0]) {
+      const f = input.files[0];
+      zone.classList.add('file-drop--selected');
+      zone.querySelector('.file-drop__text').textContent = '✅ ' + f.name;
+      zone.querySelector('.file-drop__hint').textContent = (f.size / 1024 / 1024).toFixed(2) + ' MB';
+    }
+  }
+
+  function showAlert(msg) {
+    const el = document.getElementById('bt-alert');
+    el.textContent = msg;
+    el.style.display = 'block';
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function hideAlert() {
+    document.getElementById('bt-alert').style.display = 'none';
+  }
+
+  async function submitForm() {
+    hideAlert();
+    const btn = document.getElementById('bt-submit-btn');
+
+    const name   = document.getElementById('bt-name').value.trim();
+    const cpf    = document.getElementById('bt-cpf').value.trim();
+    const phone  = document.getElementById('bt-phone').value.trim();
+    const email  = document.getElementById('bt-email').value.trim();
+    const lgpd   = document.getElementById('bt-lgpd').checked;
+
+    if (!name)  return showAlert('Informe o nome completo.');
+    if (!cpf)   return showAlert('Informe o CPF.');
+    if (!phone) return showAlert('Informe o telefone/WhatsApp.');
+    if (!email) return showAlert('Informe o e-mail.');
+    if (!lgpd)  return showAlert('Você precisa aceitar o termo de consentimento LGPD.');
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Enviando...';
+
+    try {
+      const fd = new FormData();
+      fd.append('fullName',              name);
+      fd.append('cpf',                   cpf);
+      fd.append('dataNascimento',        document.getElementById('bt-nascimento').value);
+      fd.append('cidadeAtual',           document.getElementById('bt-cidade').value.trim());
+      fd.append('linkedin',              document.getElementById('bt-linkedin').value.trim());
+      fd.append('phone',                 phone);
+      fd.append('email',                 email);
+      fd.append('education',             document.getElementById('bt-education').value);
+      fd.append('experience',            document.getElementById('bt-experience').value);
+      fd.append('disponibilidadeViagem', document.getElementById('bt-travel').value);
+      fd.append('vagaInteresse',         document.getElementById('bt-vaga').value);
+      fd.append('motivation',            document.getElementById('bt-motivation').value.trim());
+
+      const resumeFile = document.getElementById('bt-resume').files[0];
+      if (resumeFile) fd.append('resume', resumeFile);
+
+      const resp = await fetch('/api/banco-talentos', { method: 'POST', body: fd });
+      const data = await resp.json();
+
+      if (!resp.ok) {
+        btn.disabled = false;
+        btn.textContent = '✅ Enviar Cadastro';
+        return showAlert(data.message || 'Erro ao enviar. Tente novamente.');
+      }
+
+      // Sucesso
+      document.getElementById('bt-form-wrap').style.display = 'none';
+      document.getElementById('bt-success').style.display   = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = '✅ Enviar Cadastro';
+      showAlert('Erro de conexão. Verifique sua internet e tente novamente.');
+    }
+  }
+</script>
+
+</body>
+</html>
