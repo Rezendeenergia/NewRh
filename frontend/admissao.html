@@ -36,6 +36,8 @@
     <div class="sidebar-filter" style="display:flex;flex-direction:column;gap:6px;">
       <input type="text" id="filter-nome" class="form-field__input" placeholder="🔍 Buscar por nome..."
              style="width:100%;padding:6px 8px;font-size:.78rem;box-sizing:border-box;" oninput="Adm.onFilterNomeInput()">
+      <input type="text" id="filter-cargo" class="form-field__input" placeholder="🛠️ Buscar por função..."
+             style="width:100%;padding:6px 8px;font-size:.78rem;box-sizing:border-box;" oninput="Adm.onFilterCargoInput()">
       <div style="display:flex;gap:6px;">
         <select id="filter-status" class="form-field__select" style="flex:1;padding:6px 8px;font-size:.78rem;" onchange="Adm.loadLista()">
           <option value="">Todos</option>
@@ -187,11 +189,18 @@ const Adm = {
     Adm._nomeTimer = setTimeout(() => Adm.loadLista(), 350);
   },
 
+  onFilterCargoInput() {
+    // Debounce de 350ms para não disparar uma busca a cada tecla
+    clearTimeout(Adm._cargoTimer);
+    Adm._cargoTimer = setTimeout(() => Adm.loadLista(), 350);
+  },
+
   async loadLista() {
     const status = document.getElementById('filter-status').value;
     const dept   = document.getElementById('filter-dept').value;
     const local  = document.getElementById('filter-local').value;
     const nome   = document.getElementById('filter-nome').value.trim();
+    const cargo  = document.getElementById('filter-cargo').value.trim();
     const list   = document.getElementById('processo-list');
     // Skeleton animado enquanto carrega
     list.innerHTML = [1,2,3].map(() => `
@@ -206,6 +215,7 @@ const Adm = {
       if (dept)   params.set('departamento', dept);
       if (local)  params.set('local', local);
       if (nome)   params.set('nome', nome);
+      if (cargo)  params.set('cargo', cargo);
       // cache de 15s para não re-buscar ao trocar filtros rapidamente
       const data = await reqCached(`/api/processos?${params}`, 15000);
       if (data.items.length === 0) {
