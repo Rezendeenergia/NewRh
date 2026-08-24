@@ -184,7 +184,7 @@ def email_test_send():
 
     return jsonify(result)
 
-from routers import auth, jobs, candidaturas, processos, solicitacoes, menor_aprendiz
+from routers import auth, jobs, candidaturas, processos, solicitacoes, menor_aprendiz, banco_talentos
 from colaboradores_router import bp_colab
 app.register_blueprint(auth.bp)
 
@@ -200,6 +200,7 @@ app.register_blueprint(candidaturas.bp)
 app.register_blueprint(processos.bp)
 app.register_blueprint(solicitacoes.bp)
 app.register_blueprint(menor_aprendiz.bp)
+app.register_blueprint(banco_talentos.bp)
 app.register_blueprint(bp_colab)
 
 @app.route("/revisar-solicitacao")
@@ -250,6 +251,12 @@ def pasta_colaborador_page():
 @app.route("/menor-aprendiz")
 def menor_aprendiz_page():
     return send_from_directory(FRONTEND_FOLDER, "menor-aprendiz.html")
+
+
+# Serve a página pública de inscrição no Banco de Talentos
+@app.route("/banco-de-talentos")
+def banco_talentos_page():
+    return send_from_directory(FRONTEND_FOLDER, "banco-talentos.html")
 
 
 @app.route("/api/pasta-colaborador/estrutura")
