@@ -357,3 +357,31 @@ class MenorAprendiz(Base):
     observacoes_gestor  = Column(Text,        nullable=True)
     created_at          = Column(DateTime,    server_default=func.now())
     updated_at          = Column(DateTime,    server_default=func.now(), onupdate=func.now())
+
+
+# ── Banco de Talentos (inscrição espontânea) ───────────────────
+class BancoTalentos(Base):
+    """Inscrição espontânea no banco de talentos (sem vaga específica,
+    referenciando o interesse por uma de nossas vagas/áreas normais)."""
+    __tablename__ = "banco_talentos"
+
+    id                  = Column(Integer, primary_key=True, index=True)
+    full_name           = Column(String(150), nullable=False)
+    cpf                 = Column(String(14),  nullable=False)
+    data_nascimento     = Column(Date,        nullable=True)
+    phone               = Column(String(20),  nullable=False)
+    email               = Column(String(150), nullable=False)
+    cidade_atual        = Column(String(100), nullable=True)
+    linkedin            = Column(String(200), nullable=True)
+    vaga_interesse      = Column(String(150), nullable=True)   # cargo/área de interesse (baseado nas vagas normais)
+    education           = Column(String(80),  nullable=True)
+    experience          = Column(String(30),  nullable=True)
+    disponibilidade_viagem = Column(String(10), nullable=True)
+    motivation          = Column(Text,        nullable=True)
+    resume_name         = Column(String(200), nullable=True)   # currículo (PDF)
+    resume_url          = Column(String(1000), nullable=True)  # URL SharePoint do currículo
+    status              = Column(String(20),  nullable=False, default="PENDENTE")
+    # PENDENTE | EM_ANALISE | APROVADO | REJEITADO
+    observacoes_gestor  = Column(Text,        nullable=True)
+    created_at          = Column(DateTime,    server_default=func.now())
+    updated_at          = Column(DateTime,    server_default=func.now(), onupdate=func.now())
