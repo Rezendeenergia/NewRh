@@ -19,6 +19,7 @@ SCOPES     = ["https://graph.microsoft.com/.default"]
 # Caminho base já existente no SharePoint
 BASE_PATH  = "ADMINISTRAÇÃO/Departamento de Gestão de Pessoas/RH/CANDIDATURAS"
 BASE_PATH_APRENDIZ = "ADMINISTRAÇÃO/Departamento de Gestão de Pessoas/RH/MENOR APRENDIZ"
+BASE_PATH_TALENTOS = "ADMINISTRAÇÃO/Departamento de Gestão de Pessoas/RH/BANCO DE TALENTOS"
 
 
 def _get_token():
