@@ -48,7 +48,7 @@ def _pos_candidatura(candidatura_id: int, job_id: int, resume_filename: str):
         try:
             from sharepoint_service import criar_pasta_colaborador, upload_documento
             print(f"[BG][SHAREPOINT] Criando pasta para {candidatura.full_name}...")
-            result = criar_pasta_colaborador(candidatura.full_name, candidatura.cpf)
+            result = criar_pasta_colaborador(candidatura.full_name, candidatura.cpf, job.position)
             if result.get("url"):
                 print(f"[BG][SHAREPOINT] Pasta criada: {result['url']}")
                 if resume_filename:
