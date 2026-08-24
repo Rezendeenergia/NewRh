@@ -249,10 +249,11 @@ def listar():
     dept_f   = request.args.get("departamento", "").upper()
     local_f  = request.args.get("local", "").strip()
     nome_f   = request.args.get("nome", "").strip()
+    cargo_f  = request.args.get("cargo", "").strip()
     page     = max(1, int(request.args.get("page", 1)))
     per_page = 30  # aumentado de 20 para 30
 
-    cache_key = f"lista:{status_f}:{dept_f}:{local_f}:{nome_f}:{page}"
+    cache_key = f"lista:{status_f}:{dept_f}:{local_f}:{nome_f}:{cargo_f}:{page}"
     hit = _cache.get(cache_key)
     if hit is not None:
         return jsonify(hit)
@@ -276,20 +277,24 @@ def listar():
                 (models.EtapaProcesso.departamento == dept_f)
             )
 
-        # Filtro por regional (local da vaga) e/ou nome do candidato
-        if local_f or nome_f:
+        # Filtro por regional (local da vaga), função (cargo) e/ou nome do candidato
+        if local_f or nome_f or cargo_f:
             q = q.join(
                 models.Candidatura,
                 models.Candidatura.id == models.ProcessoAdmissao.candidatura_id
             )
-            if local_f:
+            if local_f or cargo_f:
                 q = q.join(
                     models.Job, models.Job.id == models.Candidatura.job_id
-                ).filter(models.Job.location == local_f)
+                )
+                if local_f:
+                    q = q.filter(models.Job.location == local_f)
+                if cargo_f:
+                    q = q.filter(models.Job.position.ilike(f"%{cargo_f}%"))
             if nome_f:
                 q = q.filter(models.Candidatura.full_name.ilike(f"%{nome_f}%"))
 
-        if dept_f and (local_f or nome_f):
+        if dept_f and (local_f or nome_f or cargo_f):
             q = q.distinct()
 
         total = q.count()
