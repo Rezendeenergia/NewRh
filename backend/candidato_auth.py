@@ -355,16 +355,16 @@ def enviar_documento():
         doc_id   = doc.id
         cand_nome = cand_alvo.full_name
         cand_cpf  = cand_alvo.cpf
+        cand_cargo = cand_alvo.job.position if cand_alvo.job else None
 
         def _upload_sp():
             try:
-                from sharepoint_service import upload_documento, criar_pasta_colaborador, BASE_PATH, _get_site_id, _get_drive_id, _criar_pasta
-                cpf_c = cand_cpf.replace('.','').replace('-','')
-                pasta = f"{cand_nome} - {cpf_c}"
+                from sharepoint_service import upload_documento, criar_pasta_colaborador, montar_nome_pasta, BASE_PATH, _get_site_id, _get_drive_id, _criar_pasta
+                pasta = montar_nome_pasta(cand_nome, cand_cpf, cand_cargo)
 
                 # Tenta criar a pasta do colaborador (pode já existir)
                 try:
-                    criar_pasta_colaborador(cand_nome, cand_cpf)
+                    criar_pasta_colaborador(cand_nome, cand_cpf, cand_cargo)
                 except Exception as ex:
                     print(f"[SHAREPOINT] Pasta colaborador: {ex}")
 
