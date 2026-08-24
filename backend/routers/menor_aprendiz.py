@@ -16,7 +16,7 @@ Armazenamento de currículos:
   A URL do arquivo é salva em resume_url; resume_name guarda o nome original.
   NÃO usa disco local (Render é efêmero).
 """
-from flask import Blueprint, request, jsonify, redirect
+from flask import Blueprint, request, jsonify, redirect, send_file
 from database import get_db
 from security import require_auth
 from extensions import limiter
