@@ -154,11 +154,22 @@ def upload_bytes(file_bytes: bytes, nome_arquivo: str, caminho_pasta: str,
         return None
 
 
-def criar_pasta_colaborador(nome: str, cpf: str) -> dict:
+def montar_nome_pasta(nome: str, cpf: str, cargo: str | None = None) -> str:
+    """Monta o nome padrão da pasta do colaborador: 'Nome - CPF - Cargo'.
+    O cargo é opcional (mantém retrocompatibilidade com pastas já criadas sem ele)."""
+    cpf_clean = (cpf or "").replace(".", "").replace("-", "")
+    pasta = f"{nome} - {cpf_clean}"
+    cargo = (cargo or "").strip()
+    if cargo and cargo != "—":
+        pasta = f"{pasta} - {cargo}"
+    return pasta
+
+
+def criar_pasta_colaborador(nome: str, cpf: str, cargo: str | None = None) -> dict:
     """
     Cria pasta do colaborador com estrutura oficial completa:
     CANDIDATURAS/
-    └── Nome - CPF/
+    └── Nome - CPF - Cargo/
         ├── 01.DOCUMENTOS PESSOAIS/
         │   ├── 01_PESSOAL/
         │   ├── 02_DEPENDENTES/
@@ -175,8 +186,7 @@ def criar_pasta_colaborador(nome: str, cpf: str) -> dict:
         └── 06_DISCIPLINAR/
     """
     try:
-        cpf_clean = cpf.replace(".", "").replace("-", "")
-        pasta     = f"{nome} - {cpf_clean}"
+        pasta = montar_nome_pasta(nome, cpf, cargo)
 
         site_id  = _get_site_id()
         drive_id = _get_drive_id(site_id)
