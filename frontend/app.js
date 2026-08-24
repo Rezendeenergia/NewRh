@@ -2118,6 +2118,7 @@ document.querySelectorAll('.subtab').forEach(tab => {
     if (tab.dataset.subtab === 'headcount')     Manager.loadHeadcount();
     if (tab.dataset.subtab === 'banco-talentos') Manager.loadBancoTalentos();
     if (tab.dataset.subtab === 'menor-aprendiz') MenorAprendiz.load();
+    if (tab.dataset.subtab === 'talentos-cadastros') BancoTalentosPublico.load();
     if (tab.dataset.subtab === 'solicitacoes')  Solicitacoes.loadLista();
     if (tab.dataset.subtab === 'colaboradores-admitidos') Manager.loadColaboradoresAdmitidos();
   });
@@ -2524,6 +2525,172 @@ const MenorAprendiz = {
       });
       await this.load();
       showToast('Status atualizado', `Inscrição marcada como ${status.replace('_', ' ')}`, 'success');
+    } catch (err) {
+      showToast('Erro', 'Não foi possível atualizar o status', 'error');
+    }
+  },
+};
+
+// ─── Banco de Talentos (cadastros espontâneos via formulário público) ──
+const BancoTalentosPublico = {
+  _data: [],
+
+  async load() {
+    const body  = document.getElementById('talentos-body');
+    const badge = document.getElementById('talentos-count-badge');
+    if (!body) return;
+
+    body.innerHTML = `<div style="text-align:center;padding:40px;color:#5A6478;">
+      <div class="spinner" style="margin:0 auto 12px;"></div><p>Carregando cadastros...</p></div>`;
+
+    try {
+      const data = await request('/api/banco-talentos');
+      this._data = data || [];
+      if (badge) {
+        const n = this._data.length;
+        badge.textContent = `${n} cadastro${n !== 1 ? 's' : ''}`;
+        const countEl = document.getElementById('count-talentos-cadastros');
+        if (countEl && n > 0) { countEl.textContent = n; countEl.style.display = ''; }
+      }
+      this._render(this._data, body);
+    } catch (err) {
+      body.innerHTML = `<div style="text-align:center;padding:40px;color:#FF5252;">
+        <div style="font-size:32px;margin-bottom:8px;">❌</div>
+        <p>Erro ao carregar cadastros.</p></div>`;
+    }
+  },
+
+  filtrar(q) {
+    const body      = document.getElementById('talentos-body');
+    const statusVal = document.getElementById('talentos-filter-status')?.value || '';
+    const ql        = (q || '').toLowerCase().trim();
+    let items       = this._data;
+
+    if (statusVal) items = items.filter(t => t.status === statusVal);
+    if (ql)        items = items.filter(t =>
+      (t.fullName      || '').toLowerCase().includes(ql) ||
+      (t.cpf           || '').includes(ql) ||
+      (t.vagaInteresse || '').toLowerCase().includes(ql) ||
+      (t.email         || '').toLowerCase().includes(ql)
+    );
+
+    this._render(items, body);
+  },
+
+  _render(items, body) {
+    if (!items || !items.length) {
+      body.innerHTML = `<div style="text-align:center;padding:60px;color:#5A6478;">
+        <div style="font-size:48px;margin-bottom:16px;">🏅</div>
+        <p style="font-size:16px;font-weight:600;color:#9AA3B2;">Nenhum cadastro encontrado.</p>
+        <p style="font-size:13px;margin-top:6px;">Os cadastros do formulário público de Banco de Talentos aparecerão aqui.</p>
+      </div>`;
+      return;
+    }
+
+    const STATUS_CFG = {
+      PENDENTE:   { bg: 'rgba(255,184,48,.12)', border: 'rgba(255,184,48,.3)', color: '#FFB830', label: 'Pendente' },
+      EM_ANALISE: { bg: 'rgba(91,141,239,.12)', border: 'rgba(91,141,239,.3)', color: '#60A5FA', label: 'Em Análise' },
+      APROVADO:   { bg: 'rgba(46,204,113,.12)', border: 'rgba(46,204,113,.3)', color: '#2ECC71', label: 'Aprovado' },
+      REJEITADO:  { bg: 'rgba(255,82,82,.12)',  border: 'rgba(255,82,82,.3)',  color: '#FF5252', label: 'Rejeitado' },
+    };
+
+    function fmtData(iso) {
+      if (!iso) return '—';
+      return new Date(iso).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' });
+    }
+
+    body.innerHTML = items.map(t => {
+      const sc = STATUS_CFG[t.status] || STATUS_CFG.PENDENTE;
+
+      return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);
+                           border-radius:14px;margin-bottom:14px;overflow:hidden;">
+        <div style="background:rgba(96,165,250,.03);border-bottom:1px solid rgba(255,255,255,.05);
+                    padding:14px 18px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+              <span style="background:${sc.bg};border:1px solid ${sc.border};color:${sc.color};
+                           font-size:10px;font-weight:700;border-radius:20px;padding:2px 10px;">${sc.label.toUpperCase()}</span>
+              ${t.hasResume ? `<button onclick="BancoTalentosPublico.downloadResume(${t.id},'${t.resumeName||'curriculo.pdf'}')"
+                style="background:rgba(255,106,0,.08);border:1px solid rgba(255,106,0,.2);color:#FF8C2A;
+                       font-size:10px;font-weight:700;border-radius:20px;padding:2px 10px;cursor:pointer;">📄 Currículo</button>` : ''}
+            </div>
+            <p style="margin:0 0 2px;font-size:16px;font-weight:800;color:#fff;">${t.fullName}</p>
+            <p style="margin:0;font-size:12px;color:#9AA3B2;">
+              📱 ${t.phone}
+              ${t.cidadeAtual ? ` · 📍 ${t.cidadeAtual}` : ''}
+            </p>
+          </div>
+          <div style="text-align:right;font-size:11px;color:#5A6478;">
+            <div>Cadastro em</div>
+            <div style="color:#9AA3B2;font-weight:600;">${fmtData(t.createdAt)}</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.04);">
+          <div style="padding-right:14px;border-right:1px solid rgba(255,255,255,.05);">
+            <p style="margin:0 0 4px;font-size:10px;color:#5A6478;text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Vaga / Área de Interesse</p>
+            <p style="margin:0;font-size:13px;color:#D0D4DE;">${t.vagaInteresse || '—'}</p>
+          </div>
+          <div style="padding-left:14px;">
+            <p style="margin:0 0 4px;font-size:10px;color:#5A6478;text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Formação / Experiência</p>
+            <p style="margin:0;font-size:13px;color:#D0D4DE;">${[t.education, t.experience].filter(Boolean).join(' · ') || '—'}</p>
+          </div>
+        </div>
+
+        ${t.motivation ? `
+        <div style="padding:10px 18px;border-bottom:1px solid rgba(255,255,255,.04);">
+          <p style="margin:0 0 4px;font-size:10px;color:#5A6478;text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Sobre o candidato</p>
+          <p style="margin:0;font-size:13px;color:#9AA3B2;line-height:1.6;max-height:80px;overflow:hidden;text-overflow:ellipsis;">${t.motivation}</p>
+        </div>` : ''}
+
+        <div style="padding:12px 18px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <a href="mailto:${t.email}" style="font-size:11px;color:#9AA3B2;text-decoration:none;background:rgba(255,255,255,.04);border-radius:6px;padding:4px 10px;">✉️ ${t.email}</a>
+          <a href="https://wa.me/55${(t.phone||'').replace(/\D/g,'')}" target="_blank"
+             style="font-size:11px;color:#25D366;text-decoration:none;background:rgba(37,211,102,.06);border-radius:6px;padding:4px 10px;">📱 WhatsApp</a>
+          <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;">
+            ${['PENDENTE','EM_ANALISE','APROVADO','REJEITADO'].map(s => {
+              if (s === t.status) return '';
+              const sc2 = STATUS_CFG[s];
+              return `<button onclick="BancoTalentosPublico.setStatus(${t.id},'${s}')"
+                style="font-size:11px;font-weight:700;cursor:pointer;
+                       background:${sc2.bg};border:1px solid ${sc2.border};color:${sc2.color};
+                       border-radius:6px;padding:4px 10px;">→ ${sc2.label}</button>`;
+            }).join('')}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  },
+
+  async downloadResume(id, filename) {
+    try {
+      const r = await fetch(`${API_BASE}/api/banco-talentos/${id}/resume-url`, {
+        headers: { 'Authorization': 'Bearer ' + sessionToken },
+      });
+      if (!r.ok) throw new Error('Currículo não encontrado');
+      const { url } = await r.json();
+      window.open(url, '_blank');
+    } catch (err) {
+      showToast('Erro', err.message, 'error');
+    }
+  },
+
+  async setStatus(id, status) {
+    try {
+      const obs = status === 'REJEITADO'
+        ? prompt('Observação para o arquivo (opcional):') || ''
+        : null;
+
+      const body = { status };
+      if (obs !== null) body.observacoesGestor = obs;
+
+      await request(`/api/banco-talentos/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      await this.load();
+      showToast('Status atualizado', `Cadastro marcado como ${status.replace('_', ' ')}`, 'success');
     } catch (err) {
       showToast('Erro', 'Não foi possível atualizar o status', 'error');
     }
