@@ -108,17 +108,17 @@ const CandidatoPortal = {
     // Reseta abas visuais
     const tabLogin   = document.getElementById('cand-tab-login');
     const tabPrimeiro = document.getElementById('cand-tab-primeiro');
-    if (tabLogin)    { tabLogin.style.borderBottomColor = 'transparent'; tabLogin.style.color = '#9AA3B2'; }
-    if (tabPrimeiro) { tabPrimeiro.style.borderBottomColor = 'transparent'; tabPrimeiro.style.color = '#9AA3B2'; }
+    if (tabLogin)    { tabLogin.style.borderBottomColor = 'transparent'; tabLogin.style.color = 'var(--texto-2)'; }
+    if (tabPrimeiro) { tabPrimeiro.style.borderBottomColor = 'transparent'; tabPrimeiro.style.color = 'var(--texto-2)'; }
 
     // Mostra form correto
     const form = document.getElementById('cand-form-' + tab);
     if (form) form.style.display = 'block';
 
     if (tab === 'login' && tabLogin) {
-      tabLogin.style.borderBottomColor = '#FF6A00'; tabLogin.style.color = '#FF6A00';
+      tabLogin.style.borderBottomColor = 'var(--laranja)'; tabLogin.style.color = 'var(--laranja-texto)';
     } else if (tab === 'primeiro' && tabPrimeiro) {
-      tabPrimeiro.style.borderBottomColor = '#FF6A00'; tabPrimeiro.style.color = '#FF6A00';
+      tabPrimeiro.style.borderBottomColor = 'var(--laranja)'; tabPrimeiro.style.color = 'var(--laranja-texto)';
     }
   },
 
@@ -142,7 +142,7 @@ const CandidatoPortal = {
       const d = await r.json();
       if (!r.ok) {
         if (d.primeiroAcesso) {
-          alertEl.innerHTML = `⚠️ ${d.message} <a href="#" onclick="CandidatoPortal.setTab('primeiro');return false;" style="color:#FF6A00;">Clique aqui</a>`;
+          alertEl.innerHTML = `⚠️ ${d.message} <a href="#" onclick="CandidatoPortal.setTab('primeiro');return false;" style="color:var(--laranja-texto);">Clique aqui</a>`;
         } else {
           alertEl.textContent = '❌ ' + (d.message || 'Erro ao autenticar');
         }
@@ -175,7 +175,7 @@ const CandidatoPortal = {
       alertEl.textContent = r.ok ? '✅ ' + d.message : '❌ ' + (d.message || 'Erro');
       alertEl.style.display = 'block';
       alertEl.style.background = r.ok ? 'rgba(46,204,113,.1)' : 'rgba(255,82,82,.1)';
-      alertEl.style.color = r.ok ? '#2ECC71' : '#FF5252';
+      alertEl.style.color = r.ok ? 'var(--ok)' : 'var(--alerta)';
     } catch(e) {
       alertEl.textContent = '❌ Erro de conexão'; alertEl.style.display = 'block';
     } finally {
@@ -200,7 +200,7 @@ const CandidatoPortal = {
       alertEl.textContent = r.ok ? '✅ ' + d.message : '❌ ' + (d.message || 'Erro');
       alertEl.style.display = 'block';
       alertEl.style.background = r.ok ? 'rgba(46,204,113,.1)' : 'rgba(255,82,82,.1)';
-      alertEl.style.color = r.ok ? '#2ECC71' : '#FF5252';
+      alertEl.style.color = r.ok ? 'var(--ok)' : 'var(--alerta)';
     } catch(e) {
       alertEl.textContent = '❌ Erro de conexão'; alertEl.style.display = 'block';
     } finally {
@@ -224,8 +224,8 @@ const CandidatoPortal = {
       const painel = document.getElementById(`painel-${t}`);
       const isActive = t === tab;
       if (btn) {
-        btn.style.borderBottomColor = isActive ? '#FF6A00' : 'transparent';
-        btn.style.color = isActive ? '#FF6A00' : '#9AA3B2';
+        btn.style.borderBottomColor = isActive ? 'var(--laranja-texto)' : 'transparent';
+        btn.style.color = isActive ? 'var(--laranja-texto)' : 'var(--texto-2)';
       }
       if (painel) painel.style.display = isActive ? 'block' : 'none';
     });
@@ -286,7 +286,7 @@ const CandidatoPortal = {
     const alertEl   = document.getElementById('cand-doc-alert');
 
     label.textContent = `⏳ Enviando ${file.name}...`;
-    zone.style.borderColor = '#FF6A00';
+    zone.style.borderColor = 'var(--laranja)';
     alertEl.style.display = 'none';
 
     const fd = new FormData();
@@ -305,11 +305,11 @@ const CandidatoPortal = {
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.message || 'Erro');
-      zone.style.borderColor = '#2ECC71';
+      zone.style.borderColor = 'var(--ok)';
       label.textContent = `✅ ${file.name} enviado!`;
       alertEl.textContent = '✅ Documento enviado com sucesso!';
       alertEl.style.background = 'rgba(46,204,113,.1)';
-      alertEl.style.color = '#2ECC71';
+      alertEl.style.color = 'var(--ok)';
       alertEl.style.display = 'block';
       setTimeout(() => { this.abrirUpload(); this._loadDocs(); }, 1500);
     } catch(e) {
@@ -317,7 +317,7 @@ const CandidatoPortal = {
       zone.style.borderColor = 'rgba(255,82,82,.4)';
       alertEl.textContent = '❌ ' + e.message;
       alertEl.style.background = 'rgba(255,82,82,.1)';
-      alertEl.style.color = '#FF5252';
+      alertEl.style.color = 'var(--alerta)';
       alertEl.style.display = 'block';
     }
     input.value = '';
@@ -332,32 +332,32 @@ const CandidatoPortal = {
       });
       const docs = await r.json();
       if (!r.ok || !docs.length) {
-        lista.innerHTML = '<p style="color:#5A6478;font-size:12px;text-align:center;padding:8px 0;">Nenhum documento enviado ainda.</p>';
+        lista.innerHTML = '<p style="color:var(--texto-3);font-size:12px;text-align:center;padding:8px 0;">Nenhum documento enviado ainda.</p>';
         return;
       }
       const TIPO_ICON = { NR:'📜', DIPLOMA:'🎓', CERTIFICADO:'📋', CNH:'🪪', OUTRO:'📄' };
       lista.innerHTML = docs.map(d => `
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;
-                    background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);
+                    background:var(--ov-30);border:1px solid var(--ov-70);
                     border-radius:8px;padding:10px 12px;">
           <div style="display:flex;align-items:center;gap:8px;overflow:hidden;">
             <span style="font-size:1.1rem;">${TIPO_ICON[d.tipo] || '📄'}</span>
             <div style="overflow:hidden;">
-              <p style="margin:0;font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${d.nome}</p>
-              <p style="margin:0;font-size:11px;color:#5A6478;">${d.descricao || d.tipo} · ${d.enviadoEm}</p>
+              <p style="margin:0;font-size:13px;font-weight:600;color:var(--texto);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${d.nome}</p>
+              <p style="margin:0;font-size:11px;color:var(--texto-3);">${d.descricao || d.tipo} · ${d.enviadoEm}</p>
             </div>
           </div>
-          ${d.url ? `<a href="${d.url}" target="_blank" style="color:#FF6A00;font-size:11px;white-space:nowrap;text-decoration:none;">Ver ↗</a>` : '<span style="color:#5A6478;font-size:11px;">Processando...</span>'}
+          ${d.url ? `<a href="${d.url}" target="_blank" style="color:var(--laranja-texto);font-size:11px;white-space:nowrap;text-decoration:none;">Ver ↗</a>` : '<span style="color:var(--texto-3);font-size:11px;">Processando...</span>'}
         </div>`).join('');
     } catch(e) {
-      lista.innerHTML = `<p style="color:#FF5252;font-size:12px;text-align:center;">${e.message}</p>`;
+      lista.innerHTML = `<p style="color:var(--alerta);font-size:12px;text-align:center;">${e.message}</p>`;
     }
   },
 
   async _loadCandidaturas() {
     const lista = document.getElementById('cand-lista');
     if (!lista) return;
-    lista.innerHTML = '<p style="color:#9AA3B2;text-align:center;padding:20px;">Carregando...</p>';
+    lista.innerHTML = '<p style="color:var(--texto-2);text-align:center;padding:20px;">Carregando...</p>';
     try {
       const r = await fetch('/api/candidato/minhas-candidaturas', {
         headers: { 'Authorization': 'Bearer ' + this._token },
@@ -365,27 +365,27 @@ const CandidatoPortal = {
       const items = await r.json();
       if (!r.ok) throw new Error(items.message || 'Erro');
       if (!items.length) {
-        lista.innerHTML = '<p style="color:#9AA3B2;text-align:center;padding:20px;">Nenhuma candidatura encontrada.</p>';
+        lista.innerHTML = '<p style="color:var(--texto-2);text-align:center;padding:20px;">Nenhuma candidatura encontrada.</p>';
         return;
       }
       const COR = {
-        PENDING:'#FFB830', TRIAGEM:'#5B8DEF', TRIAGEM_OK:'#2ECC71',
-        ENTREVISTA:'#A78BFA', ENTREVISTA_OK:'#2ECC71',
-        APROVACAO_FINAL:'#F39C12', APPROVED:'#2ECC71', REJECTED:'#FF5252',
+        PENDING:'var(--aviso)', TRIAGEM:'var(--info)', TRIAGEM_OK:'var(--ok)',
+        ENTREVISTA:'var(--graf-5)', ENTREVISTA_OK:'var(--ok)',
+        APROVACAO_FINAL:'var(--aviso)', APPROVED:'var(--ok)', REJECTED:'var(--alerta)',
       };
       lista.innerHTML = items.map(c => {
-        const cor = COR[c.statusKey] || '#9AA3B2';
-        return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:14px 16px;">
+        const cor = COR[c.statusKey] || 'var(--texto-2)';
+        return `<div style="background:var(--ov-30);border:1px solid var(--ov-70);border-radius:10px;padding:14px 16px;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
             <div style="flex:1;min-width:0;">
-              <p style="margin:0 0 2px;font-size:15px;font-weight:700;color:#fff;">${c.vaga}</p>
-              <p style="margin:0;font-size:12px;color:#9AA3B2;">📍 ${c.local} · ${c.appliedAt}</p>
+              <p style="margin:0 0 2px;font-size:15px;font-weight:700;color:var(--texto);">${c.vaga}</p>
+              <p style="margin:0;font-size:12px;color:var(--texto-2);">📍 ${c.local} · ${c.appliedAt}</p>
             </div>
-            <span style="background:${cor}18;border:1px solid ${cor}44;color:${cor};border-radius:20px;padding:3px 12px;font-size:12px;font-weight:700;white-space:nowrap;">${c.status}</span>
+            <span style="background:color-mix(in srgb, ${cor} 10%, transparent);border:1px solid color-mix(in srgb, ${cor} 27%, transparent);color:${cor};border-radius:20px;padding:3px 12px;font-size:12px;font-weight:700;white-space:nowrap;">${c.status}</span>
           </div>
-          <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.05);">
+          <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--ov-50);">
             <button onclick="CandidatoPortal.anexarNaCandidatura(${c.id}, '${c.vaga} — ${c.local}')"
-                    style="background:rgba(255,106,0,.08);border:1px solid rgba(255,106,0,.25);color:#FF6A00;
+                    style="background:rgba(255,106,0,.08);border:1px solid rgba(255,106,0,.25);color:var(--laranja-texto);
                            border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;width:100%;">
               📎 Anexar Documento nesta Candidatura
             </button>
@@ -393,7 +393,7 @@ const CandidatoPortal = {
         </div>`;
       }).join('');
     } catch(e) {
-      lista.innerHTML = `<p style="color:#FF5252;text-align:center;">${e.message}</p>`;
+      lista.innerHTML = `<p style="color:var(--alerta);text-align:center;">${e.message}</p>`;
     }
   },
 };
@@ -569,12 +569,12 @@ const Portal = {
         </div>
         ${job.tipo === 'Mudança de Função' && job.colaboradorNome ? `
         <div style="display:flex;align-items:center;gap:8px;background:rgba(255,165,0,.08);
-                    border:1px solid rgba(255,165,0,.25);border-left:3px solid #FFA500;
+                    border:1px solid rgba(255,165,0,.25);border-left:3px solid var(--aviso);
                     border-radius:8px;padding:8px 14px;margin:8px 0 4px;">
           <span style="font-size:16px;">👤</span>
           <div>
-            <span style="font-size:10px;color:#FFA500;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;">Colaborador</span><br>
-            <span style="font-size:14px;font-weight:700;color:#fff;">${job.colaboradorNome}${job.colaboradorCargo ? ` <span style="color:#9AA3B2;font-size:12px;">— ${job.colaboradorCargo}</span>` : ''}</span>
+            <span style="font-size:10px;color:var(--aviso);font-weight:700;text-transform:uppercase;letter-spacing:1.5px;">Colaborador</span><br>
+            <span style="font-size:14px;font-weight:700;color:var(--texto);">${job.colaboradorNome}${job.colaboradorCargo ? ` <span style="color:var(--texto-2);font-size:12px;">— ${job.colaboradorCargo}</span>` : ''}</span>
           </div>
         </div>` : ''}
         <p class="job-card__description">
@@ -657,24 +657,24 @@ const Portal = {
       nameField.value    = selectedJob.colaboradorNome;
       nameField.readOnly = true;
       nameField.style.background  = 'rgba(255,165,0,0.08)';
-      nameField.style.borderColor = '#FFA500';
-      nameField.style.color       = '#FFF';
+      nameField.style.borderColor = 'var(--aviso)';
+      nameField.style.color       = 'var(--texto)';
 
       if (!bannerEl) {
         bannerEl = document.createElement('div');
         bannerEl.id = 'mudanca-funcao-banner';
         nameField.closest('.form-field--full').insertAdjacentElement('afterend', bannerEl);
       }
-      bannerEl.style.cssText = 'display:flex;align-items:flex-start;gap:12px;background:rgba(255,165,0,0.1);border:1px solid rgba(255,165,0,0.35);border-left:4px solid #FFA500;border-radius:10px;padding:14px 18px;margin:0 0 16px;grid-column:1/-1;';
+      bannerEl.style.cssText = 'display:flex;align-items:flex-start;gap:12px;background:rgba(255,165,0,0.1);border:1px solid rgba(255,165,0,0.35);border-left:4px solid var(--aviso);border-radius:10px;padding:14px 18px;margin:0 0 16px;grid-column:1/-1;';
       bannerEl.innerHTML = `
         <span style="font-size:22px;line-height:1;">🔒</span>
         <div>
-          <p style="margin:0 0 4px;font-size:13px;font-weight:800;color:#FFA500;text-transform:uppercase;letter-spacing:1px;">Vaga exclusiva — Mudança de Função</p>
-          <p style="margin:0;font-size:14px;color:#E0E0E0;line-height:1.5;">
+          <p style="margin:0 0 4px;font-size:13px;font-weight:800;color:var(--aviso);text-transform:uppercase;letter-spacing:1px;">Vaga exclusiva — Mudança de Função</p>
+          <p style="margin:0;font-size:14px;color:var(--texto);line-height:1.5;">
             Esta vaga foi criada especificamente para
-            <strong style="color:#fff;">${selectedJob.colaboradorNome}</strong>.
+            <strong style="color:var(--texto);">${selectedJob.colaboradorNome}</strong>.
             O nome já foi preenchido automaticamente e não pode ser alterado.
-            Preencha os demais campos com seus dados pessoais e clique em <strong style="color:#FFA500;">Enviar Candidatura</strong>.
+            Preencha os demais campos com seus dados pessoais e clique em <strong style="color:var(--aviso);">Enviar Candidatura</strong>.
           </p>
         </div>`;
     } else {
@@ -774,10 +774,10 @@ const Manager = {
         if (!items.length) { dropdown.style.display = 'none'; return; }
         dropdown.innerHTML = items.map(c =>
           `<div onclick="Manager.selecionarColaborador('${c.nome.replace(/'/g,"\'")}','${c.cargo.replace(/'/g,"\'")}','${c.localidade || ''}')"
-               style="padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid rgba(255,255,255,.06);"
+               style="padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--ov-60);"
                onmouseover="this.style.background='rgba(255,106,0,.1)'" onmouseout="this.style.background=''">
-            <strong style="color:#fff;">${c.nome}</strong>
-            <span style="color:#9AA3B2;font-size:12px;"> · ${c.cargo}${c.localidade ? ' · '+c.localidade : ''}</span>
+            <strong style="color:var(--texto);">${c.nome}</strong>
+            <span style="color:var(--texto-2);font-size:12px;"> · ${c.cargo}${c.localidade ? ' · '+c.localidade : ''}</span>
           </div>`
         ).join('');
         dropdown.style.display = 'block';
@@ -873,14 +873,14 @@ const Manager = {
       const d = await request('/api/candidaturas/stats');
       const f = d.funil || {};
       const etapas = [
-        { label:'📥 Recebidas',        key:'recebidas',       cor:'#5B8DEF' },
-        { label:'🔍 Triagem',           key:'triagem',         cor:'#FFB830' },
-        { label:'✅ Triagem OK',        key:'triagem_ok',      cor:'#2ECC71' },
-        { label:'🎤 Entrevista',        key:'entrevista',      cor:'#A78BFA' },
-        { label:'✅ Entrevista OK',     key:'entrevista_ok',   cor:'#2ECC71' },
-        { label:'🏆 Aprovação Final',   key:'aprovacao_final', cor:'#FF8C2A' },
-        { label:'✅ Aprovados',         key:'aprovados',       cor:'#2ECC71' },
-        { label:'❌ Não Selecionados',  key:'rejeitados',      cor:'#FF5252' },
+        { label:'📥 Recebidas',        key:'recebidas',       cor:'var(--info)' },
+        { label:'🔍 Triagem',           key:'triagem',         cor:'var(--aviso)' },
+        { label:'✅ Triagem OK',        key:'triagem_ok',      cor:'var(--ok)' },
+        { label:'🎤 Entrevista',        key:'entrevista',      cor:'var(--graf-5)' },
+        { label:'✅ Entrevista OK',     key:'entrevista_ok',   cor:'var(--ok)' },
+        { label:'🏆 Aprovação Final',   key:'aprovacao_final', cor:'var(--laranja-texto)' },
+        { label:'✅ Aprovados',         key:'aprovados',       cor:'var(--ok)' },
+        { label:'❌ Não Selecionados',  key:'rejeitados',      cor:'var(--alerta)' },
       ];
       const total = f.recebidas || 1;
       body.innerHTML = etapas.map(e => {
@@ -888,15 +888,15 @@ const Manager = {
         const pct = Math.round((val / total) * 100);
         return `<div style="margin-bottom:14px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-            <span style="font-size:13px;color:#fff;">${e.label}</span>
+            <span style="font-size:13px;color:var(--texto);">${e.label}</span>
             <span style="font-size:13px;font-weight:700;color:${e.cor};">${val}</span>
           </div>
-          <div style="height:8px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;">
+          <div style="height:8px;background:var(--ov-60);border-radius:99px;overflow:hidden;">
             <div style="height:100%;width:${pct}%;background:${e.cor};border-radius:99px;transition:width .4s;"></div>
           </div>
         </div>`;
       }).join('');
-    } catch(e) { body.innerHTML = `<p style="color:#FF5252;">Erro: ${e.message}</p>`; }
+    } catch(e) { body.innerHTML = `<p style="color:var(--alerta);">Erro: ${e.message}</p>`; }
   },
 
   _bancoData: [],
@@ -907,7 +907,7 @@ const Manager = {
     body.innerHTML = '<p style="color:var(--ink-3);text-align:center;padding:32px;">Carregando...</p>';
     try {
       const tkn = sessionToken || localStorage.getItem('rz_token');
-      if (!tkn) { body.innerHTML = '<p style="color:#FF5252;text-align:center;padding:32px;">❌ Faça login para ver o banco de talentos.</p>'; return; }
+      if (!tkn) { body.innerHTML = '<p style="color:var(--alerta);text-align:center;padding:32px;">❌ Faça login para ver o banco de talentos.</p>'; return; }
       const resp = await fetch('/api/processos/banco-talentos', {
         headers: {
           'Content-Type': 'application/json',
@@ -922,7 +922,7 @@ const Manager = {
       this._bancoData = Array.isArray(items) ? items : [];
       this._renderBanco(this._bancoData, body);
     } catch(e) {
-      body.innerHTML = `<p style="color:#FF5252;text-align:center;padding:32px;">❌ Erro: ${e.message}</p>`;
+      body.innerHTML = `<p style="color:var(--alerta);text-align:center;padding:32px;">❌ Erro: ${e.message}</p>`;
       console.error('Banco de Talentos error:', e);
     }
   },
@@ -943,24 +943,24 @@ const Manager = {
   _renderBanco(items, body) {
     if (!body) return;
     if (!items.length) {
-      body.innerHTML = '<p style="color:#5A6478;text-align:center;padding:40px;">Nenhum candidato no banco de talentos ainda.</p>';
+      body.innerHTML = '<p style="color:var(--texto-3);text-align:center;padding:40px;">Nenhum candidato no banco de talentos ainda.</p>';
       return;
     }
     body.innerHTML = items.map(c => `
-      <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);
+      <div style="background:var(--ov-30);border:1px solid var(--ov-70);
                   border-radius:12px;padding:16px;margin-bottom:12px;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
           <div>
-            <p style="margin:0 0 2px;font-size:16px;font-weight:800;color:#fff;">${c.nome}</p>
-            <p style="margin:0;font-size:12px;color:#9AA3B2;">📍 ${c.vaga} · ${c.local} · Cancelado em ${c.dataCancelamento}</p>
+            <p style="margin:0 0 2px;font-size:16px;font-weight:800;color:var(--texto);">${c.nome}</p>
+            <p style="margin:0;font-size:12px;color:var(--texto-2);">📍 ${c.vaga} · ${c.local} · Cancelado em ${c.dataCancelamento}</p>
           </div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
             ${c.curriculo ? `<a href="${c.downloadCurriculoUrl}" target="_blank"
-              style="background:rgba(255,106,0,.1);border:1px solid rgba(255,106,0,.25);color:#FF6A00;
+              style="background:rgba(255,106,0,.1);border:1px solid rgba(255,106,0,.25);color:var(--laranja-texto);
                      border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;text-decoration:none;">
               📄 Currículo</a>` : ''}
             <a href="mailto:${c.email}"
-               style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#9AA3B2;
+               style="background:var(--ov-50);border:1px solid var(--ov-120);color:var(--texto-2);
                       border-radius:6px;padding:5px 12px;font-size:12px;text-decoration:none;">
               ✉️ ${c.email}</a>
             ${c.telefone ? `<a href="https://wa.me/55${c.telefone.replace(/\D/g,'')}" target="_blank"
@@ -970,13 +970,13 @@ const Manager = {
           </div>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">
-          ${c.formacao ? `<span style="background:rgba(255,255,255,.05);border-radius:4px;padding:2px 8px;font-size:11px;color:#A8A8B8;">🎓 ${c.formacao}</span>` : ''}
-          ${c.experiencia ? `<span style="background:rgba(255,255,255,.05);border-radius:4px;padding:2px 8px;font-size:11px;color:#A8A8B8;">⏱ ${c.experiencia}</span>` : ''}
-          ${c.nrs ? `<span style="background:rgba(255,106,0,.06);border-radius:4px;padding:2px 8px;font-size:11px;color:#FF8C2A;">📜 ${c.nrs}</span>` : ''}
-          ${c.cnh ? `<span style="background:rgba(255,255,255,.05);border-radius:4px;padding:2px 8px;font-size:11px;color:#A8A8B8;">🪪 CNH: ${c.cnh}</span>` : ''}
+          ${c.formacao ? `<span style="background:var(--ov-50);border-radius:4px;padding:2px 8px;font-size:11px;color:var(--texto-2);">🎓 ${c.formacao}</span>` : ''}
+          ${c.experiencia ? `<span style="background:var(--ov-50);border-radius:4px;padding:2px 8px;font-size:11px;color:var(--texto-2);">⏱ ${c.experiencia}</span>` : ''}
+          ${c.nrs ? `<span style="background:rgba(255,106,0,.06);border-radius:4px;padding:2px 8px;font-size:11px;color:var(--laranja-texto);">📜 ${c.nrs}</span>` : ''}
+          ${c.cnh ? `<span style="background:var(--ov-50);border-radius:4px;padding:2px 8px;font-size:11px;color:var(--texto-2);">🪪 CNH: ${c.cnh}</span>` : ''}
         </div>
-        ${c.motivoCancelamento ? `<p style="margin:8px 0 0;font-size:11px;color:#FF5252;">❌ ${c.motivoCancelamento}</p>` : ''}
-        ${c.notas ? `<p style="margin:6px 0 0;font-size:11px;color:#5B8DEF;font-style:italic;">🔒 ${c.notas}</p>` : ''}
+        ${c.motivoCancelamento ? `<p style="margin:8px 0 0;font-size:11px;color:var(--alerta);">❌ ${c.motivoCancelamento}</p>` : ''}
+        ${c.notas ? `<p style="margin:6px 0 0;font-size:11px;color:var(--info);font-style:italic;">🔒 ${c.notas}</p>` : ''}
       </div>`).join('');
   },
 
@@ -989,7 +989,7 @@ const Manager = {
     const badge = document.getElementById('admitidos-count-badge');
     if (!body) return;
 
-    body.innerHTML = `<div style="text-align:center;padding:40px;color:#5A6478;">
+    body.innerHTML = `<div style="text-align:center;padding:40px;color:var(--texto-3);">
       <div style="font-size:36px;margin-bottom:12px;">⏳</div>
       <p>Carregando colaboradores admitidos...</p></div>`;
 
@@ -1005,21 +1005,21 @@ const Manager = {
         const menorDias = diasList.length ? Math.min(...diasList) : '—';
         const maiorDias = diasList.length ? Math.max(...diasList) : '—';
         kpis.innerHTML = [
-          ['🎓', 'Total Admitidos', this._admitidosData.length, '#2ECC71'],
-          ['📅', 'Tempo Médio (dias)', mediaDias, '#FF8C2A'],
-          ['⚡', 'Mais Rápido (dias)', menorDias, '#60A5FA'],
-          ['🐢', 'Mais Longo (dias)', maiorDias, '#9AA3B2'],
+          ['🎓', 'Total Admitidos', this._admitidosData.length, 'var(--ok)'],
+          ['📅', 'Tempo Médio (dias)', mediaDias, 'var(--laranja-texto)'],
+          ['⚡', 'Mais Rápido (dias)', menorDias, 'var(--info)'],
+          ['🐢', 'Mais Longo (dias)', maiorDias, 'var(--texto-2)'],
         ].map(([icon, label, val, cor]) => `
-          <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;text-align:center;">
+          <div style="background:var(--ov-40);border:1px solid var(--ov-80);border-radius:12px;padding:16px;text-align:center;">
             <div style="font-size:24px;margin-bottom:4px;">${icon}</div>
             <div style="font-size:22px;font-weight:900;color:${cor};">${val}</div>
-            <div style="font-size:11px;color:#5A6478;margin-top:2px;text-transform:uppercase;letter-spacing:1px;">${label}</div>
+            <div style="font-size:11px;color:var(--texto-3);margin-top:2px;text-transform:uppercase;letter-spacing:1px;">${label}</div>
           </div>`).join('');
       }
 
       this._renderAdmitidos(this._admitidosData, body);
     } catch(e) {
-      body.innerHTML = `<p style="color:#FF5252;text-align:center;padding:32px;">Erro ao carregar: ${e.message}</p>`;
+      body.innerHTML = `<p style="color:var(--alerta);text-align:center;padding:32px;">Erro ao carregar: ${e.message}</p>`;
     }
   },
 
@@ -1036,13 +1036,13 @@ const Manager = {
   },
 
   _renderAdmitidos(items, body) {
-    const DEPT_COLORS = { RH:'#60A5FA', DP:'#A78BFA', DP_EXTERNO:'#F472B6', SESMT:'#34D399', TI:'#FBBF24' };
+    const DEPT_COLORS = { RH:'var(--info)', DP:'var(--graf-5)', DP_EXTERNO:'#F472B6', SESMT:'var(--ok)', TI:'var(--aviso)' };
     const DEPT_LABELS = { RH:'RH', DP:'DP', DP_EXTERNO:'DP Ext.', SESMT:'SESMT', TI:'TI' };
 
     if (!items || !items.length) {
-      body.innerHTML = `<div style="text-align:center;padding:60px;color:#5A6478;">
+      body.innerHTML = `<div style="text-align:center;padding:60px;color:var(--texto-3);">
         <div style="font-size:48px;margin-bottom:16px;">🎓</div>
-        <p style="font-size:16px;font-weight:600;color:#9AA3B2;">Nenhum colaborador admitido ainda.</p>
+        <p style="font-size:16px;font-weight:600;color:var(--texto-2);">Nenhum colaborador admitido ainda.</p>
         <p style="font-size:13px;margin-top:6px;">Processos concluídos aparecerão aqui.</p>
       </div>`;
       return;
@@ -1057,76 +1057,76 @@ const Manager = {
 
     body.innerHTML = items.map(c => {
       const etapasHtml = (c.etapasTimeline || []).map(e => {
-        const cor = e.status === 'APROVADO' ? '#2ECC71' : e.status === 'NAO_APLICAVEL' ? '#5A6478' : '#FFB830';
+        const cor = e.status === 'APROVADO' ? 'var(--ok)' : e.status === 'NAO_APLICAVEL' ? 'var(--texto-3)' : 'var(--aviso)';
         const dur = (e.duracaoDias !== null && e.duracaoDias !== undefined) ? `${e.duracaoDias}d` : '';
         return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">
           <div style="width:8px;height:8px;border-radius:50%;background:${cor};flex-shrink:0;"></div>
-          <span style="font-size:11px;color:#9AA3B2;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e.nome}</span>
+          <span style="font-size:11px;color:var(--texto-2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e.nome}</span>
           ${dur ? `<span style="font-size:10px;color:${cor};font-weight:700;">${dur}</span>` : ''}
         </div>`;
       }).join('');
 
       const deptBarsHtml = Object.entries(c.deptTempos || {}).map(([dept, dias]) => {
-        const cor = DEPT_COLORS[dept] || '#9AA3B2';
+        const cor = DEPT_COLORS[dept] || 'var(--texto-2)';
         const lbl = DEPT_LABELS[dept] || dept;
         const pct = Math.min(100, Math.round((dias / (c.diasTotal || 1)) * 100));
         return `<div style="margin-bottom:6px;">
           <div style="display:flex;justify-content:space-between;margin-bottom:2px;">
             <span style="font-size:10px;color:${cor};font-weight:700;">${lbl}</span>
-            <span style="font-size:10px;color:#5A6478;">${dias}d</span>
+            <span style="font-size:10px;color:var(--texto-3);">${dias}d</span>
           </div>
-          <div style="background:rgba(255,255,255,.06);border-radius:4px;height:4px;overflow:hidden;">
+          <div style="background:var(--ov-60);border-radius:4px;height:4px;overflow:hidden;">
             <div style="background:${cor};width:${pct}%;height:100%;border-radius:4px;"></div>
           </div>
         </div>`;
       }).join('');
 
       const progPct = Math.min(100, Math.round(((c.diasTotal||0) / maxDias) * 100));
-      const diasCor = c.diasTotal <= 15 ? '#2ECC71' : c.diasTotal <= 30 ? '#FFB830' : '#FF6A00';
+      const diasCor = c.diasTotal <= 15 ? 'var(--ok)' : c.diasTotal <= 30 ? 'var(--aviso)' : 'var(--laranja-texto)';
 
-      return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;margin-bottom:16px;overflow:hidden;">
-        <div style="background:rgba(46,204,113,.04);border-bottom:1px solid rgba(255,255,255,.05);padding:16px 20px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
+      return `<div style="background:var(--ov-30);border:1px solid var(--ov-70);border-radius:14px;margin-bottom:16px;overflow:hidden;">
+        <div style="background:rgba(46,204,113,.04);border-bottom:1px solid var(--ov-50);padding:16px 20px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
           <div>
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-              <span style="background:#0D2E1A;border:1px solid #2ECC71;color:#2ECC71;font-size:10px;font-weight:700;border-radius:20px;padding:2px 10px;">✅ ADMITIDO</span>
-              ${c.sharepointUrl ? `<a href="${c.sharepointUrl}" target="_blank" style="background:rgba(0,120,212,.1);border:1px solid rgba(0,120,212,.3);color:#60A5FA;font-size:10px;font-weight:700;border-radius:20px;padding:2px 10px;text-decoration:none;">📁 SharePoint</a>` : ''}
+              <span style="background:var(--ok-fundo);border:1px solid var(--ok);color:var(--ok);font-size:10px;font-weight:700;border-radius:20px;padding:2px 10px;">✅ ADMITIDO</span>
+              ${c.sharepointUrl ? `<a href="${c.sharepointUrl}" target="_blank" style="background:rgba(0,120,212,.1);border:1px solid rgba(0,120,212,.3);color:var(--info);font-size:10px;font-weight:700;border-radius:20px;padding:2px 10px;text-decoration:none;">📁 SharePoint</a>` : ''}
             </div>
-            <p style="margin:0 0 2px;font-size:17px;font-weight:800;color:#fff;">${c.nome}</p>
-            <p style="margin:0;font-size:12px;color:#9AA3B2;">🔧 ${c.cargo} · 📍 ${c.local}</p>
+            <p style="margin:0 0 2px;font-size:17px;font-weight:800;color:var(--texto);">${c.nome}</p>
+            <p style="margin:0;font-size:12px;color:var(--texto-2);">🔧 ${c.cargo} · 📍 ${c.local}</p>
           </div>
           <div style="text-align:right;">
             <div style="font-size:28px;font-weight:900;color:${diasCor};">${c.diasTotal !== null ? c.diasTotal : '—'}</div>
-            <div style="font-size:10px;color:#5A6478;text-transform:uppercase;letter-spacing:1px;">dias no processo</div>
+            <div style="font-size:10px;color:var(--texto-3);text-transform:uppercase;letter-spacing:1px;">dias no processo</div>
           </div>
         </div>
-        <div style="padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.05);">
+        <div style="padding:14px 20px;border-bottom:1px solid var(--ov-50);">
           <div style="display:flex;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:4px;">
             <div>
-              <span style="font-size:10px;color:#5A6478;text-transform:uppercase;letter-spacing:1px;">Aprovado (Triagem)</span>
-              <p style="margin:2px 0 0;font-size:13px;font-weight:700;color:#F4F5F7;">${fmtData(c.dtCandidatura)}</p>
+              <span style="font-size:10px;color:var(--texto-3);text-transform:uppercase;letter-spacing:1px;">Aprovado (Triagem)</span>
+              <p style="margin:2px 0 0;font-size:13px;font-weight:700;color:var(--texto);">${fmtData(c.dtCandidatura)}</p>
             </div>
-            <span style="font-size:18px;color:#FF6A00;align-self:center;">→</span>
+            <span style="font-size:18px;color:var(--laranja-texto);align-self:center;">→</span>
             <div style="text-align:right;">
-              <span style="font-size:10px;color:#5A6478;text-transform:uppercase;letter-spacing:1px;">Admitido em</span>
-              <p style="margin:2px 0 0;font-size:13px;font-weight:700;color:#2ECC71;">${fmtData(c.dtAdmitido)}</p>
+              <span style="font-size:10px;color:var(--texto-3);text-transform:uppercase;letter-spacing:1px;">Admitido em</span>
+              <p style="margin:2px 0 0;font-size:13px;font-weight:700;color:var(--ok);">${fmtData(c.dtAdmitido)}</p>
             </div>
           </div>
-          <div style="background:rgba(255,255,255,.06);border-radius:6px;height:6px;overflow:hidden;margin-top:8px;">
-            <div style="background:linear-gradient(90deg,#2ECC71,#FF6A00);width:${progPct}%;height:100%;border-radius:6px;"></div>
+          <div style="background:var(--ov-60);border-radius:6px;height:6px;overflow:hidden;margin-top:8px;">
+            <div style="background:linear-gradient(90deg,var(--ok),var(--laranja));width:${progPct}%;height:100%;border-radius:6px;"></div>
           </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
-          <div style="padding:14px 20px;border-right:1px solid rgba(255,255,255,.05);">
-            <p style="margin:0 0 8px;font-size:10px;color:#5A6478;text-transform:uppercase;letter-spacing:1px;font-weight:700;">Etapas do Processo</p>
-            <div style="max-height:180px;overflow-y:auto;padding-right:4px;">${etapasHtml || '<p style="color:#5A6478;font-size:12px;">—</p>'}</div>
+          <div style="padding:14px 20px;border-right:1px solid var(--ov-50);">
+            <p style="margin:0 0 8px;font-size:10px;color:var(--texto-3);text-transform:uppercase;letter-spacing:1px;font-weight:700;">Etapas do Processo</p>
+            <div style="max-height:180px;overflow-y:auto;padding-right:4px;">${etapasHtml || '<p style="color:var(--texto-3);font-size:12px;">—</p>'}</div>
           </div>
           <div style="padding:14px 20px;">
-            <p style="margin:0 0 8px;font-size:10px;color:#5A6478;text-transform:uppercase;letter-spacing:1px;font-weight:700;">Tempo por Departamento</p>
-            ${deptBarsHtml || '<p style="color:#5A6478;font-size:12px;">—</p>'}
+            <p style="margin:0 0 8px;font-size:10px;color:var(--texto-3);text-transform:uppercase;letter-spacing:1px;font-weight:700;">Tempo por Departamento</p>
+            ${deptBarsHtml || '<p style="color:var(--texto-3);font-size:12px;">—</p>'}
           </div>
         </div>
-        <div style="padding:10px 20px;background:rgba(255,255,255,.02);border-top:1px solid rgba(255,255,255,.05);display:flex;gap:8px;flex-wrap:wrap;">
-          ${c.email ? `<a href="mailto:${c.email}" style="font-size:11px;color:#9AA3B2;text-decoration:none;background:rgba(255,255,255,.04);border-radius:6px;padding:4px 10px;">✉️ ${c.email}</a>` : ''}
+        <div style="padding:10px 20px;background:var(--ov-20);border-top:1px solid var(--ov-50);display:flex;gap:8px;flex-wrap:wrap;">
+          ${c.email ? `<a href="mailto:${c.email}" style="font-size:11px;color:var(--texto-2);text-decoration:none;background:var(--ov-40);border-radius:6px;padding:4px 10px;">✉️ ${c.email}</a>` : ''}
           ${c.telefone ? `<a href="https://wa.me/55${c.telefone.replace(/\D/g,'')}" target="_blank" style="font-size:11px;color:#25D366;text-decoration:none;background:rgba(37,211,102,.06);border-radius:6px;padding:4px 10px;">📱 ${c.telefone}</a>` : ''}
         </div>
       </div>`;
@@ -1141,14 +1141,14 @@ const Manager = {
       const nrsBody = document.getElementById('nrs-body');
       if (nrsBody) {
         if (!d.nrsExpirando?.length) {
-          nrsBody.innerHTML = '<p style="color:#2ECC71;text-align:center;padding:16px;">✅ Nenhuma NR expirando nos próximos 90 dias.</p>';
+          nrsBody.innerHTML = '<p style="color:var(--ok);text-align:center;padding:16px;">✅ Nenhuma NR expirando nos próximos 90 dias.</p>';
         } else {
           nrsBody.innerHTML = d.nrsExpirando.map(n => {
-            const cor = n.diasRestantes < 30 ? '#FF5252' : n.diasRestantes < 60 ? '#FFB830' : '#2ECC71';
-            return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);">
+            const cor = n.diasRestantes < 30 ? 'var(--alerta)' : n.diasRestantes < 60 ? 'var(--aviso)' : 'var(--ok)';
+            return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--ov-50);">
               <div>
-                <p style="margin:0;font-size:13px;font-weight:600;color:#fff;">${n.nome}</p>
-                <p style="margin:0;font-size:11px;color:#9AA3B2;">${n.documento}</p>
+                <p style="margin:0;font-size:13px;font-weight:600;color:var(--texto);">${n.nome}</p>
+                <p style="margin:0;font-size:11px;color:var(--texto-2);">${n.documento}</p>
               </div>
               <div style="text-align:right;">
                 <span style="color:${cor};font-size:12px;font-weight:700;">${n.vencimento}</span><br>
@@ -1164,9 +1164,9 @@ const Manager = {
       if (localBody) {
         localBody.innerHTML = d.porLocalidade.length
           ? d.porLocalidade.map(r => `
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);">
-              <span style="color:#fff;font-size:13px;">📍 ${r.local}</span>
-              <span style="color:#FF6A00;font-weight:700;">${r.total}</span>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--ov-50);">
+              <span style="color:var(--texto);font-size:13px;">📍 ${r.local}</span>
+              <span style="color:var(--laranja-texto);font-weight:700;">${r.total}</span>
             </div>`).join('')
           : '<p style="color:var(--ink-3);text-align:center;padding:20px;">Nenhum dado ainda.</p>';
       }
@@ -1176,9 +1176,9 @@ const Manager = {
       if (cargoBody) {
         cargoBody.innerHTML = d.porCargo.length
           ? d.porCargo.map(r => `
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);">
-              <span style="color:#fff;font-size:13px;">💼 ${r.cargo}</span>
-              <span style="color:#FF6A00;font-weight:700;">${r.total}</span>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--ov-50);">
+              <span style="color:var(--texto);font-size:13px;">💼 ${r.cargo}</span>
+              <span style="color:var(--laranja-texto);font-weight:700;">${r.total}</span>
             </div>`).join('')
           : '<p style="color:var(--ink-3);text-align:center;padding:20px;">Nenhum dado ainda.</p>';
       }
@@ -1287,13 +1287,13 @@ const Manager = {
           </div>
           ${job.tipo === 'Mudança de Função' && job.colaboradorNome ? `
           <div style="display:flex;align-items:center;gap:10px;background:rgba(255,165,0,.07);
-                      border:1px solid rgba(255,165,0,.22);border-left:3px solid #FFA500;
+                      border:1px solid rgba(255,165,0,.22);border-left:3px solid var(--aviso);
                       border-radius:8px;padding:10px 16px;margin:10px 0 4px;">
             <span style="font-size:18px;">👤</span>
             <div>
-              <span style="font-size:10px;color:#FFA500;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;">Colaborador a ser promovido</span><br>
-              <span style="font-size:15px;font-weight:800;color:#fff;">${job.colaboradorNome}</span>
-              ${job.colaboradorCargo ? '<span style="color:#9AA3B2;font-size:12px;margin-left:6px;">— ' + job.colaboradorCargo + '</span>' : ''}
+              <span style="font-size:10px;color:var(--aviso);font-weight:700;text-transform:uppercase;letter-spacing:1.5px;">Colaborador a ser promovido</span><br>
+              <span style="font-size:15px;font-weight:800;color:var(--texto);">${job.colaboradorNome}</span>
+              ${job.colaboradorCargo ? '<span style="color:var(--texto-2);font-size:12px;margin-left:6px;">— ' + job.colaboradorCargo + '</span>' : ''}
             </div>
           </div>` : ''}
           ${job.finalidade ? `<p class="manager-job__description">${job.finalidade.slice(0, 200)}${job.finalidade.length > 200 ? '...' : ''}</p>` : ''}
@@ -1724,19 +1724,19 @@ const Manager = {
         <style>
           * { box-sizing: border-box; margin: 0; padding: 0; }
           body { font-family: -apple-system, sans-serif; background: #fff; color: #111; font-size: 13px; padding: 28px 32px; line-height: 1.5; }
-          .print-header { border-bottom: 2px solid #F7931E; padding-bottom: 12px; margin-bottom: 18px; }
-          .print-header__title { font-size: 16px; font-weight: 800; color: #F7931E; }
-          .print-header__meta  { font-size: 12px; color: #555; margin-top: 4px; }
+          .print-header { border-bottom: 2px solid var(--laranja); padding-bottom: 12px; margin-bottom: 18px; }
+          .print-header__title { font-size: 16px; font-weight: 800; color: var(--laranja-texto); }
+          .print-header__meta  { font-size: 12px; color: var(--texto-3); margin-top: 4px; }
           .detail-section-title {
             font-size: 10px; font-weight: 700; text-transform: uppercase;
-            letter-spacing: 0.1em; color: #F7931E; margin: 16px 0 8px;
-            padding-bottom: 4px; border-bottom: 1px solid #eee;
+            letter-spacing: 0.1em; color: var(--laranja-texto); margin: 16px 0 8px;
+            padding-bottom: 4px; border-bottom: 1px solid var(--texto);
           }
           .detail-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-          .detail-cell { background: #f7f7f7; border-radius: 5px; padding: 7px 10px; }
-          .detail-cell__label { display: block; font-size: 9px; font-weight: 700; text-transform: uppercase; color: #F7931E; letter-spacing: 0.07em; margin-bottom: 2px; }
+          .detail-cell { background: var(--texto); border-radius: 5px; padding: 7px 10px; }
+          .detail-cell__label { display: block; font-size: 9px; font-weight: 700; text-transform: uppercase; color: var(--laranja-texto); letter-spacing: 0.07em; margin-bottom: 2px; }
           .detail-cell__value { font-size: 12px; font-weight: 500; }
-          .detail-text-block { background: #f7f7f7; border-radius: 6px; padding: 10px 12px; font-size: 12px; line-height: 1.7; margin-top: 8px; }
+          .detail-text-block { background: var(--texto); border-radius: 6px; padding: 10px 12px; font-size: 12px; line-height: 1.7; margin-top: 8px; }
           @media print { body { padding: 0; } }
         </style>
       </head>
@@ -1827,30 +1827,30 @@ const Manager = {
           const rejectedW  = j.total > 0 ? Math.round(j.rejected  / j.total * 100) : 0;
           const pendingW   = j.total > 0 ? Math.round(j.pending   / j.total * 100) : 0;
           return `
-          <tr style="border-bottom:1px solid rgba(255,255,255,.04);">
+          <tr style="border-bottom:1px solid var(--ov-40);">
             <td style="padding:10px 16px;">
-              <div style="font-weight:700;color:#fff;">${j.position}</div>
+              <div style="font-weight:700;color:var(--texto);">${j.position}</div>
               <div style="font-size:.72rem;color:var(--ink-3);">📍 ${j.location}</div>
-              <div style="margin-top:6px;height:4px;border-radius:4px;background:rgba(255,255,255,.06);overflow:hidden;display:flex;">
-                <div style="width:${approvedW}%;background:#2ECC71;"></div>
-                <div style="width:${rejectedW}%;background:#FF5252;"></div>
-                <div style="width:${pendingW}%;background:#FFB830;"></div>
+              <div style="margin-top:6px;height:4px;border-radius:4px;background:var(--ov-60);overflow:hidden;display:flex;">
+                <div style="width:${approvedW}%;background:var(--ok);"></div>
+                <div style="width:${rejectedW}%;background:var(--alerta);"></div>
+                <div style="width:${pendingW}%;background:var(--aviso);"></div>
               </div>
             </td>
-            <td style="padding:10px 16px;text-align:center;font-weight:800;color:#fff;font-size:1.1rem;">${j.total}</td>
-            <td style="padding:10px 16px;text-align:center;color:#2ECC71;font-weight:700;">${j.approved}</td>
-            <td style="padding:10px 16px;text-align:center;color:#FF5252;font-weight:700;">${j.rejected}</td>
-            <td style="padding:10px 16px;text-align:center;color:#FFB830;font-weight:700;">${j.pending}</td>
+            <td style="padding:10px 16px;text-align:center;font-weight:800;color:var(--texto);font-size:1.1rem;">${j.total}</td>
+            <td style="padding:10px 16px;text-align:center;color:var(--ok);font-weight:700;">${j.approved}</td>
+            <td style="padding:10px 16px;text-align:center;color:var(--alerta);font-weight:700;">${j.rejected}</td>
+            <td style="padding:10px 16px;text-align:center;color:var(--aviso);font-weight:700;">${j.pending}</td>
             <td style="padding:10px 16px;text-align:center;">
-              <span style="font-weight:700;color:${j.approvalRate>=50?'#2ECC71':j.approvalRate>=20?'#FFB830':'#FF5252'};">
+              <span style="font-weight:700;color:${j.approvalRate>=50?'var(--ok)':j.approvalRate>=20?'var(--aviso)':'var(--alerta)'};">
                 ${j.approvalRate}%
               </span>
             </td>
             <td style="padding:10px 16px;text-align:center;color:var(--ink-2);">${fmtH(j.avgHours)}</td>
             <td style="padding:10px 16px;text-align:center;">
               <span style="padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700;
-                           background:${j.status==='OPEN'?'rgba(46,204,113,.12)':'rgba(255,255,255,.06)'};
-                           color:${j.status==='OPEN'?'#2ECC71':'var(--ink-3)'};">
+                           background:${j.status==='OPEN'?'var(--ok-fundo)':'var(--ov-60)'};
+                           color:${j.status==='OPEN'?'var(--ok)':'var(--ink-3)'};">
                 ${j.status==='OPEN'?'Aberta':'Fechada'}
               </span>
             </td>
@@ -1871,18 +1871,18 @@ const Manager = {
       if (tbody) {
         if (t.oldestPending && t.oldestPending.length > 0) {
           tbody.innerHTML = t.oldestPending.map(p => {
-            const cor   = p.days >= 7 ? '#FF5252' : p.days >= 3 ? '#FFB830' : '#2ECC71';
+            const cor   = p.days >= 7 ? 'var(--alerta)' : p.days >= 3 ? 'var(--aviso)' : 'var(--ok)';
             const icon  = p.days >= 7 ? '🚨' : p.days >= 3 ? '⚠️' : '✅';
             const label = p.days >= 7 ? 'Crítico' : p.days >= 3 ? 'Atenção' : 'OK';
             return `
-            <tr style="border-bottom:1px solid rgba(255,255,255,.05);transition:background .15s;"
-                onmouseover="this.style.background='rgba(255,255,255,.03)'"
+            <tr style="border-bottom:1px solid var(--ov-50);transition:background .15s;"
+                onmouseover="this.style.background='var(--ov-30)'"
                 onmouseout="this.style.background=''">
-              <td style="padding:10px 16px;color:#fff;font-weight:600;">${p.name}</td>
+              <td style="padding:10px 16px;color:var(--texto);font-weight:600;">${p.name}</td>
               <td style="padding:10px 16px;color:var(--ink-2);">${p.position}</td>
               <td style="padding:10px 16px;">
                 <div style="display:flex;align-items:center;gap:8px;">
-                  <span style="background:${cor}18;border:1px solid ${cor}44;color:${cor};
+                  <span style="background:color-mix(in srgb, ${cor} 10%, transparent);border:1px solid color-mix(in srgb, ${cor} 27%, transparent);color:${cor};
                                border-radius:20px;padding:3px 10px;font-size:12px;font-weight:800;white-space:nowrap;">
                     ${icon} ${p.days}d — ${label}
                   </span>
@@ -1923,10 +1923,11 @@ const Manager = {
           },
           options: {
             responsive: true,
-            plugins: { legend: { display: type === 'doughnut', labels: { color: '#aaa' } } },
+            // Canvas não entende var(--x): lê a cor do tema atual (rzCor, de js/rezende-tema.js)
+            plugins: { legend: { display: type === 'doughnut', labels: { color: rzCor('texto-2') } } },
             scales: type !== 'doughnut' ? {
-              x: { ticks: { color: '#666' }, grid: { color: 'rgba(255,255,255,0.04)' } },
-              y: { ticks: { color: '#666', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.06)' }, beginAtZero: true },
+              x: { ticks: { color: rzCor('texto-3') }, grid: { color: rzCor('graf-grade') } },
+              y: { ticks: { color: rzCor('texto-3'), stepSize: 1 }, grid: { color: rzCor('graf-grade') }, beginAtZero: true },
             } : undefined,
           },
         });
@@ -1986,30 +1987,30 @@ async function loadAudit(page = 1) {
     // Mapeamento completo de ações → label legível + cor da categoria
     const ACTION_MAP = {
       // Autenticação
-      LOGIN:                { label: '🔑 Login',                   color: '#5B8DEF' },
-      LOGIN_FAILED:         { label: '⚠️ Login Falho',             color: '#FFB830' },
-      LOGOUT:               { label: '🚪 Logout',                  color: '#9AA3B2' },
-      FORGOT_PASSWORD:      { label: '📧 Esqueceu Senha',          color: '#9AA3B2' },
-      RESET_PASSWORD:       { label: '🔑 Redefinir Senha',         color: '#9AA3B2' },
-      INVITE_USER:          { label: '✉️ Convidar Gestor',         color: '#A78BFA' },
-      ACTIVATE_USER:        { label: '✅ Ativar Conta',            color: '#2ECC71' },
+      LOGIN:                { label: '🔑 Login',                   color: 'var(--info)' },
+      LOGIN_FAILED:         { label: '⚠️ Login Falho',             color: 'var(--aviso)' },
+      LOGOUT:               { label: '🚪 Logout',                  color: 'var(--texto-2)' },
+      FORGOT_PASSWORD:      { label: '📧 Esqueceu Senha',          color: 'var(--texto-2)' },
+      RESET_PASSWORD:       { label: '🔑 Redefinir Senha',         color: 'var(--texto-2)' },
+      INVITE_USER:          { label: '✉️ Convidar Gestor',         color: 'var(--graf-5)' },
+      ACTIVATE_USER:        { label: '✅ Ativar Conta',            color: 'var(--ok)' },
       // Vagas
-      CREATE_JOB:           { label: '➕ Vaga Criada',             color: '#2ECC71' },
-      UPDATE_JOB:           { label: '✏️ Vaga Editada',           color: '#5B8DEF' },
-      DELETE_JOB:           { label: '🗑 Vaga Excluída',          color: '#FF5252' },
-      TOGGLE_JOB:           { label: '🔄 Abrir/Fechar Vaga',       color: '#FFB830' },
+      CREATE_JOB:           { label: '➕ Vaga Criada',             color: 'var(--ok)' },
+      UPDATE_JOB:           { label: '✏️ Vaga Editada',           color: 'var(--info)' },
+      DELETE_JOB:           { label: '🗑 Vaga Excluída',          color: 'var(--alerta)' },
+      TOGGLE_JOB:           { label: '🔄 Abrir/Fechar Vaga',       color: 'var(--aviso)' },
       // Candidaturas
-      NEW_APPLICATION:      { label: '📥 Nova Candidatura',        color: '#2ECC71' },
-      UPDATE_STATUS:        { label: '📋 Status Candidatura',      color: '#5B8DEF' },
-      FUNNEL_ADVANCE:       { label: '⏩ Avançou no Funil',        color: '#2ECC71' },
-      FUNNEL_REJECTED:      { label: '⏹ Reprovado no Funil',      color: '#FF5252' },
-      DOWNLOAD_RESUME:      { label: '⬇ Download Currículo',       color: '#9AA3B2' },
-      EXPORT_CSV:           { label: '📤 Exportar CSV',            color: '#9AA3B2' },
-      AUTO_ADMISSION:       { label: '🏢 Admissão Iniciada',       color: '#A78BFA' },
+      NEW_APPLICATION:      { label: '📥 Nova Candidatura',        color: 'var(--ok)' },
+      UPDATE_STATUS:        { label: '📋 Status Candidatura',      color: 'var(--info)' },
+      FUNNEL_ADVANCE:       { label: '⏩ Avançou no Funil',        color: 'var(--ok)' },
+      FUNNEL_REJECTED:      { label: '⏹ Reprovado no Funil',      color: 'var(--alerta)' },
+      DOWNLOAD_RESUME:      { label: '⬇ Download Currículo',       color: 'var(--texto-2)' },
+      EXPORT_CSV:           { label: '📤 Exportar CSV',            color: 'var(--texto-2)' },
+      AUTO_ADMISSION:       { label: '🏢 Admissão Iniciada',       color: 'var(--graf-5)' },
       // Solicitações de vaga
-      CREATE_SOLICITACAO:   { label: '📋 Solicitação Criada',      color: '#FFB830' },
-      SOLICITACAO_APROVADA: { label: '✅ Solicitação Aprovada',    color: '#2ECC71' },
-      SOLICITACAO_REJEITADA:{ label: '❌ Solicitação Rejeitada',   color: '#FF5252' },
+      CREATE_SOLICITACAO:   { label: '📋 Solicitação Criada',      color: 'var(--aviso)' },
+      SOLICITACAO_APROVADA: { label: '✅ Solicitação Aprovada',    color: 'var(--ok)' },
+      SOLICITACAO_REJEITADA:{ label: '❌ Solicitação Rejeitada',   color: 'var(--alerta)' },
     };
 
     const ENTITY_LABEL = {
@@ -2023,19 +2024,19 @@ async function loadAudit(page = 1) {
       tbody.innerHTML = '<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--ink-3);">Nenhum registro encontrado.</td></tr>';
     } else {
       tbody.innerHTML = data.items.map(r => {
-        const map   = ACTION_MAP[r.action] || { label: r.action, color: '#9AA3B2' };
+        const map   = ACTION_MAP[r.action] || { label: r.action, color: 'var(--texto-2)' };
         const entLabel = r.entity ? (ENTITY_LABEL[r.entity] || r.entity) : '—';
         const entId    = r.entityId ? ` #${r.entityId}` : '';
         return `
-        <tr style="border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s;"
-            onmouseover="this.style.background='rgba(255,255,255,.03)'"
+        <tr style="border-bottom:1px solid var(--ov-40);transition:background .15s;"
+            onmouseover="this.style.background='var(--ov-30)'"
             onmouseout="this.style.background=''">
           <td style="padding:9px 16px;color:var(--ink-3);white-space:nowrap;font-size:.75rem;">
             ${r.createdAt ? new Date(r.createdAt).toLocaleString('pt-BR') : '—'}
           </td>
-          <td style="padding:9px 16px;color:#fff;font-weight:700;">${r.username}</td>
+          <td style="padding:9px 16px;color:var(--texto);font-weight:700;">${r.username}</td>
           <td style="padding:9px 16px;white-space:nowrap;">
-            <span style="background:${map.color}18;border:1px solid ${map.color}44;color:${map.color};
+            <span style="background:color-mix(in srgb, ${map.color} 10%, transparent);border:1px solid color-mix(in srgb, ${map.color} 27%, transparent);color:${map.color};
                          border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;white-space:nowrap;">
               ${map.label}
             </span>
@@ -2060,7 +2061,7 @@ async function loadAudit(page = 1) {
 
   } catch(e) {
     const tbody = document.getElementById('audit-tbody');
-    if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="padding:24px;text-align:center;color:#FF5252;">${e.message}</td></tr>`;
+    if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--alerta);">${e.message}</td></tr>`;
   }
 }
 
@@ -2153,30 +2154,30 @@ const Solicitacoes = {
       if (!items.length) { el.innerHTML = '<p style="color:var(--ink-3);text-align:center;padding:32px;">Nenhuma solicitação encontrada.</p>'; return; }
       const isOwner = AppState.role === 'ROLE_OWNER';
       el.innerHTML = items.map(s => {
-        const statusColor = { PENDENTE: '#FFB830', APROVADA: '#2ECC71', REJEITADA: '#FF5252' }[s.status] || '#AAA';
+        const statusColor = { PENDENTE: 'var(--aviso)', APROVADA: 'var(--ok)', REJEITADA: 'var(--alerta)' }[s.status] || 'var(--texto-2)';
         const statusLabel = { PENDENTE: '⏳ Pendente', APROVADA: '✅ Aprovada', REJEITADA: '❌ Rejeitada' }[s.status] || s.status;
         const decideButtons = isOwner && s.status === 'PENDENTE' ? `
           <div style="display:flex;gap:8px;margin-top:12px;">
-            <button onclick="Solicitacoes.decide(${s.id},'APROVADA')" style="flex:1;padding:10px;border-radius:8px;background:#0D2E1A;border:2px solid #2ECC71;color:#2ECC71;font-weight:700;cursor:pointer;">✅ Aprovar</button>
-            <button onclick="Solicitacoes.rejeitar(${s.id})" style="flex:1;padding:10px;border-radius:8px;background:#2E0D0D;border:2px solid #FF5252;color:#FF5252;font-weight:700;cursor:pointer;">❌ Rejeitar</button>
+            <button onclick="Solicitacoes.decide(${s.id},'APROVADA')" style="flex:1;padding:10px;border-radius:8px;background:var(--ok-fundo);border:2px solid var(--ok);color:var(--ok);font-weight:700;cursor:pointer;">✅ Aprovar</button>
+            <button onclick="Solicitacoes.rejeitar(${s.id})" style="flex:1;padding:10px;border-radius:8px;background:var(--alerta-fundo);border:2px solid var(--alerta);color:var(--alerta);font-weight:700;cursor:pointer;">❌ Rejeitar</button>
           </div>` : '';
-        const motivoHtml = s.motivoRejeicao ? `<p style="margin:6px 0 0;font-size:12px;color:#FF5252;">Motivo: ${s.motivoRejeicao}</p>` : '';
-        return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:18px;margin-bottom:12px;">
+        const motivoHtml = s.motivoRejeicao ? `<p style="margin:6px 0 0;font-size:12px;color:var(--alerta);">Motivo: ${s.motivoRejeicao}</p>` : '';
+        return `<div style="background:var(--ov-30);border:1px solid var(--ov-70);border-radius:12px;padding:18px;margin-bottom:12px;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
             <div>
-              <p style="font-size:16px;font-weight:800;color:#fff;margin:0 0 2px;">${s.position}</p>
-              <p style="font-size:13px;color:#A8A8B8;margin:0;">📍 ${s.location} · ${s.numVagas} vaga(s) · ${s.tipo || ''}</p>
-              ${isOwner ? `<p style="font-size:12px;color:#5A6478;margin:4px 0 0;">Solicitante: ${s.solicitanteNome} &lt;${s.solicitanteEmail}&gt;</p>` : ''}
-              ${s.tipo === 'Mudança de Função' && s.colaboradorNome ? '<p style="font-size:12px;color:#FFA500;margin:4px 0 0;">👤 Colaborador: <strong style="color:#fff;">' + s.colaboradorNome + (s.colaboradorCargo ? ' — ' + s.colaboradorCargo : '') + '</strong></p>' : ''}
-              <p style="font-size:12px;color:#5A6478;margin:4px 0 0;">Justificativa: ${s.justificativa}</p>
+              <p style="font-size:16px;font-weight:800;color:var(--texto);margin:0 0 2px;">${s.position}</p>
+              <p style="font-size:13px;color:var(--texto-2);margin:0;">📍 ${s.location} · ${s.numVagas} vaga(s) · ${s.tipo || ''}</p>
+              ${isOwner ? `<p style="font-size:12px;color:var(--texto-3);margin:4px 0 0;">Solicitante: ${s.solicitanteNome} &lt;${s.solicitanteEmail}&gt;</p>` : ''}
+              ${s.tipo === 'Mudança de Função' && s.colaboradorNome ? '<p style="font-size:12px;color:var(--aviso);margin:4px 0 0;">👤 Colaborador: <strong style="color:var(--texto);">' + s.colaboradorNome + (s.colaboradorCargo ? ' — ' + s.colaboradorCargo : '') + '</strong></p>' : ''}
+              <p style="font-size:12px;color:var(--texto-3);margin:4px 0 0;">Justificativa: ${s.justificativa}</p>
             </div>
-            <span style="background:rgba(0,0,0,.3);border:1px solid ${statusColor};color:${statusColor};border-radius:20px;padding:4px 14px;font-size:12px;font-weight:700;white-space:nowrap;">${statusLabel}</span>
+            <span style="background:var(--bk-30);border:1px solid ${statusColor};color:${statusColor};border-radius:20px;padding:4px 14px;font-size:12px;font-weight:700;white-space:nowrap;">${statusLabel}</span>
           </div>
           ${motivoHtml}
           ${decideButtons}
         </div>`;
       }).join('');
-    } catch(e) { el.innerHTML = '<p style="color:#FF5252;text-align:center;padding:24px;">Erro ao carregar solicitações.</p>'; }
+    } catch(e) { el.innerHTML = '<p style="color:var(--alerta);text-align:center;padding:24px;">Erro ao carregar solicitações.</p>'; }
   },
 
   _renderBadge(count) {
@@ -2336,7 +2337,7 @@ const MenorAprendiz = {
     const badge = document.getElementById('aprendiz-count-badge');
     if (!body) return;
 
-    body.innerHTML = `<div style="text-align:center;padding:40px;color:#5A6478;">
+    body.innerHTML = `<div style="text-align:center;padding:40px;color:var(--texto-3);">
       <div class="spinner" style="margin:0 auto 12px;"></div><p>Carregando inscrições...</p></div>`;
 
     try {
@@ -2350,7 +2351,7 @@ const MenorAprendiz = {
       }
       this._render(this._data, body);
     } catch (err) {
-      body.innerHTML = `<div style="text-align:center;padding:40px;color:#FF5252;">
+      body.innerHTML = `<div style="text-align:center;padding:40px;color:var(--alerta);">
         <div style="font-size:32px;margin-bottom:8px;">❌</div>
         <p>Erro ao carregar inscrições.</p></div>`;
     }
@@ -2375,19 +2376,19 @@ const MenorAprendiz = {
 
   _render(items, body) {
     if (!items || !items.length) {
-      body.innerHTML = `<div style="text-align:center;padding:60px;color:#5A6478;">
+      body.innerHTML = `<div style="text-align:center;padding:60px;color:var(--texto-3);">
         <div style="font-size:48px;margin-bottom:16px;">🌟</div>
-        <p style="font-size:16px;font-weight:600;color:#9AA3B2;">Nenhuma inscrição encontrada.</p>
+        <p style="font-size:16px;font-weight:600;color:var(--texto-2);">Nenhuma inscrição encontrada.</p>
         <p style="font-size:13px;margin-top:6px;">As inscrições do formulário público aparecerão aqui.</p>
       </div>`;
       return;
     }
 
     const STATUS_CFG = {
-      PENDENTE:   { bg: 'rgba(255,184,48,.12)', border: 'rgba(255,184,48,.3)', color: '#FFB830', label: 'Pendente' },
-      EM_ANALISE: { bg: 'rgba(91,141,239,.12)', border: 'rgba(91,141,239,.3)', color: '#60A5FA', label: 'Em Análise' },
-      APROVADO:   { bg: 'rgba(46,204,113,.12)', border: 'rgba(46,204,113,.3)', color: '#2ECC71', label: 'Aprovado' },
-      REJEITADO:  { bg: 'rgba(255,82,82,.12)',  border: 'rgba(255,82,82,.3)',  color: '#FF5252', label: 'Rejeitado' },
+      PENDENTE:   { bg: 'rgba(255,184,48,.12)', border: 'rgba(255,184,48,.3)', color: 'var(--aviso)', label: 'Pendente' },
+      EM_ANALISE: { bg: 'rgba(91,141,239,.12)', border: 'rgba(91,141,239,.3)', color: 'var(--info)', label: 'Em Análise' },
+      APROVADO:   { bg: 'rgba(46,204,113,.12)', border: 'rgba(46,204,113,.3)', color: 'var(--ok)', label: 'Aprovado' },
+      REJEITADO:  { bg: 'rgba(255,82,82,.12)',  border: 'rgba(255,82,82,.3)',  color: 'var(--alerta)', label: 'Rejeitado' },
     };
 
     function fmtData(iso) {
@@ -2408,52 +2409,52 @@ const MenorAprendiz = {
       const sc    = STATUS_CFG[a.status] || STATUS_CFG.PENDENTE;
       const idade = calcIdade(a.dataNascimento);
 
-      return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);
+      return `<div style="background:var(--ov-30);border:1px solid var(--ov-70);
                            border-radius:14px;margin-bottom:14px;overflow:hidden;">
-        <div style="background:rgba(255,184,48,.03);border-bottom:1px solid rgba(255,255,255,.05);
+        <div style="background:rgba(255,184,48,.03);border-bottom:1px solid var(--ov-50);
                     padding:14px 18px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
           <div>
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
               <span style="background:${sc.bg};border:1px solid ${sc.border};color:${sc.color};
                            font-size:10px;font-weight:700;border-radius:20px;padding:2px 10px;">${sc.label.toUpperCase()}</span>
               ${a.hasResume ? `<button onclick="MenorAprendiz.downloadResume(${a.id},'${a.resumeName||'curriculo.pdf'}')"
-                style="background:rgba(255,106,0,.08);border:1px solid rgba(255,106,0,.2);color:#FF8C2A;
+                style="background:rgba(255,106,0,.08);border:1px solid rgba(255,106,0,.2);color:var(--laranja-texto);
                        font-size:10px;font-weight:700;border-radius:20px;padding:2px 10px;cursor:pointer;">📄 Currículo</button>` : ''}
             </div>
-            <p style="margin:0 0 2px;font-size:16px;font-weight:800;color:#fff;">${a.fullName}</p>
-            <p style="margin:0;font-size:12px;color:#9AA3B2;">
+            <p style="margin:0 0 2px;font-size:16px;font-weight:800;color:var(--texto);">${a.fullName}</p>
+            <p style="margin:0;font-size:12px;color:var(--texto-2);">
               📱 ${a.phone}
               ${a.cidadeAtual ? ` · 📍 ${a.cidadeAtual}` : ''}
               ${idade !== null ? ` · 🎂 ${idade} anos` : ''}
             </p>
           </div>
-          <div style="text-align:right;font-size:11px;color:#5A6478;">
+          <div style="text-align:right;font-size:11px;color:var(--texto-3);">
             <div>Inscrição em</div>
-            <div style="color:#9AA3B2;font-weight:600;">${fmtData(a.createdAt)}</div>
+            <div style="color:var(--texto-2);font-weight:600;">${fmtData(a.createdAt)}</div>
           </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.04);">
-          <div style="padding-right:14px;border-right:1px solid rgba(255,255,255,.05);">
-            <p style="margin:0 0 4px;font-size:10px;color:#5A6478;text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Escola / Período</p>
-            <p style="margin:0;font-size:13px;color:#D0D4DE;">${a.escolaAtual || '—'}</p>
-            <p style="margin:2px 0 0;font-size:12px;color:#9AA3B2;">${[a.periodoEscolar, a.turnoEscolar].filter(Boolean).join(' · ') || '—'}</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;padding:12px 18px;border-bottom:1px solid var(--ov-40);">
+          <div style="padding-right:14px;border-right:1px solid var(--ov-50);">
+            <p style="margin:0 0 4px;font-size:10px;color:var(--texto-3);text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Escola / Período</p>
+            <p style="margin:0;font-size:13px;color:var(--texto);">${a.escolaAtual || '—'}</p>
+            <p style="margin:2px 0 0;font-size:12px;color:var(--texto-2);">${[a.periodoEscolar, a.turnoEscolar].filter(Boolean).join(' · ') || '—'}</p>
           </div>
           <div style="padding-left:14px;">
-            <p style="margin:0 0 4px;font-size:10px;color:#5A6478;text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Área de Interesse</p>
-            <p style="margin:0;font-size:13px;color:#D0D4DE;">${a.areaInteresse || '—'}</p>
-            <p style="margin:2px 0 0;font-size:12px;color:#9AA3B2;">Responsável: ${a.nomeResponsavel || '—'}</p>
+            <p style="margin:0 0 4px;font-size:10px;color:var(--texto-3);text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Área de Interesse</p>
+            <p style="margin:0;font-size:13px;color:var(--texto);">${a.areaInteresse || '—'}</p>
+            <p style="margin:2px 0 0;font-size:12px;color:var(--texto-2);">Responsável: ${a.nomeResponsavel || '—'}</p>
           </div>
         </div>
 
         ${a.motivation ? `
-        <div style="padding:10px 18px;border-bottom:1px solid rgba(255,255,255,.04);">
-          <p style="margin:0 0 4px;font-size:10px;color:#5A6478;text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Motivação</p>
-          <p style="margin:0;font-size:13px;color:#9AA3B2;line-height:1.6;max-height:80px;overflow:hidden;text-overflow:ellipsis;">${a.motivation}</p>
+        <div style="padding:10px 18px;border-bottom:1px solid var(--ov-40);">
+          <p style="margin:0 0 4px;font-size:10px;color:var(--texto-3);text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Motivação</p>
+          <p style="margin:0;font-size:13px;color:var(--texto-2);line-height:1.6;max-height:80px;overflow:hidden;text-overflow:ellipsis;">${a.motivation}</p>
         </div>` : ''}
 
         <div style="padding:12px 18px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-          <a href="mailto:${a.email}" style="font-size:11px;color:#9AA3B2;text-decoration:none;background:rgba(255,255,255,.04);border-radius:6px;padding:4px 10px;">✉️ ${a.email}</a>
+          <a href="mailto:${a.email}" style="font-size:11px;color:var(--texto-2);text-decoration:none;background:var(--ov-40);border-radius:6px;padding:4px 10px;">✉️ ${a.email}</a>
           <a href="https://wa.me/55${(a.phone||'').replace(/\D/g,'')}" target="_blank"
              style="font-size:11px;color:#25D366;text-decoration:none;background:rgba(37,211,102,.06);border-radius:6px;padding:4px 10px;">📱 WhatsApp</a>
           <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;">
@@ -2516,7 +2517,7 @@ const BancoTalentosPublico = {
     const badge = document.getElementById('talentos-count-badge');
     if (!body) return;
 
-    body.innerHTML = `<div style="text-align:center;padding:40px;color:#5A6478;">
+    body.innerHTML = `<div style="text-align:center;padding:40px;color:var(--texto-3);">
       <div class="spinner" style="margin:0 auto 12px;"></div><p>Carregando cadastros...</p></div>`;
 
     try {
@@ -2530,7 +2531,7 @@ const BancoTalentosPublico = {
       }
       this._render(this._data, body);
     } catch (err) {
-      body.innerHTML = `<div style="text-align:center;padding:40px;color:#FF5252;">
+      body.innerHTML = `<div style="text-align:center;padding:40px;color:var(--alerta);">
         <div style="font-size:32px;margin-bottom:8px;">❌</div>
         <p>Erro ao carregar cadastros.</p></div>`;
     }
@@ -2555,19 +2556,19 @@ const BancoTalentosPublico = {
 
   _render(items, body) {
     if (!items || !items.length) {
-      body.innerHTML = `<div style="text-align:center;padding:60px;color:#5A6478;">
+      body.innerHTML = `<div style="text-align:center;padding:60px;color:var(--texto-3);">
         <div style="font-size:48px;margin-bottom:16px;">🏅</div>
-        <p style="font-size:16px;font-weight:600;color:#9AA3B2;">Nenhum cadastro encontrado.</p>
+        <p style="font-size:16px;font-weight:600;color:var(--texto-2);">Nenhum cadastro encontrado.</p>
         <p style="font-size:13px;margin-top:6px;">Os cadastros do formulário público de Banco de Talentos aparecerão aqui.</p>
       </div>`;
       return;
     }
 
     const STATUS_CFG = {
-      PENDENTE:   { bg: 'rgba(255,184,48,.12)', border: 'rgba(255,184,48,.3)', color: '#FFB830', label: 'Pendente' },
-      EM_ANALISE: { bg: 'rgba(91,141,239,.12)', border: 'rgba(91,141,239,.3)', color: '#60A5FA', label: 'Em Análise' },
-      APROVADO:   { bg: 'rgba(46,204,113,.12)', border: 'rgba(46,204,113,.3)', color: '#2ECC71', label: 'Aprovado' },
-      REJEITADO:  { bg: 'rgba(255,82,82,.12)',  border: 'rgba(255,82,82,.3)',  color: '#FF5252', label: 'Rejeitado' },
+      PENDENTE:   { bg: 'rgba(255,184,48,.12)', border: 'rgba(255,184,48,.3)', color: 'var(--aviso)', label: 'Pendente' },
+      EM_ANALISE: { bg: 'rgba(91,141,239,.12)', border: 'rgba(91,141,239,.3)', color: 'var(--info)', label: 'Em Análise' },
+      APROVADO:   { bg: 'rgba(46,204,113,.12)', border: 'rgba(46,204,113,.3)', color: 'var(--ok)', label: 'Aprovado' },
+      REJEITADO:  { bg: 'rgba(255,82,82,.12)',  border: 'rgba(255,82,82,.3)',  color: 'var(--alerta)', label: 'Rejeitado' },
     };
 
     function fmtData(iso) {
@@ -2578,49 +2579,49 @@ const BancoTalentosPublico = {
     body.innerHTML = items.map(t => {
       const sc = STATUS_CFG[t.status] || STATUS_CFG.PENDENTE;
 
-      return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);
+      return `<div style="background:var(--ov-30);border:1px solid var(--ov-70);
                            border-radius:14px;margin-bottom:14px;overflow:hidden;">
-        <div style="background:rgba(96,165,250,.03);border-bottom:1px solid rgba(255,255,255,.05);
+        <div style="background:rgba(96,165,250,.03);border-bottom:1px solid var(--ov-50);
                     padding:14px 18px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
           <div>
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
               <span style="background:${sc.bg};border:1px solid ${sc.border};color:${sc.color};
                            font-size:10px;font-weight:700;border-radius:20px;padding:2px 10px;">${sc.label.toUpperCase()}</span>
               ${t.hasResume ? `<button onclick="BancoTalentosPublico.downloadResume(${t.id},'${t.resumeName||'curriculo.pdf'}')"
-                style="background:rgba(255,106,0,.08);border:1px solid rgba(255,106,0,.2);color:#FF8C2A;
+                style="background:rgba(255,106,0,.08);border:1px solid rgba(255,106,0,.2);color:var(--laranja-texto);
                        font-size:10px;font-weight:700;border-radius:20px;padding:2px 10px;cursor:pointer;">📄 Currículo</button>` : ''}
             </div>
-            <p style="margin:0 0 2px;font-size:16px;font-weight:800;color:#fff;">${t.fullName}</p>
-            <p style="margin:0;font-size:12px;color:#9AA3B2;">
+            <p style="margin:0 0 2px;font-size:16px;font-weight:800;color:var(--texto);">${t.fullName}</p>
+            <p style="margin:0;font-size:12px;color:var(--texto-2);">
               📱 ${t.phone}
               ${t.cidadeAtual ? ` · 📍 ${t.cidadeAtual}` : ''}
             </p>
           </div>
-          <div style="text-align:right;font-size:11px;color:#5A6478;">
+          <div style="text-align:right;font-size:11px;color:var(--texto-3);">
             <div>Cadastro em</div>
-            <div style="color:#9AA3B2;font-weight:600;">${fmtData(t.createdAt)}</div>
+            <div style="color:var(--texto-2);font-weight:600;">${fmtData(t.createdAt)}</div>
           </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.04);">
-          <div style="padding-right:14px;border-right:1px solid rgba(255,255,255,.05);">
-            <p style="margin:0 0 4px;font-size:10px;color:#5A6478;text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Vaga / Área de Interesse</p>
-            <p style="margin:0;font-size:13px;color:#D0D4DE;">${t.vagaInteresse || '—'}</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;padding:12px 18px;border-bottom:1px solid var(--ov-40);">
+          <div style="padding-right:14px;border-right:1px solid var(--ov-50);">
+            <p style="margin:0 0 4px;font-size:10px;color:var(--texto-3);text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Vaga / Área de Interesse</p>
+            <p style="margin:0;font-size:13px;color:var(--texto);">${t.vagaInteresse || '—'}</p>
           </div>
           <div style="padding-left:14px;">
-            <p style="margin:0 0 4px;font-size:10px;color:#5A6478;text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Formação / Experiência</p>
-            <p style="margin:0;font-size:13px;color:#D0D4DE;">${[t.education, t.experience].filter(Boolean).join(' · ') || '—'}</p>
+            <p style="margin:0 0 4px;font-size:10px;color:var(--texto-3);text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Formação / Experiência</p>
+            <p style="margin:0;font-size:13px;color:var(--texto);">${[t.education, t.experience].filter(Boolean).join(' · ') || '—'}</p>
           </div>
         </div>
 
         ${t.motivation ? `
-        <div style="padding:10px 18px;border-bottom:1px solid rgba(255,255,255,.04);">
-          <p style="margin:0 0 4px;font-size:10px;color:#5A6478;text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Sobre o candidato</p>
-          <p style="margin:0;font-size:13px;color:#9AA3B2;line-height:1.6;max-height:80px;overflow:hidden;text-overflow:ellipsis;">${t.motivation}</p>
+        <div style="padding:10px 18px;border-bottom:1px solid var(--ov-40);">
+          <p style="margin:0 0 4px;font-size:10px;color:var(--texto-3);text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Sobre o candidato</p>
+          <p style="margin:0;font-size:13px;color:var(--texto-2);line-height:1.6;max-height:80px;overflow:hidden;text-overflow:ellipsis;">${t.motivation}</p>
         </div>` : ''}
 
         <div style="padding:12px 18px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-          <a href="mailto:${t.email}" style="font-size:11px;color:#9AA3B2;text-decoration:none;background:rgba(255,255,255,.04);border-radius:6px;padding:4px 10px;">✉️ ${t.email}</a>
+          <a href="mailto:${t.email}" style="font-size:11px;color:var(--texto-2);text-decoration:none;background:var(--ov-40);border-radius:6px;padding:4px 10px;">✉️ ${t.email}</a>
           <a href="https://wa.me/55${(t.phone||'').replace(/\D/g,'')}" target="_blank"
              style="font-size:11px;color:#25D366;text-decoration:none;background:rgba(37,211,102,.06);border-radius:6px;padding:4px 10px;">📱 WhatsApp</a>
           <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;">
@@ -2672,6 +2673,11 @@ const BancoTalentosPublico = {
     }
   },
 };
+
+// Gráficos usam canvas (não herdam variáveis CSS): ao trocar claro/escuro, redesenha
+window.addEventListener('rz:tema', () => {
+  if (Object.keys(chartInstances).length && document.getElementById('chart-by-job')) Manager.loadCharts();
+});
 
 // ─── Init ──────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {

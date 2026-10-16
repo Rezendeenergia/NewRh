@@ -7,8 +7,8 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background: #0B0F14;
-      font-family: 'Segoe UI', Arial, sans-serif;
+      background: var(--fundo);
+      font-family: var(--f-texto);
       min-height: 100vh;
       display: flex;
       align-items: center;
@@ -16,42 +16,42 @@
       padding: 24px 16px;
     }
     .card {
-      background: #141820;
-      border: 1px solid rgba(255,255,255,.08);
-      border-top: 3px solid #FF6A00;
+      background: var(--sup);
+      border: 1px solid var(--ov-80);
+      border-top: 3px solid var(--laranja);
       border-radius: 16px;
       max-width: 560px;
       width: 100%;
       overflow: hidden;
     }
     .card__header {
-      background: linear-gradient(135deg, #1C2230, #141820);
+      background: linear-gradient(135deg, var(--sup-2), var(--sup));
       padding: 28px 32px 20px;
-      border-bottom: 1px solid rgba(255,255,255,.06);
+      border-bottom: 1px solid var(--ov-60);
       text-align: center;
     }
-    .brand { font-size: 22px; font-weight: 900; color: #fff; }
-    .brand span { color: #FF6A00; }
-    .subtitle { font-size: 11px; color: rgba(255,255,255,.35); letter-spacing: 3px; text-transform: uppercase; margin-top: 4px; }
+    .brand { font-size: 22px; font-weight: 900; color: var(--texto); }
+    .brand span { color: var(--laranja-texto); }
+    .subtitle { font-size: 11px; color: var(--ov-350); letter-spacing: 3px; text-transform: uppercase; margin-top: 4px; }
     .card__body { padding: 32px; }
-    h2 { font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+    h2 { font-size: 20px; font-weight: 800; color: var(--texto); margin-bottom: 4px; }
     .section-title { font-size: 11px; color: rgba(255,106,0,.8); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; }
     .info-block {
       background: rgba(255,106,0,.06);
       border: 1px solid rgba(255,106,0,.18);
-      border-left: 3px solid #FF6A00;
+      border-left: 3px solid var(--laranja);
       border-radius: 12px;
       padding: 16px 20px;
       margin-bottom: 20px;
     }
-    .info-block__label { font-size: 10px; color: #FF6A00; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px; }
-    .info-block__value { font-size: 16px; font-weight: 800; color: #fff; }
-    .info-block__sub { font-size: 13px; color: #A8A8B8; margin-top: 3px; }
+    .info-block__label { font-size: 10px; color: var(--laranja-texto); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px; }
+    .info-block__value { font-size: 16px; font-weight: 800; color: var(--texto); }
+    .info-block__sub { font-size: 13px; color: var(--texto-2); margin-top: 3px; }
     .table { width: 100%; border-collapse: separate; border-spacing: 0 8px; margin-bottom: 24px; }
     .table td { padding: 10px 14px; font-size: 14px; border-radius: 8px; }
-    .table .lbl { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); color: rgba(255,106,0,.8); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; width: 38%; }
-    .table .val { background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.04); color: #F4F5F7; }
-    .divider { border: none; border-top: 1px solid rgba(255,255,255,.06); margin: 24px 0; }
+    .table .lbl { background: var(--ov-30); border: 1px solid var(--ov-60); color: rgba(255,106,0,.8); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; width: 38%; }
+    .table .val { background: var(--ov-20); border: 1px solid var(--ov-40); color: var(--texto); }
+    .divider { border: none; border-top: 1px solid var(--ov-60); margin: 24px 0; }
     .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
     .btn {
       padding: 14px;
@@ -63,18 +63,18 @@
       transition: opacity .2s;
     }
     .btn:disabled { opacity: .5; cursor: not-allowed; }
-    .btn--approve { background: #0D2E1A; border-color: #2ECC71; color: #2ECC71; }
-    .btn--reject  { background: #2E0D0D; border-color: #FF5252; color: #FF5252; }
-    .btn--approve:hover:not(:disabled) { background: #0F3A1F; }
-    .btn--reject:hover:not(:disabled)  { background: #3A0F0F; }
+    .btn--approve { background: var(--ok-fundo); border-color: var(--ok); color: var(--ok); }
+    .btn--reject  { background: var(--alerta-fundo); border-color: var(--alerta); color: var(--alerta); }
+    .btn--approve:hover:not(:disabled) { background: var(--ok-fundo); }
+    .btn--reject:hover:not(:disabled)  { background: var(--alerta-fundo); }
     .motivo-wrap { margin-top: 16px; display: none; }
-    .motivo-wrap label { font-size: 13px; color: #A8A8B8; display: block; margin-bottom: 6px; }
+    .motivo-wrap label { font-size: 13px; color: var(--texto-2); display: block; margin-bottom: 6px; }
     .motivo-wrap textarea {
       width: 100%;
-      background: #1C2230;
-      border: 1px solid rgba(255,255,255,.12);
+      background: var(--sup-2);
+      border: 1px solid var(--ov-120);
       border-radius: 8px;
-      color: #F4F5F7;
+      color: var(--texto);
       font-size: 14px;
       padding: 12px;
       resize: vertical;
@@ -90,8 +90,8 @@
       font-weight: 800;
       cursor: pointer;
       border: none;
-      background: linear-gradient(135deg, #FF8C2A, #FF6A00, #E55A00);
-      color: #000;
+      background: linear-gradient(135deg, var(--rz-laranja-400), var(--laranja), var(--rz-laranja-600));
+      color:var(--sobre-laranja);
     }
     .btn--confirm:disabled { opacity: .5; cursor: not-allowed; }
     .alert {
@@ -103,14 +103,20 @@
       text-align: center;
       display: none;
     }
-    .alert--success { background: #0D2E1A; border: 1px solid #2ECC71; color: #2ECC71; }
-    .alert--error   { background: #2E0D0D; border: 1px solid #FF5252; color: #FF5252; }
-    .loading { text-align: center; color: #5A6478; padding: 40px; }
-    .card__footer { padding: 16px 32px; border-top: 1px solid rgba(255,255,255,.06); text-align: center; }
-    .card__footer p { font-size: 12px; color: rgba(255,255,255,.2); line-height: 1.5; }
+    .alert--success { background: var(--ok-fundo); border: 1px solid var(--ok); color: var(--ok); }
+    .alert--error   { background: var(--alerta-fundo); border: 1px solid var(--alerta); color: var(--alerta); }
+    .loading { text-align: center; color: var(--texto-3); padding: 40px; }
+    .card__footer { padding: 16px 32px; border-top: 1px solid var(--ov-60); text-align: center; }
+    .card__footer p { font-size: 12px; color: var(--ov-200); line-height: 1.5; }
   </style>
+  <script src="/js/rezende-tema.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@500;600;700;800&display=swap">
+  <link rel="stylesheet" href="/css/rezende-tema.css">
+  <link rel="stylesheet" href="/css/rezende-newrh.css">
 </head>
 <body>
+<button class="rz-tema-btn rz-tema-flutuante" type="button" data-rz-tema aria-label="Alternar modo claro/escuro" title="Modo claro/escuro"><svg class="sol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg class="lua" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg></button>
 <div class="card">
   <div class="card__header">
     <div class="brand">⚡ Rezende <span>Energia</span></div>
@@ -148,12 +154,12 @@
   }
 
   if (sol.status !== 'PENDENTE') {
-    const cor = sol.status === 'APROVADA' ? '#2ECC71' : '#FF5252';
+    const cor = sol.status === 'APROVADA' ? 'var(--ok)' : 'var(--alerta)';
     const ico = sol.status === 'APROVADA' ? '✅' : '❌';
     contentEl.innerHTML = `
       <h2 style="text-align:center;margin-bottom:8px;">${ico} Já Decidida</h2>
       <p class="section-title" style="text-align:center;">Esta solicitação já foi processada</p>
-      <div style="text-align:center;padding:16px;background:rgba(255,255,255,.03);border-radius:12px;">
+      <div style="text-align:center;padding:16px;background:var(--ov-30);border-radius:12px;">
         <span style="color:${cor};font-size:18px;font-weight:800;">Situação: ${sol.status}</span>
       </div>`;
     return;
@@ -180,7 +186,7 @@
     </table>
 
     <hr class="divider">
-    <p style="font-size:13px;color:#A8A8B8;margin-bottom:16px;text-align:center;">
+    <p style="font-size:13px;color:var(--texto-2);margin-bottom:16px;text-align:center;">
       Ao aprovar, a vaga será criada e publicada automaticamente no portal.
     </p>
 

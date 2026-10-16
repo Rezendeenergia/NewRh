@@ -1,0 +1,163 @@
+/* =====================================================================
+   NewRh — PONTE PARA O TEMA REZENDE
+   ---------------------------------------------------------------------
+   Carregue DEPOIS de rezende-tema.css (que não é alterado) e ANTES de
+   styles.css. Aqui ficam só:
+     1. Os nomes antigos do NewRh (--fire, --void, --ink-1...) apontando
+        para as variáveis do tema -> as telas seguem o modo claro/escuro.
+     2. Camadas translúcidas (--ov-*, --bk-*) que se adaptam ao modo.
+   Não escreva cor em hexadecimal nas telas: use as variáveis do tema.
+   ===================================================================== */
+
+:root {
+  /* ---------- 1. Nomes antigos -> tema ---------- */
+  /* Energia principal */
+  --fire:         var(--laranja);
+  --fire-bright:  var(--rz-laranja-400);
+  --fire-deep:    var(--rz-laranja-600);
+  --amber:        var(--aviso);
+  --amber-dim:    var(--rz-laranja-700);
+
+  /* Superfícies (antes "pretos") */
+  --void:    var(--fundo);
+  --deep:    var(--fundo-2);
+  --surface: var(--sup);
+  --lift:    var(--sup-2);
+  --raise:   var(--sup-3);
+
+  /* Bordas */
+  --line:        var(--linha);
+  --line-hover:  rgba(247, 147, 30, 0.5);
+  --line-active: rgba(247, 147, 30, 0.85);
+
+  /* Texto */
+  --ink-1: var(--texto);
+  --ink-2: var(--texto-2);
+  --ink-3: var(--texto-3);
+  --ink-4: var(--linha-forte);
+
+  /* Status */
+  --go:        var(--ok);
+  --go-bg:     var(--ok-fundo);
+  --stop:      var(--alerta);
+  --stop-bg:   var(--alerta-fundo);
+  --wait:      var(--aviso);
+  --wait-bg:   var(--aviso-fundo);
+  /* --info já existe no tema */
+  --info-bg:   var(--info-fundo);
+
+  /* Fonte do tema */
+  --font-titulo: var(--f-titulo);
+  --font-texto:  var(--f-texto);
+}
+
+/* ---------- 2. Camadas translúcidas que acompanham o modo ----------
+   --ov-NN : "véu" sobre a superfície (antes rgba(255,255,255,.NN) no escuro)
+   --bk-NN : sombreado/inset (antes rgba(0,0,0,.NN))                          */
+:root,
+:root[data-theme="claro"] {
+  --glow-fire:    rgba(247, 147, 30, 0.18);
+  --glow-fire-md: rgba(247, 147, 30, 0.12);
+  --glow-fire-sm: rgba(247, 147, 30, 0.06);
+  --glow-amber:   rgba(245, 158, 11, 0.10);
+  --go-line:      rgba(4, 120, 87, 0.28);
+  --stop-line:    rgba(190, 18, 60, 0.28);
+  --wait-line:    rgba(180, 83, 9, 0.28);
+  --info-line:    rgba(29, 78, 216, 0.28);
+
+  --ov-15: rgba(15, 24, 41, 0.015);  --ov-20: rgba(15, 24, 41, 0.02);  --ov-25: rgba(15, 24, 41, 0.025);
+  --ov-30: rgba(15, 24, 41, 0.03);   --ov-40: rgba(15, 24, 41, 0.045); --ov-50: rgba(15, 24, 41, 0.055);
+  --ov-60: rgba(15, 24, 41, 0.08);   --ov-70: rgba(15, 24, 41, 0.10);  --ov-80: rgba(15, 24, 41, 0.12);
+  --ov-100: rgba(15, 24, 41, 0.15);  --ov-120: rgba(15, 24, 41, 0.18); --ov-150: rgba(15, 24, 41, 0.22);
+  --ov-200: rgba(15, 24, 41, 0.30);  --ov-350: rgba(15, 24, 41, 0.45);
+
+  --bk-20: rgba(15, 24, 41, 0.05);  --bk-25: rgba(15, 24, 41, 0.06);  --bk-30: rgba(15, 24, 41, 0.07);
+  --bk-35: rgba(15, 24, 41, 0.08);  --bk-40: rgba(15, 24, 41, 0.10);  --bk-45: rgba(15, 24, 41, 0.12);
+  --bk-50: rgba(15, 24, 41, 0.14);  --bk-55: rgba(15, 24, 41, 0.16);  --bk-60: rgba(15, 24, 41, 0.18);
+  --bk-70: rgba(15, 24, 41, 0.22);  --bk-85: rgba(15, 24, 41, 0.30);
+
+  /* Brilhos do fundo da página */
+  --pg-brilho-1: rgba(247, 147, 30, 0.10);
+  --pg-brilho-2: rgba(247, 147, 30, 0.05);
+  --pg-brilho-3: rgba(247, 147, 30, 0.04);
+  --pg-vinheta:  transparent;
+  --header-vidro: rgba(255, 255, 255, 0.85);
+}
+
+:root[data-theme="escuro"] {
+  --glow-fire:    rgba(255, 106, 0, 0.22);
+  --glow-fire-md: rgba(255, 106, 0, 0.14);
+  --glow-fire-sm: rgba(255, 106, 0, 0.07);
+  --glow-amber:   rgba(255, 184, 48, 0.12);
+  --go-line:      rgba(46, 204, 113, 0.22);
+  --stop-line:    rgba(255, 82, 82, 0.22);
+  --wait-line:    rgba(255, 184, 48, 0.22);
+  --info-line:    rgba(72, 169, 255, 0.22);
+
+  --ov-15: rgba(255, 255, 255, 0.015); --ov-20: rgba(255, 255, 255, 0.02);  --ov-25: rgba(255, 255, 255, 0.025);
+  --ov-30: rgba(255, 255, 255, 0.03);  --ov-40: rgba(255, 255, 255, 0.04);  --ov-50: rgba(255, 255, 255, 0.05);
+  --ov-60: rgba(255, 255, 255, 0.06);  --ov-70: rgba(255, 255, 255, 0.07);  --ov-80: rgba(255, 255, 255, 0.08);
+  --ov-100: rgba(255, 255, 255, 0.10); --ov-120: rgba(255, 255, 255, 0.12); --ov-150: rgba(255, 255, 255, 0.15);
+  --ov-200: rgba(255, 255, 255, 0.20); --ov-350: rgba(255, 255, 255, 0.35);
+
+  --bk-20: rgba(0, 0, 0, 0.2);   --bk-25: rgba(0, 0, 0, 0.25); --bk-30: rgba(0, 0, 0, 0.3);
+  --bk-35: rgba(0, 0, 0, 0.35);  --bk-40: rgba(0, 0, 0, 0.4);  --bk-45: rgba(0, 0, 0, 0.45);
+  --bk-50: rgba(0, 0, 0, 0.5);   --bk-55: rgba(0, 0, 0, 0.55); --bk-60: rgba(0, 0, 0, 0.6);
+  --bk-70: rgba(0, 0, 0, 0.7);   --bk-85: rgba(0, 0, 0, 0.85);
+
+  --pg-brilho-1: rgba(255, 106, 0, 0.16);
+  --pg-brilho-2: rgba(255, 106, 0, 0.06);
+  --pg-brilho-3: rgba(255, 184, 48, 0.09);
+  --pg-vinheta:  rgba(0, 0, 0, 0.55);
+  --header-vidro: rgba(7, 11, 20, 0.85);
+}
+
+/* Sem escolha salva: acompanha o sistema (mesma regra do tema) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --glow-fire:    rgba(255, 106, 0, 0.22);
+    --glow-fire-md: rgba(255, 106, 0, 0.14);
+    --glow-fire-sm: rgba(255, 106, 0, 0.07);
+    --glow-amber:   rgba(255, 184, 48, 0.12);
+    --go-line:      rgba(46, 204, 113, 0.22);
+    --stop-line:    rgba(255, 82, 82, 0.22);
+    --wait-line:    rgba(255, 184, 48, 0.22);
+    --info-line:    rgba(72, 169, 255, 0.22);
+    --ov-15: rgba(255, 255, 255, 0.015); --ov-20: rgba(255, 255, 255, 0.02);  --ov-25: rgba(255, 255, 255, 0.025);
+    --ov-30: rgba(255, 255, 255, 0.03);  --ov-40: rgba(255, 255, 255, 0.04);  --ov-50: rgba(255, 255, 255, 0.05);
+    --ov-60: rgba(255, 255, 255, 0.06);  --ov-70: rgba(255, 255, 255, 0.07);  --ov-80: rgba(255, 255, 255, 0.08);
+    --ov-100: rgba(255, 255, 255, 0.10); --ov-120: rgba(255, 255, 255, 0.12); --ov-150: rgba(255, 255, 255, 0.15);
+    --ov-200: rgba(255, 255, 255, 0.20); --ov-350: rgba(255, 255, 255, 0.35);
+    --bk-20: rgba(0, 0, 0, 0.2);   --bk-25: rgba(0, 0, 0, 0.25); --bk-30: rgba(0, 0, 0, 0.3);
+    --bk-35: rgba(0, 0, 0, 0.35);  --bk-40: rgba(0, 0, 0, 0.4);  --bk-45: rgba(0, 0, 0, 0.45);
+    --bk-50: rgba(0, 0, 0, 0.5);   --bk-55: rgba(0, 0, 0, 0.55); --bk-60: rgba(0, 0, 0, 0.6);
+    --bk-70: rgba(0, 0, 0, 0.7);   --bk-85: rgba(0, 0, 0, 0.85);
+    --pg-brilho-1: rgba(255, 106, 0, 0.16);
+    --pg-brilho-2: rgba(255, 106, 0, 0.06);
+    --pg-brilho-3: rgba(255, 184, 48, 0.09);
+    --pg-vinheta:  rgba(0, 0, 0, 0.55);
+    --header-vidro: rgba(7, 11, 20, 0.85);
+  }
+}
+
+/* ---------- Botão de modo dia/noite quando a tela não tem cabeçalho próprio ---------- */
+.rz-tema-flutuante {
+  position: fixed; top: 14px; right: 14px; z-index: 900;
+  background: var(--sup); box-shadow: var(--sombra);
+}
+
+/* Botão Microsoft: continua branco nos dois modos (identidade da Microsoft) */
+.btn-microsoft { background: #FFFFFF; color: #111827; }
+
+/* Botão de tema dentro da barra de abas (tela inicial) */
+.nav__inner { align-items: center; }
+.nav__tema { margin-left: auto; }
+
+/* Logo: versão colorida no modo claro, branca no modo escuro */
+.logo-escuro { display: none; }
+:root[data-theme="escuro"] .logo-claro { display: none; }
+:root[data-theme="escuro"] .logo-escuro { display: inline-block; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .logo-claro { display: none; }
+  :root:not([data-theme]) .logo-escuro { display: inline-block; }
+}

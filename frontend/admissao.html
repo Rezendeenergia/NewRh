@@ -4,7 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Admissão — Rezende Energia</title>
-  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="/js/rezende-tema.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@500;600;700;800&display=swap">
+  <link rel="stylesheet" href="/css/rezende-tema.css">
+  <link rel="stylesheet" href="/css/rezende-newrh.css">
   <link rel="stylesheet" href="styles.css">
 <style>
 @keyframes pulse { 0%,100%{opacity:.5} 50%{opacity:1} }
@@ -24,7 +28,7 @@
           <div class="sidebar-header__brand">⚡ Rezende RH</div>
           <div class="sidebar-header__sub">Admissão</div>
         </div>
-        <a href="/?gestor=1" style="color:var(--ink-3);font-size:.75rem;text-decoration:none;">← Menu inicial</a>
+        <div style="display:flex;align-items:center;gap:10px;"><a href="/?gestor=1" style="color:var(--ink-3);font-size:.75rem;text-decoration:none;">← Menu inicial</a><button class="rz-tema-btn" type="button" data-rz-tema aria-label="Alternar modo claro/escuro" title="Modo claro/escuro"><svg class="sol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg class="lua" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg></button></div>
       </div>
     </div>
 
@@ -206,10 +210,10 @@ const Adm = {
     const list   = document.getElementById('processo-list');
     // Skeleton animado enquanto carrega
     list.innerHTML = [1,2,3].map(() => `
-      <div style="padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.04);">
-        <div style="height:13px;width:70%;background:rgba(255,255,255,.07);border-radius:4px;margin-bottom:8px;animation:pulse 1.2s ease infinite;"></div>
-        <div style="height:11px;width:50%;background:rgba(255,255,255,.04);border-radius:4px;margin-bottom:10px;animation:pulse 1.2s ease infinite .2s;"></div>
-        <div style="height:4px;background:rgba(255,255,255,.06);border-radius:99px;animation:pulse 1.2s ease infinite .4s;"></div>
+      <div style="padding:14px 16px;border-bottom:1px solid var(--ov-40);">
+        <div style="height:13px;width:70%;background:var(--ov-70);border-radius:4px;margin-bottom:8px;animation:pulse 1.2s ease infinite;"></div>
+        <div style="height:11px;width:50%;background:var(--ov-40);border-radius:4px;margin-bottom:10px;animation:pulse 1.2s ease infinite .2s;"></div>
+        <div style="height:4px;background:var(--ov-60);border-radius:99px;animation:pulse 1.2s ease infinite .4s;"></div>
       </div>`).join('');
     try {
       const params = new URLSearchParams();
@@ -238,7 +242,7 @@ const Adm = {
           </div>
         </div>`).join('');
     } catch(e) {
-      list.innerHTML = `<div style="padding:20px;text-align:center;color:#FF5252;font-size:.83rem;">${e.message}</div>`;
+      list.innerHTML = `<div style="padding:20px;text-align:center;color:var(--alerta);font-size:.83rem;">${e.message}</div>`;
     }
   },
 
@@ -269,7 +273,7 @@ const Adm = {
       currentProcesso = p;
       main.innerHTML = Adm.renderProcesso(p);
     } catch(e) {
-      main.innerHTML = `<div style="padding:40px;text-align:center;color:#FF5252;">${e.message}</div>`;
+      main.innerHTML = `<div style="padding:40px;text-align:center;color:var(--alerta);">${e.message}</div>`;
     }
   },
 
@@ -293,7 +297,7 @@ const Adm = {
       </div>
 
       <div style="margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
-        <span style="font-size:.8rem;color:var(--ink-3);">Progresso: <strong style="color:#fff;">${p.progresso}%</strong></span>
+        <span style="font-size:.8rem;color:var(--ink-3);">Progresso: <strong style="color:var(--texto);">${p.progresso}%</strong></span>
         <span style="font-size:.8rem;color:var(--ink-3);">Etapa atual: <strong style="color:var(--fire);">${p.etapaAtual || '—'}</strong></span>
       </div>
       <div class="progress-bar"><div class="progress-bar__fill" style="width:${p.progresso}%"></div></div>
@@ -302,23 +306,23 @@ const Adm = {
 
       <!-- Painel Interno (notas + salário) — nunca enviado ao candidato -->
       <div style="margin-top:24px;background:rgba(91,141,239,.06);border:1px solid rgba(91,141,239,.2);
-                  border-left:3px solid #5B8DEF;border-radius:12px;padding:20px;">
+                  border-left:3px solid var(--info);border-radius:12px;padding:20px;">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
           <span style="font-size:16px;">🔒</span>
-          <h4 style="margin:0;color:#5B8DEF;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">
+          <h4 style="margin:0;color:var(--info);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">
             Uso Interno — Não enviado ao candidato
           </h4>
         </div>
 
         <!-- Notas internas -->
         <div style="margin-bottom:16px;">
-          <label style="display:block;color:#A8A8B8;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">
+          <label style="display:block;color:var(--texto-2);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">
             📝 Notas Internas
           </label>
           <textarea id="notas-internas-${p.id}" rows="4"
                     placeholder="Observações internas sobre o candidato (perfil, pontos de atenção, feedback da equipe...)&#10;Visível apenas para gestores no sistema."
-                    style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(91,141,239,.25);
-                           color:#fff;border-radius:8px;padding:12px;font-size:13px;resize:vertical;
+                    style="width:100%;background:var(--ov-40);border:1px solid rgba(91,141,239,.25);
+                           color:var(--texto);border-radius:8px;padding:12px;font-size:13px;resize:vertical;
                            font-family:inherit;box-sizing:border-box;">${p.notasInternas || ''}</textarea>
         </div>
 
@@ -326,36 +330,36 @@ const Adm = {
         ${Adm.podVerSalario() ? `
         <div style="display:grid;grid-template-columns:1fr 2fr;gap:12px;margin-bottom:16px;">
           <div>
-            <label style="display:block;color:#A8A8B8;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">
+            <label style="display:block;color:var(--texto-2);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">
               💰 Salário Proposto (R$)
             </label>
             <input type="number" id="salario-proposto-${p.id}" step="0.01" min="0"
                    value="${p.salarioProposto || ''}"
                    placeholder="0,00"
-                   style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(91,141,239,.25);
-                          color:#fff;border-radius:8px;padding:10px 12px;font-size:14px;font-weight:700;
+                   style="width:100%;background:var(--ov-40);border:1px solid rgba(91,141,239,.25);
+                          color:var(--texto);border-radius:8px;padding:10px 12px;font-size:14px;font-weight:700;
                           box-sizing:border-box;">
           </div>
           <div>
-            <label style="display:block;color:#A8A8B8;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">
+            <label style="display:block;color:var(--texto-2);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">
               📋 Observação sobre Salário
             </label>
             <input type="text" id="salario-obs-${p.id}"
                    value="${p.salarioObs || ''}"
                    placeholder="Ex: inclui benefícios, a confirmar com DP..."
-                   style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(91,141,239,.25);
-                          color:#fff;border-radius:8px;padding:10px 12px;font-size:13px;
+                   style="width:100%;background:var(--ov-40);border:1px solid rgba(91,141,239,.25);
+                          color:var(--texto);border-radius:8px;padding:10px 12px;font-size:13px;
                           box-sizing:border-box;">
           </div>
         </div>` : ''}
 
         <button onclick="Adm.salvarInterno(${p.id})" id="btn-interno-${p.id}"
                 style="background:rgba(91,141,239,.15);border:1px solid rgba(91,141,239,.3);
-                       color:#5B8DEF;border-radius:8px;padding:9px 20px;font-size:13px;
+                       color:var(--info);border-radius:8px;padding:9px 20px;font-size:13px;
                        font-weight:700;cursor:pointer;">
           💾 Salvar Notas e Salário
         </button>
-        <span id="interno-saved-${p.id}" style="display:none;color:#2ECC71;font-size:12px;margin-left:12px;">✅ Salvo!</span>
+        <span id="interno-saved-${p.id}" style="display:none;color:var(--ok);font-size:12px;margin-left:12px;">✅ Salvo!</span>
       </div>`;
   },
 
@@ -372,15 +376,15 @@ const Adm = {
           <div style="flex-direction:column;align-items:stretch;" class="doc-item">
             <div style="display:flex;align-items:center;gap:6px;width:100%;">
               <span>📄</span>
-              <span class="doc-item__name" style="flex:1;min-width:0;">${d.nome}${d.versao>1?`<span style="font-size:10px;background:rgba(91,141,239,.2);color:#5B8DEF;border-radius:4px;padding:1px 5px;margin-left:4px;">v${d.versao}</span>`:''}</span>
+              <span class="doc-item__name" style="flex:1;min-width:0;">${d.nome}${d.versao>1?`<span style="font-size:10px;background:rgba(91,141,239,.2);color:var(--info);border-radius:4px;padding:1px 5px;margin-left:4px;">v${d.versao}</span>`:''}</span>
               <span class="pill pill--${d.status}" style="font-size:.68rem;flex-shrink:0;">${STATUS_LABEL[d.status]||d.status}</span>
               ${d.sharepointUrl
                 ? `<a href="${d.sharepointUrl}" target="_blank" style="color:var(--fire);font-size:.75rem;text-decoration:none;flex-shrink:0;">SP ↗</a>`
                 : `<button onclick="Adm.reenviarSharepoint(${processoId},${e.id},${d.id})"
                            id="btn-sp-${d.id}"
                            title="${d.sharepointErro ? 'Falha: ' + d.sharepointErro.replace(/"/g,'&quot;') + ' — clique para tentar novamente' : 'Ainda não sincronizado com o SharePoint — clique para tentar agora'}"
-                           style="background:none;border:1px solid ${d.sharepointErro ? 'rgba(231,76,60,.4)' : 'rgba(255,255,255,.12)'};
-                                  color:${d.sharepointErro ? '#E74C3C' : '#5A6478'};font-size:.68rem;flex-shrink:0;
+                           style="background:none;border:1px solid ${d.sharepointErro ? 'rgba(231,76,60,.4)' : 'var(--ov-120)'};
+                                  color:${d.sharepointErro ? 'var(--alerta)' : 'var(--texto-3)'};font-size:.68rem;flex-shrink:0;
                                   border-radius:5px;padding:1px 6px;cursor:pointer;">
                     ${d.sharepointErro ? '⚠️ SP falhou · tentar' : '🔄 SP...'}
                   </button>`}
@@ -391,33 +395,33 @@ const Adm = {
               ` : ''}
               <button onclick="Adm.toggleDocAcoes(${d.id})"
                       title="Comentar / Substituir arquivo"
-                      style="background:none;border:1px solid rgba(255,255,255,.12);color:#9AA3B2;
+                      style="background:none;border:1px solid var(--ov-120);color:var(--texto-2);
                              border-radius:5px;padding:2px 7px;font-size:11px;cursor:pointer;
                              flex-shrink:0;margin-left:auto;">✏️</button>
             </div>
             <div id="doc-acoes-${d.id}" style="display:none;margin-top:8px;padding:10px;
-                 background:rgba(255,255,255,.03);border-radius:8px;border:1px solid rgba(255,255,255,.07);">
-              <p style="margin:0 0 6px;font-size:11px;color:#9AA3B2;font-weight:700;text-transform:uppercase;">🔒 Uso Interno</p>
+                 background:var(--ov-30);border-radius:8px;border:1px solid var(--ov-70);">
+              <p style="margin:0 0 6px;font-size:11px;color:var(--texto-2);font-weight:700;text-transform:uppercase;">🔒 Uso Interno</p>
               <textarea id="comentario-${d.id}" rows="2"
                         placeholder="Comentário interno (não enviado ao candidato)..."
                         style="width:100%;background:rgba(91,141,239,.05);border:1px solid rgba(91,141,239,.2);
-                               color:#fff;border-radius:6px;padding:8px;font-size:12px;resize:none;
+                               color:var(--texto);border-radius:6px;padding:8px;font-size:12px;resize:none;
                                font-family:inherit;box-sizing:border-box;margin-bottom:8px;">${d.comentarioInterno||''}</textarea>
               <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
                 <button onclick="Adm.salvarComentario(${d.id},${e.id})"
-                        style="background:rgba(91,141,239,.15);border:1px solid rgba(91,141,239,.3);color:#5B8DEF;
+                        style="background:rgba(91,141,239,.15);border:1px solid rgba(91,141,239,.3);color:var(--info);
                                border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">
                   💾 Salvar
                 </button>
-                <label style="background:rgba(255,82,82,.1);border:1px solid rgba(255,82,82,.25);color:#FF5252;
+                <label style="background:rgba(255,82,82,.1);border:1px solid rgba(255,82,82,.25);color:var(--alerta);
                               border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">
                   🔄 Substituir Arquivo
                   <input type="file" accept="*/*" style="display:none"
                          onchange="Adm.substituirDoc(${d.id},${e.id},this)">
                 </label>
-                <span id="acao-saved-${d.id}" style="display:none;color:#2ECC71;font-size:11px;">✅ Salvo!</span>
+                <span id="acao-saved-${d.id}" style="display:none;color:var(--ok);font-size:11px;">✅ Salvo!</span>
               </div>
-              ${d.comentarioInterno?`<p style="margin:6px 0 0;font-size:11px;color:#5B8DEF;font-style:italic;">💬 ${d.comentarioInterno}</p>`:''}
+              ${d.comentarioInterno?`<p style="margin:6px 0 0;font-size:11px;color:var(--info);font-style:italic;">💬 ${d.comentarioInterno}</p>`:''}
             </div>
           </div>`).join('')}
       </div>` : '';
@@ -432,36 +436,36 @@ const Adm = {
 
     const actionsHtml = isAtiva ? `
       ${e.handoffPara ? `
-      <p style="font-size:.78rem;color:#FBBF24;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);
+      <p style="font-size:.78rem;color:var(--aviso);background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);
                 border-radius:8px;padding:8px 10px;margin:0 0 10px;">
         ⚠️ Ao aprovar, esta etapa será encaminhada para validação do <strong>${e.handoffParaLabel}</strong>
         — o processo só avança depois que ${e.handoffParaLabel} confirmar.
       </p>` : ''}
       ${e.emValidacaoFinal ? `
-      <p style="font-size:.78rem;color:#5B8DEF;background:rgba(91,141,239,.08);border:1px solid rgba(91,141,239,.25);
+      <p style="font-size:.78rem;color:var(--info);background:rgba(91,141,239,.08);border:1px solid rgba(91,141,239,.25);
                 border-radius:8px;padding:8px 10px;margin:0 0 10px;">
         🔎 Aguardando validação final do <strong>${e.deptLabel}</strong>. Se algo precisar trocar, use "Reenviar Doc." —
         a etapa volta para quem anexou os documentos.
       </p>` : ''}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
         <div>
-          <label style="display:block;font-size:11px;font-weight:700;color:#9AA3B2;text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;">
-            🔒 Nota Interna <span style="color:#5A6478;font-weight:400;">(só gestores)</span>
+          <label style="display:block;font-size:11px;font-weight:700;color:var(--texto-2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;">
+            🔒 Nota Interna <span style="color:var(--texto-3);font-weight:400;">(só gestores)</span>
           </label>
           <textarea id="nota-${e.id}" rows="3"
                     placeholder="Anotações internas — não enviado ao candidato..."
                     style="width:100%;background:rgba(91,141,239,.05);border:1px solid rgba(91,141,239,.2);
-                           color:#fff;border-radius:8px;padding:10px;font-size:12px;resize:vertical;
+                           color:var(--texto);border-radius:8px;padding:10px;font-size:12px;resize:vertical;
                            font-family:inherit;box-sizing:border-box;"></textarea>
         </div>
         <div>
-          <label style="display:block;font-size:11px;font-weight:700;color:#9AA3B2;text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;">
-            📧 Nota Externa <span style="color:#5A6478;font-weight:400;">(enviada ao candidato)</span>
+          <label style="display:block;font-size:11px;font-weight:700;color:var(--texto-2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;">
+            📧 Nota Externa <span style="color:var(--texto-3);font-weight:400;">(enviada ao candidato)</span>
           </label>
           <textarea id="nota-externa-${e.id}" rows="3"
                     placeholder="Mensagem enviada ao candidato por e-mail ao aprovar/reprovar..."
                     style="width:100%;background:rgba(255,106,0,.05);border:1px solid rgba(255,106,0,.2);
-                           color:#fff;border-radius:8px;padding:10px;font-size:12px;resize:vertical;
+                           color:var(--texto);border-radius:8px;padding:10px;font-size:12px;resize:vertical;
                            font-family:inherit;box-sizing:border-box;"></textarea>
         </div>
       </div>
@@ -469,12 +473,12 @@ const Adm = {
         <button class="btn btn-aprovar btn--small" onclick="Adm.atualizarEtapa(${processoId},${e.id},'APROVADO')">${e.handoffPara ? `✅ Aprovar e enviar p/ ${e.handoffParaLabel}` : '✅ Aprovar'}</button>
         <button class="btn btn-reenviar btn--small" onclick="Adm.atualizarEtapa(${processoId},${e.id},'REENVIAR')">🔄 Reenviar Doc.</button>
         <button class="btn btn-reprovar btn--small" onclick="Adm.atualizarEtapa(${processoId},${e.id},'REPROVADO')">❌ Reprovar</button>
-        <button class="btn btn--small" style="background:rgba(90,100,120,.15);color:#9AA3B2;border:1px solid rgba(90,100,120,.3);" onclick="Adm.atualizarEtapa(${processoId},${e.id},'NAO_APLICAVEL')" title="Marcar como Não Aplicável — etapa será pulada">🚫 N/A</button>
+        <button class="btn btn--small" style="background:rgba(90,100,120,.15);color:var(--texto-2);border:1px solid rgba(90,100,120,.3);" onclick="Adm.atualizarEtapa(${processoId},${e.id},'NAO_APLICAVEL')" title="Marcar como Não Aplicável — etapa será pulada">🚫 N/A</button>
       </div>` : '';
 
     const notaHtml = (e.nota || e.notaExterna) ? `
-      ${e.nota ? `<p style="font-size:.8rem;color:#5B8DEF;margin-top:8px;font-style:italic;">🔒 ${e.nota}</p>` : ''}
-      ${e.notaExterna ? `<p style="font-size:.8rem;color:#FF6A00;margin-top:4px;font-style:italic;">📧 ${e.notaExterna}</p>` : ''}
+      ${e.nota ? `<p style="font-size:.8rem;color:var(--info);margin-top:8px;font-style:italic;">🔒 ${e.nota}</p>` : ''}
+      ${e.notaExterna ? `<p style="font-size:.8rem;color:var(--laranja-texto);margin-top:4px;font-style:italic;">📧 ${e.notaExterna}</p>` : ''}
     ` : '';
     const respHtml = e.responsavel ? `<p style="font-size:.75rem;color:var(--ink-3);margin-top:4px;">👤 ${e.responsavel} ${e.concluidoEm ? '· '+new Date(e.concluidoEm).toLocaleDateString('pt-BR') : ''}</p>` : '';
 
@@ -540,14 +544,14 @@ const Adm = {
     // Feedback imediato ao selecionar o arquivo
     const originalLabel = label ? label.innerHTML : '';
     if (label) label.innerHTML = `⏳ Enviando <strong>${file.name}</strong>...`;
-    if (zone)  zone.style.borderColor = '#FF6A00';
+    if (zone)  zone.style.borderColor = 'var(--laranja)';
 
     const fd = new FormData();
     fd.append('arquivo', file);
     try {
       await reqForm(`/api/processos/${processoId}/etapas/${etapaId}/documentos`, fd);
       if (label) label.innerHTML = `✅ <strong>${file.name}</strong> anexado!`;
-      if (zone)  zone.style.borderColor = '#2ECC71';
+      if (zone)  zone.style.borderColor = 'var(--ok)';
       // Recarrega a tela após 800ms para mostrar o arquivo
       setTimeout(() => Adm.loadProcesso(processoId), 800);
     } catch(e) {
@@ -597,7 +601,7 @@ const Adm = {
 
   async _loadBancoTalentos() {
     const lista = document.getElementById('banco-lista');
-    lista.innerHTML = '<p style="color:#9AA3B2;text-align:center;padding:32px;">Carregando...</p>';
+    lista.innerHTML = '<p style="color:var(--texto-2);text-align:center;padding:32px;">Carregando...</p>';
     try {
       const r = await fetch('/api/processos/banco-talentos', {
         headers: { 'Authorization': 'Bearer ' + token }
@@ -605,7 +609,7 @@ const Adm = {
       this._bancoData = await r.json();
       this._renderBanco(this._bancoData);
     } catch(e) {
-      lista.innerHTML = `<p style="color:#FF5252;text-align:center;">${e.message}</p>`;
+      lista.innerHTML = `<p style="color:var(--alerta);text-align:center;">${e.message}</p>`;
     }
   },
 
@@ -623,25 +627,25 @@ const Adm = {
   _renderBanco(items) {
     const lista = document.getElementById('banco-lista');
     if (!items.length) {
-      lista.innerHTML = '<p style="color:#5A6478;text-align:center;padding:40px;">Nenhum candidato no banco de talentos ainda.</p>';
+      lista.innerHTML = '<p style="color:var(--texto-3);text-align:center;padding:40px;">Nenhum candidato no banco de talentos ainda.</p>';
       return;
     }
     lista.innerHTML = items.map(c => `
-      <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);
+      <div style="background:var(--ov-30);border:1px solid var(--ov-70);
                   border-radius:12px;padding:16px;margin-bottom:12px;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
           <div>
-            <p style="margin:0 0 2px;font-size:16px;font-weight:800;color:#fff;">${c.nome}</p>
-            <p style="margin:0;font-size:12px;color:#9AA3B2;">📍 ${c.vaga} · ${c.local} · Cancelado em ${c.dataCancelamento}</p>
+            <p style="margin:0 0 2px;font-size:16px;font-weight:800;color:var(--texto);">${c.nome}</p>
+            <p style="margin:0;font-size:12px;color:var(--texto-2);">📍 ${c.vaga} · ${c.local} · Cancelado em ${c.dataCancelamento}</p>
           </div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
             ${c.curriculo ? `<a href="${c.downloadCurriculoUrl}" target="_blank"
-                style="background:rgba(255,106,0,.1);border:1px solid rgba(255,106,0,.25);color:#FF6A00;
+                style="background:rgba(255,106,0,.1);border:1px solid rgba(255,106,0,.25);color:var(--laranja-texto);
                        border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;text-decoration:none;">
               📄 Currículo
             </a>` : ''}
             <a href="mailto:${c.email}"
-               style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#9AA3B2;
+               style="background:var(--ov-50);border:1px solid var(--ov-120);color:var(--texto-2);
                       border-radius:6px;padding:5px 12px;font-size:12px;text-decoration:none;">
               ✉️ ${c.email}
             </a>
@@ -653,13 +657,13 @@ const Adm = {
           </div>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">
-          ${c.formacao ? `<span style="background:rgba(255,255,255,.05);border-radius:4px;padding:2px 8px;font-size:11px;color:#A8A8B8;">🎓 ${c.formacao}</span>` : ''}
-          ${c.experiencia ? `<span style="background:rgba(255,255,255,.05);border-radius:4px;padding:2px 8px;font-size:11px;color:#A8A8B8;">⏱ ${c.experiencia}</span>` : ''}
-          ${c.nrs ? `<span style="background:rgba(255,106,0,.06);border-radius:4px;padding:2px 8px;font-size:11px;color:#FF8C2A;">📜 ${c.nrs}</span>` : ''}
-          ${c.cnh ? `<span style="background:rgba(255,255,255,.05);border-radius:4px;padding:2px 8px;font-size:11px;color:#A8A8B8;">🪪 CNH: ${c.cnh}</span>` : ''}
+          ${c.formacao ? `<span style="background:var(--ov-50);border-radius:4px;padding:2px 8px;font-size:11px;color:var(--texto-2);">🎓 ${c.formacao}</span>` : ''}
+          ${c.experiencia ? `<span style="background:var(--ov-50);border-radius:4px;padding:2px 8px;font-size:11px;color:var(--texto-2);">⏱ ${c.experiencia}</span>` : ''}
+          ${c.nrs ? `<span style="background:rgba(255,106,0,.06);border-radius:4px;padding:2px 8px;font-size:11px;color:var(--laranja-texto);">📜 ${c.nrs}</span>` : ''}
+          ${c.cnh ? `<span style="background:var(--ov-50);border-radius:4px;padding:2px 8px;font-size:11px;color:var(--texto-2);">🪪 CNH: ${c.cnh}</span>` : ''}
         </div>
-        ${c.motivoCancelamento ? `<p style="margin:8px 0 0;font-size:11px;color:#FF5252;">❌ ${c.motivoCancelamento}</p>` : ''}
-        ${c.notas ? `<p style="margin:6px 0 0;font-size:11px;color:#5B8DEF;font-style:italic;">🔒 ${c.notas}</p>` : ''}
+        ${c.motivoCancelamento ? `<p style="margin:8px 0 0;font-size:11px;color:var(--alerta);">❌ ${c.motivoCancelamento}</p>` : ''}
+        ${c.notas ? `<p style="margin:6px 0 0;font-size:11px;color:var(--info);font-style:italic;">🔒 ${c.notas}</p>` : ''}
       </div>`).join('');
   },
 

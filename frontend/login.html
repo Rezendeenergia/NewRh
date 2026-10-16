@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Gestão de RH — Entrar</title>
   <link rel="icon" href="img/favicon.png">
-  <script src="js/rezende-tema.js"></script>
+  <script src="/js/rezende-tema.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600;700&display=swap">
-  <link rel="stylesheet" href="css/rezende-tema.css">
+  <link rel="stylesheet" href="/css/rezende-tema.css">
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     html, body { margin: 0; }
@@ -22,7 +22,7 @@
       --veu-1: rgba(243, 245, 249, 0.97); --veu-2: rgba(243, 245, 249, 0.85); --veu-3: rgba(243, 245, 249, 0.2);
       background:
         linear-gradient(100deg, var(--veu-1) 0%, var(--veu-2) 38%, var(--veu-3) 70%, transparent 100%),
-        url('img/fundo-login.jpg') center right / cover no-repeat,
+        url('/img/fundo-login.jpg') center right / cover no-repeat,
         var(--fundo);
     }
     :root[data-theme="escuro"] body {
@@ -92,12 +92,30 @@
     @media (max-width: 760px) {
       body { background:
           linear-gradient(180deg, var(--veu-3) 0%, var(--veu-2) 45%, var(--veu-1) 100%),
-          url('img/fundo-login.jpg') 78% center / cover no-repeat, var(--fundo); }
+          url('/img/fundo-login.jpg') 78% center / cover no-repeat, var(--fundo); }
       .entrada { align-items: flex-end; padding: 32px 20px 12px; }
       .logo { width: 170px; margin-bottom: 28px; }
       .sub { font-size: 16px; margin-bottom: 26px; }
     }
     @media (prefers-reduced-motion: reduce) { .cartao { animation: none; } }
+    .continuar { margin-bottom: 14px; }
+    .continuar[hidden] { display: none; }
+    .btn-continuar {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      width: 100%; padding: 13px 18px; border-radius: var(--raio-p);
+      background: var(--laranja); color: var(--sobre-laranja); text-decoration: none;
+      font-family: var(--f-titulo); font-weight: 600; font-size: 1rem;
+      transition: background var(--transicao);
+    }
+    .btn-continuar:hover { background: var(--laranja-hover); }
+    .btn-continuar .c-txt { display: flex; flex-direction: column; text-align: left; min-width: 0; }
+    .btn-continuar b { font-weight: 700; overflow: hidden; text-overflow: ellipsis; }
+    .btn-continuar small { font-family: var(--f-texto); font-weight: 400; font-size: .78rem; opacity: .85; overflow: hidden; text-overflow: ellipsis; }
+    .link-sair { display: block; margin: 8px auto 0; background: none; border: 0; cursor: pointer;
+      color: var(--texto-3); font: inherit; font-size: .82rem; text-decoration: underline; }
+    .link-sair:hover { color: var(--texto); }
+    .ou { display: flex; align-items: center; gap: 10px; margin: 14px 0 0; color: var(--texto-3); font-size: .78rem; }
+    .ou::before, .ou::after { content: ""; flex: 1; border-top: 1px solid var(--linha); }
   </style>
 </head>
 <body>
@@ -110,8 +128,8 @@
   </header>
   <main class="entrada">
     <div class="cartao">
-      <img class="logo logo-claro" src="img/logo-rezende.png" alt="Rezende Energia">
-      <img class="logo logo-escuro" src="img/logo-rezende-branca.png" alt="Rezende Energia">
+      <img class="logo logo-claro" src="/img/logo-rezende.png" alt="Rezende Energia">
+      <img class="logo logo-escuro" src="/img/logo-rezende-branca.png" alt="Rezende Energia">
       <p class="eyebrow">Gestão de RH</p>
       <h1>Vagas, candidatos e admissões em um só lugar</h1>
       <p class="sub">Entre com a sua conta corporativa da Microsoft para abrir vagas, acompanhar candidatos e conduzir as admissões.</p>
@@ -121,9 +139,18 @@
         <span id="erro-texto"></span>
       </div>
 
+      <div class="continuar" id="continuar" hidden>
+        <a class="btn-continuar" href="/?gestor=1" id="continuar-link">
+          <span class="c-txt">Continuar como <b id="continuar-nome"></b><small id="continuar-email"></small></span>
+          <span class="seta" aria-hidden="true">→</span>
+        </a>
+        <button type="button" class="link-sair" id="sair-sessao">Sair desta sessão</button>
+        <div class="ou"><span>ou</span></div>
+      </div>
+
       <a class="btn-ms" href="/api/auth/microsoft/login" id="entrar">
         <span class="ms" aria-hidden="true"><i style="background:#F25022"></i><i style="background:#7FBA00"></i><i style="background:#00A4EF"></i><i style="background:#FFB900"></i></span>
-        Entrar com a conta Rezende
+        <span id="entrar-texto">Entrar com a conta Rezende</span>
         <span class="seta" aria-hidden="true">→</span>
       </a>
       <p class="regra">
@@ -147,15 +174,25 @@
     <span>Problemas para entrar? Fale com a TI.</span>
   </footer>
 
-  <script src="js/rz-sessao.js"></script>
+  <script src="/js/rz-sessao.js"></script>
   <script>
     (function () {
-      /* 1) Já está logado? Vai direto para o menu inicial, sem pedir nada. */
+      /* 1) Já existe sessão neste navegador? Não entra sozinho: oferece "Continuar como ..."
+            e deixa o botão da Microsoft disponível para entrar com outro e-mail. */
       var params = new URLSearchParams(location.search);
       var codigo = params.get('erro');
       if (!codigo && window.RzSessao && RzSessao.valida()) {
-        location.replace('/?gestor=1');
-        return;
+        var sess = RzSessao.ler() || {};
+        var quem = sess.name || sess.email || sess.username || 'sua conta';
+        document.getElementById('continuar-nome').textContent = quem;
+        document.getElementById('continuar-email').textContent = (sess.email && sess.email !== quem) ? sess.email : '';
+        document.getElementById('continuar').hidden = false;
+        document.getElementById('entrar-texto').textContent = 'Entrar com outra conta';
+        document.getElementById('sair-sessao').addEventListener('click', function () {
+          RzSessao.limpar();
+          document.getElementById('continuar').hidden = true;
+          document.getElementById('entrar-texto').textContent = 'Entrar com a conta Rezende';
+        });
       }
 
       /* 2) Mensagens de erro vindas do login Microsoft */
