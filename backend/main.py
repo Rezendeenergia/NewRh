@@ -88,6 +88,11 @@ def health():
 def index():
     return send_from_directory(FRONTEND_FOLDER, "index.html")
 
+# Logo na aba do navegador (alguns navegadores pedem /favicon.ico direto)
+@app.route("/favicon.ico")
+def favicon():
+    return send_from_directory(os.path.join(FRONTEND_FOLDER, "img"), "favicon.png", mimetype="image/png")
+
 # Tela de login corporativo (padrão visual Rezende)
 @app.route("/login")
 def login_page():
