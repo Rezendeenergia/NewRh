@@ -24,7 +24,7 @@
           <div class="sidebar-header__brand">⚡ Rezende RH</div>
           <div class="sidebar-header__sub">Admissão</div>
         </div>
-        <a href="/?gestor=1" style="color:var(--ink-3);font-size:.75rem;text-decoration:none;">← Portal</a>
+        <a href="/?gestor=1" style="color:var(--ink-3);font-size:.75rem;text-decoration:none;">← Menu inicial</a>
       </div>
     </div>
 
@@ -93,6 +93,7 @@
   </div>
 </div>
 
+<script src="js/rz-sessao.js"></script>
 <script>
 // Cache simples para evitar re-fetch desnecessário
 // ── Request Manager: cache + fila + concorrência limitada ────
@@ -138,8 +139,10 @@ function invalidateCache(processo_id) {
   Object.keys(_cache).forEach(k => { if (k.startsWith('/api/processos?')) delete _cache[k]; });
 }
 
-let TOKEN = localStorage.getItem('rz_token');
-let ROLE  = localStorage.getItem('rz_role') || '';
+// Sessão compartilhada com o menu inicial (js/rz-sessao.js)
+const _SESSAO = window.RzSessao ? RzSessao.ler() : null;
+let TOKEN = _SESSAO ? _SESSAO.token : '';
+let ROLE  = _SESSAO ? _SESSAO.role : '';
 
 
 
@@ -151,9 +154,8 @@ async function req(url, opts={}) {
     headers: { 'Authorization':'Bearer '+TOKEN, 'Content-Type':'application/json', ...(opts.headers||{}) }
   });
   if (r.status === 401) {
-    // Token expirado — volta pro portal
-    localStorage.removeItem('rz_token');
-    window.location.href = '/?gestor=1';
+    // Sessão expirada — apaga e abre a tela de login
+    RzSessao.expirou();
     return;
   }
   if (!r.ok) { const e = await r.json().catch(()=>({message:'Erro'})); throw new Error(e.message); }
@@ -711,7 +713,7 @@ const Adm = {
     // ROLE_ADMIN e ROLE_OWNER sempre veem o salário
     if (['ROLE_ADMIN','ROLE_OWNER'].includes(ROLE)) return true;
     // Lista específica de emails que podem ver
-    const email = (localStorage.getItem('rz_email') || '').toLowerCase();
+    const email = ((window.RzSessao && RzSessao.ler() || {}).email || '').toLowerCase();
     return this.EMAILS_VER_SALARIO.includes(email);
   },
 
@@ -735,11 +737,10 @@ const Adm = {
 
 // ── Init: usa token do portal, sem tela de login ──────────────
 document.addEventListener('DOMContentLoaded', async () => {
-  TOKEN = document.cookie.match('(^|;)\s*rz_token\s*=\s*([^;]+)')?.pop()
-       || localStorage.getItem('rz_token')
-       || sessionStorage.getItem('rz_token')
-       || sessionStorage.getItem('token')
-       || '';
+  const sessao = RzSessao.ler();
+  if (!sessao) { RzSessao.expirou(); return; }   // sem login: tela de login
+  TOKEN = sessao.token;
+  ROLE  = sessao.role;
   await Promise.all([Adm.loadStats(), Adm.loadLista()]);
 
   // Se veio com ?id= na URL (ex: clique em Admissões), abre o processo direto

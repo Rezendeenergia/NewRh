@@ -123,7 +123,7 @@
     <div class="page-header__nav">
       <a href="/admissao">🏢 Fluxo de Admissão</a>
       <a href="/admissoes" class="active">🏗 Admissões</a>
-      <a href="/" style="margin-left:8px;">← Portal</a>
+      <a href="/?gestor=1" style="margin-left:8px;">← Menu inicial</a>
     </div>
   </div>
 
@@ -203,17 +203,15 @@
   </div>
 </div>
 
+<script src="js/rz-sessao.js"></script>
 <script>
 const API = '/api';
 function getCookie(name) {
   const v = document.cookie.match('(^|;)\s*' + name + '\s*=\s*([^;]+)');
   return v ? v.pop() : null;
 }
-let token = getCookie('rz_token')
-         || localStorage.getItem('rz_token')
-         || sessionStorage.getItem('rz_token')
-         || sessionStorage.getItem('token');
-if (token) localStorage.setItem('rz_token', token);
+// Sessão compartilhada com o menu inicial (js/rz-sessao.js)
+let token = (window.RzSessao && RzSessao.ler() || {}).token || '';
 let allProcessos = [];
 
 
@@ -226,8 +224,7 @@ async function loadData() {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (r.status === 401) {
-        localStorage.removeItem('rz_token');
-        window.location.href = '/';
+        RzSessao.expirou();
         return;
       }
       const data = await r.json();
@@ -344,11 +341,9 @@ function renderTable() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  token = getCookie('rz_token')
-       || localStorage.getItem('rz_token')
-       || sessionStorage.getItem('rz_token')
-       || sessionStorage.getItem('token')
-       || '';
+  const sessao = RzSessao.ler();
+  if (!sessao) { RzSessao.expirou(); return; }   // sem login: tela de login
+  token = sessao.token;
   loadData();
 });
 </script>

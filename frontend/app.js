@@ -6,6 +6,7 @@ const API_BASE = '';
 
 let sessionToken    = null;
 let sessionUsername = null;
+let sessionNome     = '';
 let selectedJob     = null;
 let currentPage     = 1;
 let chartInstances  = {};
@@ -31,64 +32,47 @@ function _esconderTabGestor() {
 }
 
 function _verificarTabGestor() {
-  // Só mostra a aba se o email for autorizado E houver token válido
-  const email = (localStorage.getItem('rz_email') || '').toLowerCase();
-  const token = localStorage.getItem('rz_token');
-  if (token && email && EMAILS_GESTOR.includes(email)) {
+  // Mostra a aba "Área do Gestor" sempre que houver uma sessão válida.
+  // Quem pode entrar já é decidido no login (lista de acesso no servidor).
+  if (window.RzSessao && RzSessao.valida()) {
     _mostrarTabGestor();
   } else {
     _esconderTabGestor();
   }
 }
 
-
+/** Traz a sessão salva (localStorage/cookie) para a memória da página. Devolve true se havia sessão válida. */
+function _restaurarSessao() {
+  const s = window.RzSessao ? RzSessao.ler() : null;
+  if (!s) return false;
+  sessionToken      = s.token;
+  sessionUsername   = s.username || '';
+  sessionNome       = s.name || '';
+  AppState.role     = s.role || null;
+  AppState.username = s.username || '';
+  return true;
+}
 
 // ── Microsoft SSO callback handler ───────────────────────────
+// O servidor devolve o login no hash da URL (/?gestor=1#ms-token=...).
+// Aqui só gravamos a sessão compartilhada; quem abre o painel é o init (DOMContentLoaded).
 (function() {
   const hash = window.location.hash;
   if (!hash.includes('ms-token=')) return;
   const params = new URLSearchParams(hash.slice(1));
   const token  = params.get('ms-token');
-  const user   = params.get('ms-user');
-  const role   = params.get('ms-role');
-  const name   = params.get('ms-name');
-  const errMsg = params.get('ms-error');
 
-  // Limpa o hash da URL
-  history.replaceState(null, '', window.location.pathname);
+  // Limpa o hash da URL (o token não deve ficar no endereço)
+  history.replaceState(null, '', window.location.pathname + window.location.search);
 
-  if (errMsg) {
-    // Mostra erro no painel de login
-    setTimeout(() => {
-      const alert = document.getElementById('login-alert');
-      if (alert) { alert.textContent = decodeURIComponent(errMsg.replace(/\+/g,' ')); alert.style.display='block'; }
-      // Ativa aba do gestor
-      document.querySelectorAll('.nav__tab').forEach(t => t.classList.remove('nav__tab--active'));
-      document.querySelectorAll('.panel').forEach(p => p.classList.remove('panel--active'));
-      document.querySelector('[data-panel="manager"]')?.classList.add('nav__tab--active');
-      document.getElementById('panel-manager')?.classList.add('panel--active');
-    }, 300);
-    return;
-  }
-
-  if (token && user) {
-    sessionToken    = token;
-    sessionUsername = user;
-    AppState.role   = role;
-    AppState.username = user;
-    // Ativa dashboard
-    setTimeout(() => {
-      document.getElementById('manager-login').style.display    = 'none';
-      document.getElementById('manager-dashboard').style.display = 'block';
-      document.getElementById('dashboard-greeting').textContent  = `Olá, ${name || user} 👋`;
-      document.querySelectorAll('.nav__tab').forEach(t => t.classList.remove('nav__tab--active'));
-      document.querySelectorAll('.panel').forEach(p => p.classList.remove('panel--active'));
-      document.querySelector('[data-panel="manager"]')?.classList.add('nav__tab--active');
-      document.getElementById('panel-manager')?.classList.add('panel--active');
-      Manager.loadStats();
-      Manager.loadJobList();
-      Solicitacoes.loadBadge();
-    }, 100);
+  if (token && window.RzSessao) {
+    RzSessao.salvar({
+      token:    token,
+      username: params.get('ms-user'),
+      role:     params.get('ms-role'),
+      email:    params.get('ms-email'),
+      name:     params.get('ms-name'),
+    });
   }
 })();
 
@@ -459,16 +443,7 @@ async function request(path, options = {}) {
   // Sessão expirada → logout automático com aviso
   if (response.status === 401 && sessionToken) {
     sessionToken = sessionUsername = null;
-    localStorage.removeItem('rz_token');
-    showToast('Sessão expirada', 'Faça login novamente.', 'warning');
-    document.getElementById('manager-dashboard').style.display = 'none';
-    document.getElementById('manager-login').style.display     = 'block';
-    document.getElementById('login-form').reset();
-    // Vai para aba do gestor
-    document.querySelectorAll('.nav__tab').forEach(t => t.classList.remove('nav__tab--active'));
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('panel--active'));
-    document.querySelector('[data-panel="manager"]').classList.add('nav__tab--active');
-    document.getElementById('panel-manager').classList.add('panel--active');
+    if (window.RzSessao) RzSessao.expirou();   // apaga a sessão e abre a tela de login
     throw new Error('Sessão expirada');
   }
 
@@ -764,10 +739,12 @@ const Portal = {
 const Manager = {
 
   init() {
-    if (sessionToken) this.showDashboard();
-    else {
-      document.getElementById('manager-login').style.display     = 'block';
-      document.getElementById('manager-dashboard').style.display = 'none';
+    // Já logado nesta página, ou com sessão salva (vinda de /admissao, /admissoes ou de outra aba)
+    if (sessionToken || _restaurarSessao()) {
+      this.showDashboard();
+    } else {
+      // Sem sessão: tela de login corporativo
+      window.location.href = '/login';
     }
   },
 
@@ -827,7 +804,7 @@ const Manager = {
   showDashboard() {
     document.getElementById('manager-login').style.display     = 'none';
     document.getElementById('manager-dashboard').style.display = 'block';
-    document.getElementById('dashboard-greeting').textContent  = `Olá, ${sessionUsername} 👋`;
+    document.getElementById('dashboard-greeting').textContent  = `Olá, ${sessionNome || sessionUsername} 👋`;
 
     // ROLE_GESTOR: mostra só "Solicitar Vaga" e esconde o resto
     if (AppState.role === 'ROLE_GESTOR') {
@@ -855,10 +832,9 @@ const Manager = {
 
   logout() {
     sessionToken = sessionUsername = null;
-    document.getElementById('manager-dashboard').style.display = 'none';
-    document.getElementById('manager-login').style.display     = 'block';
-    document.getElementById('login-form').reset();
-    showToast('Sessão encerrada', '', 'info');
+    sessionNome = '';
+    if (window.RzSessao) RzSessao.limpar();   // apaga localStorage e cookie: "Sair" encerra de verdade
+    window.location.href = '/login';
   },
 
   toggleRegisterPanel() {
@@ -2158,7 +2134,7 @@ document.getElementById('login-form').addEventListener('submit', async function(
     })});
     sessionToken = r.token; sessionUsername = r.username;
     AppState.role = r.role; AppState.username = r.username;
-    localStorage.setItem('rz_token', r.token);
+    if (window.RzSessao) RzSessao.salvar({ token: r.token, username: r.username, role: r.role });
     showToast('Bem-vindo!', `Logado como ${r.username}`, 'success');
     Manager.showDashboard();
   } catch (err) { showAlert('login-alert', '❌ ' + err.message); }
@@ -2702,19 +2678,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Verifica se deve mostrar aba do gestor (baseado em sessão anterior)
   _verificarTabGestor();
 
-  // Restaura sessão APENAS quando vindo de /admissao ou /admissoes
-  // (não faz auto-login no carregamento normal da página)
+  // Abre o painel do gestor quando vindo do login, de /admissao ou de /admissoes (?gestor=1).
+  // No carregamento normal, o portal público de vagas continua aparecendo.
   if (new URLSearchParams(window.location.search).get('gestor') === '1') {
-    const savedToken = localStorage.getItem('rz_token');
-    const savedUser  = localStorage.getItem('rz_username');
-    const savedRole  = localStorage.getItem('rz_role');
-    if (savedToken) {
-      sessionToken      = savedToken;
-      sessionUsername   = savedUser || '';
-      AppState.role     = savedRole || 'ROLE_ADMIN';
-      AppState.username = savedUser || '';
-    }
+    const logado = _restaurarSessao();
     history.replaceState({}, '', '/');
+    if (!logado) {
+      // Sessão inexistente ou expirada: pede o login corporativo
+      window.location.replace('/login');
+      return;
+    }
     if (sessionToken) {
       // Mostra a aba do gestor (remove display:none)
       _mostrarTabGestor();
