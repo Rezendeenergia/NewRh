@@ -1812,7 +1812,97 @@ const Manager = {
 
   // ── Gráficos ──────────────────────────────────────────────
 
+  // ── Admissão: quantidade por etapa (onde o colaborador parou) ──
+  async loadEtapasChart() {
+    const resumo = document.getElementById('etapas-resumo');
+    const canvas = document.getElementById('chart-by-etapa');
+    if (!canvas) return;
+    try {
+      const d = await request('/api/processos/por-etapa');
+      const etapas = (d.etapas || []).filter(e => e.andamento || e.reprovados || e.ordem < 99);
+      const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+      const DEPT = { RH: 'RH', DP: 'DP', DP_EXTERNO: 'DP Externo', TI: 'TI', SESMT: 'SESMT' };
+
+      const item = (cor, rotulo, valor) =>
+        `<span style="display:inline-flex;align-items:center;gap:6px;">` +
+        (cor ? `<span style="width:10px;height:10px;border-radius:3px;background:${cor};"></span>` : '') +
+        `${rotulo}: <strong style="color:var(--texto);">${valor}</strong></span>`;
+      resumo.innerHTML =
+        item('var(--graf-1)', 'Em andamento', d.totalAndamento) +
+        item('var(--graf-2)', 'Reprovados no fluxo', d.totalReprovados) +
+        item('', 'Concluídos', d.concluidos) +
+        item('', 'Reprovados ainda na candidatura', d.reprovadosCandidatura);
+
+      document.getElementById('etapas-tbody').innerHTML = etapas.map(e => `
+        <tr style="border-bottom:1px solid var(--ov-40);">
+          <td style="padding:7px 12px;color:var(--texto);">${e.ordem < 99 ? e.ordem + '. ' : ''}${esc(e.etapa)}</td>
+          <td style="padding:7px 12px;color:var(--ink-3);">${esc(DEPT[e.departamento] || e.departamento || '—')}</td>
+          <td style="padding:7px 12px;text-align:center;font-weight:700;color:var(--texto);">${e.andamento}</td>
+          <td style="padding:7px 12px;text-align:center;color:var(--ink-2);">${e.reprovados}</td>
+        </tr>`).join('');
+
+      document.getElementById('etapas-chart-wrap').style.height = Math.max(260, etapas.length * 34 + 60) + 'px';
+
+      // número no fim de cada barra (em cor de texto, não na cor da série)
+      const rotulos = {
+        id: 'rotulosEtapa',
+        afterDatasetsDraw(chart) {
+          const { ctx } = chart;
+          ctx.save();
+          ctx.font = '600 11px Barlow, sans-serif';
+          ctx.fillStyle = rzCor('texto-2');
+          ctx.textBaseline = 'middle';
+          chart.data.datasets.forEach((ds, i) => {
+            if (chart.getDatasetMeta(i).hidden) return;
+            chart.getDatasetMeta(i).data.forEach((bar, j) => {
+              const v = ds.data[j];
+              if (v) ctx.fillText(v, bar.x + 5, bar.y);
+            });
+          });
+          ctx.restore();
+        },
+      };
+
+      if (chartInstances['chart-by-etapa']) chartInstances['chart-by-etapa'].destroy();
+      chartInstances['chart-by-etapa'] = new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: etapas.map(e => (e.ordem < 99 ? e.ordem + '. ' : '') + e.etapa),
+          datasets: [
+            { label: 'Parados nesta etapa (em andamento)', data: etapas.map(e => e.andamento),
+              backgroundColor: rzCor('graf-1'), borderRadius: 4, borderSkipped: 'start', barPercentage: 0.9, categoryPercentage: 0.8 },
+            { label: 'Reprovados nesta etapa', data: etapas.map(e => e.reprovados),
+              backgroundColor: rzCor('graf-2'), borderRadius: 4, borderSkipped: 'start', barPercentage: 0.9, categoryPercentage: 0.8 },
+          ],
+        },
+        plugins: [rotulos],
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          layout: { padding: { right: 28 } },
+          interaction: { mode: 'index', axis: 'y', intersect: false },
+          plugins: {
+            legend: { position: 'top', align: 'start', labels: { color: rzCor('texto-2'), boxWidth: 12, boxHeight: 12, useBorderRadius: true, borderRadius: 3 } },
+            tooltip: {
+              callbacks: {
+                afterTitle: items => { const e = etapas[items[0].dataIndex]; return e && e.departamento ? 'Setor: ' + (DEPT[e.departamento] || e.departamento) : ''; },
+              },
+            },
+          },
+          scales: {
+            x: { beginAtZero: true, ticks: { color: rzCor('texto-3'), precision: 0 }, grid: { color: rzCor('graf-grade') } },
+            y: { ticks: { color: rzCor('texto-2'), autoSkip: false }, grid: { display: false } },
+          },
+        },
+      });
+    } catch (err) {
+      if (resumo) resumo.textContent = 'Não foi possível carregar as etapas de admissão.';
+    }
+  },
+
   async loadCharts() {
+    this.loadEtapasChart();
     try {
       const data = await request('/api/candidaturas/chart-stats');
 

@@ -631,7 +631,6 @@
         <button class="subtab" data-subtab="audit">🔍 Auditoria</button>
         <button class="subtab" data-subtab="solicitacoes">📋 Solicitações <span class="subtab__count" id="count-solicitacoes" style="display:none;background:var(--alerta);"></span></button>
           <a href="/admissao" class="subtab" style="text-decoration:none;">🏢 Admissão</a>
-        <a href="/admissoes" class="subtab" style="text-decoration:none;">🏗 Admissões</a>
         <button class="subtab" data-subtab="banco-talentos">🏅 Banco de Talentos</button>
         <button class="subtab" data-subtab="colaboradores-admitidos">🎓 Colaboradores Admitidos</button>
         <button class="subtab" data-subtab="menor-aprendiz">🌟 Menor Aprendiz <span class="subtab__count" id="count-aprendiz" style="display:none;background:var(--aviso);color:var(--sobre-laranja);"></span></button>
@@ -1089,6 +1088,29 @@
 
       <!-- Subtab: gráficos -->
       <div class="subtab-panel" id="subtab-charts">
+        <!-- Admissão: onde o colaborador parou (quantidade por etapa) -->
+        <div class="card" style="margin-bottom:24px;">
+          <div class="card__header" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+            <span class="card__title">🏗 Admissão — onde o colaborador parou</span>
+            <a href="/admissao" style="font-size:.8rem;color:var(--ink-3);text-decoration:none;">Abrir fluxo de admissão →</a>
+          </div>
+          <div class="card__body">
+            <div id="etapas-resumo" style="display:flex;gap:18px;flex-wrap:wrap;font-size:.82rem;color:var(--ink-2);margin-bottom:12px;">Carregando...</div>
+            <div id="etapas-chart-wrap" style="position:relative;height:560px;"><canvas id="chart-by-etapa" role="img" aria-label="Quantidade de processos de admissão por etapa"></canvas></div>
+            <details style="margin-top:12px;font-size:.82rem;">
+              <summary style="cursor:pointer;color:var(--ink-3);">Ver em tabela</summary>
+              <table style="width:100%;border-collapse:collapse;margin-top:8px;">
+                <thead><tr style="border-bottom:1px solid var(--ov-80);">
+                  <th style="padding:8px 12px;text-align:left;color:var(--ink-3);font-weight:600;">Etapa</th>
+                  <th style="padding:8px 12px;text-align:left;color:var(--ink-3);font-weight:600;">Setor</th>
+                  <th style="padding:8px 12px;text-align:center;color:var(--ink-3);font-weight:600;">Parados nela</th>
+                  <th style="padding:8px 12px;text-align:center;color:var(--ink-3);font-weight:600;">Reprovados nela</th>
+                </tr></thead>
+                <tbody id="etapas-tbody"></tbody>
+              </table>
+            </details>
+          </div>
+        </div>
         <!-- Tempo de resposta -->
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:24px;">
           <div class="stat-card">

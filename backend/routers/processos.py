@@ -366,6 +366,63 @@ def stats():
         db.close()
 
 
+@bp.get("/por-etapa")
+@require_auth
+def por_etapa():
+    """Quantidade de processos por etapa: onde estão parados (em andamento)
+    e em qual etapa foram reprovados/cancelados. Usado no gráfico da aba Gráficos."""
+    hit = _cache.get("por_etapa")
+    if hit is not None:
+        return jsonify(hit)
+    db = get_db()
+    try:
+        rows = db.execute(
+            __import__('sqlalchemy').text("""
+                SELECT status, etapa_atual, COUNT(*)
+                FROM processo_admissao
+                GROUP BY status, etapa_atual
+            """)
+        ).fetchall()
+
+        ordem = {e["nome"]: e["ordem"] for e in ETAPAS_FLUXO}
+        etapas = {e["nome"]: {"ordem": e["ordem"], "etapa": e["nome"], "departamento": e["departamento"],
+                              "andamento": 0, "reprovados": 0} for e in ETAPAS_FLUXO}
+        concluidos = 0
+        reprovados_candidatura = 0
+        for status, etapa, qtd in rows:
+            etapa = (etapa or "").strip()
+            if status == "CONCLUIDO":
+                concluidos += qtd
+                continue
+            campo = "andamento"
+            if status == "CANCELADO":
+                campo = "reprovados"
+                if etapa.startswith("Reprovado em:"):
+                    etapa = etapa.split(":", 1)[1].strip()
+                if etapa == "Candidatura":
+                    reprovados_candidatura += qtd
+                    continue
+            if not etapa:
+                etapa = "Sem etapa"
+            if etapa not in etapas:
+                etapas[etapa] = {"ordem": 99, "etapa": etapa, "departamento": "",
+                                 "andamento": 0, "reprovados": 0}
+            etapas[etapa][campo] += qtd
+
+        lista = sorted(etapas.values(), key=lambda e: (e["ordem"], e["etapa"]))
+        data = {
+            "etapas": lista,
+            "totalAndamento": sum(e["andamento"] for e in lista),
+            "totalReprovados": sum(e["reprovados"] for e in lista),
+            "reprovadosCandidatura": reprovados_candidatura,
+            "concluidos": concluidos,
+        }
+        _cache.set("por_etapa", data, ttl=30)
+        return jsonify(data)
+    finally:
+        db.close()
+
+
 @bp.get("/<int:processo_id>")
 @require_auth
 def detalhe(processo_id):
