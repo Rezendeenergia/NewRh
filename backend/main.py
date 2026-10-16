@@ -88,6 +88,11 @@ def health():
 def index():
     return send_from_directory(FRONTEND_FOLDER, "index.html")
 
+# Tela de login corporativo (padrão visual Rezende)
+@app.route("/login")
+def login_page():
+    return send_from_directory(FRONTEND_FOLDER, "login.html")
+
 # Serve a página de ativação de conta
 @app.route("/definir-senha")
 def ativar():

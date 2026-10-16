@@ -6,6 +6,7 @@ Fluxo: Authorization Code Flow
 """
 import os
 import requests
+from urllib.parse import urlencode
 from flask import Blueprint, redirect, request, jsonify, url_for
 from security import create_token
 from database import get_db
@@ -93,8 +94,7 @@ def ms_callback():
     error = request.args.get("error")
 
     if error or not code:
-        desc = request.args.get("error_description", "Acesso negado")
-        return redirect(f"/#ms-error={desc.replace(' ', '+')}")
+        return redirect("/login?erro=microsoft_negado")
 
     # Troca código por token
     resp = requests.post(TOKEN_URL, data={
@@ -106,14 +106,14 @@ def ms_callback():
     }, timeout=15)
 
     if resp.status_code != 200:
-        return redirect("/#ms-error=Falha+ao+obter+token+Microsoft")
+        return redirect("/login?erro=microsoft_callback")
 
     access_token = resp.json().get("access_token")
 
     # Busca dados do usuário no Graph
     me = requests.get(GRAPH_ME_URL, headers={"Authorization": f"Bearer {access_token}"}, timeout=10)
     if me.status_code != 200:
-        return redirect("/#ms-error=Falha+ao+obter+dados+do+usuário")
+        return redirect("/login?erro=microsoft_callback")
 
     me_data      = me.json()
     email        = me_data.get("mail") or me_data.get("userPrincipalName", "")
@@ -123,7 +123,7 @@ def ms_callback():
     email_lower = email.lower()
     if email_lower not in USUARIOS_AUTORIZADOS:
         print(f"[MS_AUTH] Bloqueado: {email_lower} não está na whitelist")
-        return redirect("/#ms-error=Acesso+não+autorizado.+Email+não+está+na+lista+de+permissões.+Fale+com+o+TI.")
+        return redirect("/login?erro=sem_acesso")
 
     role_correto = USUARIOS_AUTORIZADOS[email_lower]
 
@@ -156,14 +156,22 @@ def ms_callback():
                 db.commit()
 
         if not user.is_active:
-            return redirect("/#ms-error=Conta+desativada.+Fale+com+o+TI.")
+            return redirect("/login?erro=conta_desativada")
 
         # Gera JWT interno
         token = create_token(user.username, user.role)
         audit.log(user.username, "LOGIN_MS", detail=f"SSO Microsoft — {email}")
 
-        # Redireciona com token no hash
-        resp = redirect(f"/#ms-token={token}&ms-user={user.username}&ms-role={user.role}&ms-name={display_name}")
+        # Redireciona com token no hash (valores codificados: nomes com acento/espaço não quebram a URL).
+        # A página inicial grava esses dados na sessão compartilhada (js/rz-sessao.js).
+        hash_params = urlencode({
+            "ms-token": token,
+            "ms-user":  user.username,
+            "ms-role":  user.role,
+            "ms-email": email_lower,
+            "ms-name":  display_name,
+        })
+        resp = redirect(f"/?gestor=1#{hash_params}")
         resp.set_cookie(
             "rz_token", token,
             max_age=86400,
