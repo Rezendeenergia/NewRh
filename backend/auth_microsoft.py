@@ -61,7 +61,6 @@ GESTORES_CAMPO = {
     "viniciusamaral@rezendeenergia.com.br": "ROLE_GESTOR",  # Vinicius Oliveira Amaral de Souza
     "andre.sousa@rezendeenergia.com.br":    "ROLE_GESTOR",  # André Luis Aguiar de Sousa
     "marcos.lopes@rezendeenergia.com.br":   "ROLE_GESTOR",  # Marcos Vinicius Lopes de Jesus
-    "mara.chaves@rezendeenergia.com.br":    "ROLE_GESTOR",  # Mara Chaves
 }
 
 USUARIOS_AUTORIZADOS = {**GESTORES, **EQUIPE_DP_RH, **EQUIPE_TI, **GESTORES_CAMPO}
