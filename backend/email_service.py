@@ -539,6 +539,48 @@ def notify_dept_sesmt(candidatura, etapa_nome: str):
         print(f"[EMAIL] Erro SESMT: {e}")
 
 
+def notify_devolucao_bernhoeft(candidatura, etapa_nome: str, departamento: str,
+                               motivo: str, responsavel: str, processo_id: int):
+    """Alerta o departamento que preenche a etapa (normalmente o SESMT) quando a
+    Bernhoeft não aceita o documento e o RH devolve a etapa com o motivo."""
+    import html as _html
+    nome  = candidatura.full_name
+    cargo = candidatura.job.position if getattr(candidatura, "job", None) else ""
+    para  = list(DEPT_EMAILS.get(departamento, [EMAIL_SESMT]))
+    cc    = [e for e in [EMAIL_RH, EMAIL_TI] if e not in para]
+    subject = f"🚨 Bernhoeft não aceitou: {etapa_nome} · {nome}"
+    content_html = (
+        f'<h2 style="margin:0 0 6px;font-size:20px;font-weight:800;color:#fff;">Documento devolvido pela Bernhoeft</h2>'
+        f'<p style="margin:0 0 20px;font-size:13px;color:#ff6b6b;font-weight:600;'
+        f'text-transform:uppercase;letter-spacing:2px;">Etapa reaberta para correção</p>'
+        f'<div style="background:rgba(255,107,107,.06);border:1px solid rgba(255,107,107,.25);'
+        f'border-left:3px solid #ff6b6b;border-radius:12px;padding:18px 22px;margin-bottom:20px;">'
+        f'<p style="margin:0 0 4px;font-size:11px;color:#ff6b6b;font-weight:700;'
+        f'text-transform:uppercase;letter-spacing:2px;">Colaborador</p>'
+        f'<p style="margin:0;font-size:17px;font-weight:800;color:#fff;">{_html.escape(nome)}</p>'
+        f'<p style="margin:4px 0 0;font-size:13px;color:#A8A8B8;">{_html.escape(cargo)}</p>'
+        f'</div>'
+        f'<p style="color:#A8A8B8;font-size:14px;line-height:1.7;margin:0 0 10px;">'
+        f'A etapa <strong style="color:#fff;">{_html.escape(etapa_nome)}</strong> não foi aceita na Bernhoeft '
+        f'e voltou para preenchimento.</p>'
+        f'<p style="color:#fff;font-size:14px;line-height:1.7;margin:0 0 6px;"><strong>Motivo:</strong></p>'
+        f'<p style="color:#fff;font-size:14px;line-height:1.7;margin:0 0 20px;background:rgba(255,255,255,.05);'
+        f'border-radius:8px;padding:12px 14px;">{_html.escape(motivo or "—")}</p>'
+        f'<p style="color:#A8A8B8;font-size:12px;margin:0 0 20px;">Devolvido por {_html.escape(responsavel or "")}</p>'
+        f'<div style="text-align:center;">'
+        f'<a href="https://newrh.onrender.com/admissao?id={processo_id}" '
+        f'style="display:inline-block;background:linear-gradient(135deg,#FF8C2A,#FF6A00);'
+        f'color:#000;font-weight:800;font-size:14px;text-decoration:none;'
+        f'padding:12px 32px;border-radius:10px;">Abrir a etapa</a></div>'
+    )
+    try:
+        for dest in para:
+            send_email(dest, subject, _base_template(subject, content_html), cc=cc)
+        print(f"[EMAIL] Devolução Bernhoeft: {etapa_nome} → {nome} ({para})")
+    except Exception as e:
+        print(f"[EMAIL] Erro devolução Bernhoeft: {e}")
+
+
 def notify_solicitacao_rafael(sol, rafael_email: str, base_url: str):
     """Envia pedido de aprovação ao Rafael (TO) e cópia informativa ao TI (CC: Ingrid)."""
     token   = sol.approval_token

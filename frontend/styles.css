@@ -1315,6 +1315,9 @@ select, input {
 .dept-DP        { background:rgba(52,152,219,.15); color:var(--info); }
 .dept-DP_EXTERNO{ background:rgba(155,89,182,.15); color:var(--graf-5); }
 .dept-SESMT     { background:rgba(46,204,113,.15); color:var(--ok); }
+.dept-TI        { background:rgba(148,163,184,.18); color:var(--texto-2); }
+select.dept-select { border:1px solid currentColor; cursor:pointer; font-family:inherit; padding:2px 6px; outline:none; }
+select.dept-select option { color:var(--texto); background:var(--sup); text-transform:none; letter-spacing:0; }
 
 /* ── Empty admissão ── */
 .empty-adm        { text-align:center; padding:80px 0; color:var(--ink-3); }

@@ -237,6 +237,13 @@ class EtapaProcesso(Base):
     nota         = Column(Text, nullable=True)          # nota interna (só gestores)
     nota_externa = Column(Text, nullable=True)          # nota externa (enviada ao candidato)
     responsavel  = Column(String(100), nullable=True)   # username do gestor
+    # Devolução pela Bernhoeft (etapas de documentos do SESMT): RH informa o motivo
+    # e a etapa volta para o SESMT preencher de novo.
+    motivo_devolucao = Column(Text, nullable=True)
+    devolvido_em     = Column(DateTime, nullable=True)
+    devolvido_por    = Column(String(100), nullable=True)
+    # Etapa reaberta por um editor depois de concluída (não empurra o fluxo ao ser aprovada de novo)
+    reaberta         = Column(Boolean, nullable=False, default=False, server_default="false")
     iniciado_em  = Column(DateTime, nullable=True)
     concluido_em = Column(DateTime, nullable=True)
     created_at   = Column(DateTime, server_default=func.now())
@@ -244,6 +251,17 @@ class EtapaProcesso(Base):
     processo    = relationship("ProcessoAdmissao", back_populates="etapas")
     documentos  = relationship("DocumentoEtapa", back_populates="etapa",
                                cascade="all, delete-orphan")
+
+
+class EtapaConfig(Base):
+    """Departamento responsável padrão de cada etapa (definido pelos editores no portal).
+    Sobrepõe o departamento fixo de ETAPAS_FLUXO para processos em andamento e novos."""
+    __tablename__ = "etapa_config"
+
+    codigo         = Column(String(50), primary_key=True)
+    departamento   = Column(String(50), nullable=False)
+    atualizado_por = Column(String(100), nullable=True)
+    atualizado_em  = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
 
 class DocumentoEtapa(Base):

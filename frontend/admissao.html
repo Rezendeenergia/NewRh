@@ -173,7 +173,9 @@ async function reqForm(url, fd) {
   return r.json();
 }
 
-const STATUS_LABEL = { PENDENTE:'Pendente', EM_ANDAMENTO:'Em andamento', APROVADO:'Aprovado', REPROVADO:'Reprovado', REENVIAR:'Reenviar doc.' };
+const STATUS_LABEL = { PENDENTE:'Pendente', EM_ANDAMENTO:'Em andamento', APROVADO:'Aprovado', REPROVADO:'Reprovado', REENVIAR:'Reenviar doc.', NAO_APLICAVEL:'N/A' };
+const DEPTS = [['RH','Recursos Humanos'],['DP','Departamento Pessoal'],['DP_EXTERNO','DP Externo'],['SESMT','SESMT'],['TI','TI']];
+const escH = t => String(t ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const STATUS_ICON  = { PENDENTE:'○', EM_ANDAMENTO:'◉', APROVADO:'✅', REPROVADO:'❌', REENVIAR:'🔄' };
 const TIPO_ICON    = { APROVACAO:'🗂', DOCUMENTO:'📄', CHECKLIST:'☑', ENTREVISTA:'🎤' };
 
@@ -371,6 +373,10 @@ const Adm = {
     const isAtiva    = isEmAndamento || (e.status === 'PENDENTE' && (e.tipo === 'DOCUMENTO' || e.tipo === 'CHECKLIST' || e.codigo === 'PROVA_DEEP'));
     const isAprovada = e.status === 'APROVADO';
     const temDocs    = e.tipo === 'DOCUMENTO' || e.codigo === 'PROVA_DEEP';
+    const podeEditar = !!(currentProcesso && currentProcesso.podeEditar);
+    const concluida  = ['APROVADO','NAO_APLICAVEL','REPROVADO'].includes(e.status);
+    // Devolvida pela Bernhoeft e ainda não reenviada pelo responsável
+    const devolvida  = !!(e.motivoDevolucao && e.status === 'EM_ANDAMENTO' && !e.emValidacaoFinal);
     const docsHtml   = e.documentos.length > 0 ? `
       <div class="docs-list">
         ${e.documentos.map(d => `
@@ -436,13 +442,32 @@ const Adm = {
       </div>` : '';
 
     const actionsHtml = isAtiva ? `
-      ${e.handoffPara ? `
+      ${devolvida ? `
+      <div style="font-size:.8rem;color:var(--alerta);background:rgba(255,82,82,.08);border:1px solid rgba(255,82,82,.3);
+                border-radius:8px;padding:10px 12px;margin:0 0 10px;">
+        <strong>⚠ Não aceito na Bernhoeft</strong>${e.devolvidoEm ? ` · ${new Date(e.devolvidoEm).toLocaleDateString('pt-BR')}` : ''}${e.devolvidoPor ? ` · por ${escH(e.devolvidoPor)}` : ''}<br>
+        <span style="color:var(--texto);">Motivo: ${escH(e.motivoDevolucao)}</span><br>
+        <span style="color:var(--texto-2);">Corrija o documento e envie de novo para o RH.</span>
+      </div>` : ''}
+      ${e.handoffPara && e.bernhoeft ? `
+      <p style="font-size:.78rem;color:var(--aviso);background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);
+                border-radius:8px;padding:8px 10px;margin:0 0 10px;">
+        📤 Ao enviar, o <strong>${e.handoffParaLabel}</strong> manda o documento para a Bernhoeft e confirma o aceite.
+        Se a Bernhoeft não aceitar, a etapa volta para cá com o motivo.
+      </p>` : ''}
+      ${e.handoffPara && !e.bernhoeft ? `
       <p style="font-size:.78rem;color:var(--aviso);background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);
                 border-radius:8px;padding:8px 10px;margin:0 0 10px;">
         ⚠️ Ao aprovar, esta etapa será encaminhada para validação do <strong>${e.handoffParaLabel}</strong>
         — o processo só avança depois que ${e.handoffParaLabel} confirmar.
       </p>` : ''}
-      ${e.emValidacaoFinal ? `
+      ${e.emValidacaoFinal && e.bernhoeft ? `
+      <p style="font-size:.78rem;color:var(--info);background:rgba(91,141,239,.08);border:1px solid rgba(91,141,239,.25);
+                border-radius:8px;padding:8px 10px;margin:0 0 10px;">
+        🏢 <strong>${e.deptLabel}:</strong> envie o documento para a Bernhoeft. Quando ela responder, marque
+        <strong>Aceito na Bernhoeft</strong> ou <strong>Não aceito</strong> (escreva o motivo na Nota Interna — ele vai para o SESMT).
+      </p>` : ''}
+      ${e.emValidacaoFinal && !e.bernhoeft ? `
       <p style="font-size:.78rem;color:var(--info);background:rgba(91,141,239,.08);border:1px solid rgba(91,141,239,.25);
                 border-radius:8px;padding:8px 10px;margin:0 0 10px;">
         🔎 Aguardando validação final do <strong>${e.deptLabel}</strong>. Se algo precisar trocar, use "Reenviar Doc." —
@@ -470,16 +495,27 @@ const Adm = {
                            font-family:inherit;box-sizing:border-box;"></textarea>
         </div>
       </div>
+      ${e.emValidacaoFinal && e.bernhoeft ? `
       <div class="etapa-actions">
-        <button class="btn btn-aprovar btn--small" onclick="Adm.atualizarEtapa(${processoId},${e.id},'APROVADO')">${e.handoffPara ? `✅ Aprovar e enviar p/ ${e.handoffParaLabel}` : '✅ Aprovar'}</button>
+        <button class="btn btn-aprovar btn--small" onclick="Adm.atualizarEtapa(${processoId},${e.id},'APROVADO')">✅ Aceito na Bernhoeft</button>
+        <button class="btn btn-reprovar btn--small" onclick="Adm.atualizarEtapa(${processoId},${e.id},'REENVIAR')">↩ Não aceito — devolver para correção</button>
+      </div>` : `
+      <div class="etapa-actions">
+        <button class="btn btn-aprovar btn--small" onclick="Adm.atualizarEtapa(${processoId},${e.id},'APROVADO')">${e.handoffPara ? (e.bernhoeft ? `📤 Enviar p/ ${e.handoffParaLabel} (Bernhoeft)` : `✅ Aprovar e enviar p/ ${e.handoffParaLabel}`) : '✅ Aprovar'}</button>
         <button class="btn btn-reenviar btn--small" onclick="Adm.atualizarEtapa(${processoId},${e.id},'REENVIAR')">🔄 Reenviar Doc.</button>
         <button class="btn btn-reprovar btn--small" onclick="Adm.atualizarEtapa(${processoId},${e.id},'REPROVADO')">❌ Reprovar</button>
         <button class="btn btn--small" style="background:rgba(90,100,120,.15);color:var(--texto-2);border:1px solid rgba(90,100,120,.3);" onclick="Adm.atualizarEtapa(${processoId},${e.id},'NAO_APLICAVEL')" title="Marcar como Não Aplicável — etapa será pulada">🚫 N/A</button>
+      </div>`}` : '';
+
+    const reabrirHtml = (podeEditar && concluida) ? `
+      <div class="etapa-actions">
+        <button class="btn btn--small" style="background:rgba(91,141,239,.12);color:var(--info);border:1px solid rgba(91,141,239,.3);"
+                onclick="Adm.reabrirEtapa(${processoId},${e.id})">↩ Reabrir etapa</button>
       </div>` : '';
 
     const notaHtml = (e.nota || e.notaExterna) ? `
-      ${e.nota ? `<p style="font-size:.8rem;color:var(--info);margin-top:8px;font-style:italic;">🔒 ${e.nota}</p>` : ''}
-      ${e.notaExterna ? `<p style="font-size:.8rem;color:var(--laranja-texto);margin-top:4px;font-style:italic;">📧 ${e.notaExterna}</p>` : ''}
+      ${e.nota ? `<p style="font-size:.8rem;color:var(--info);margin-top:8px;font-style:italic;">🔒 ${escH(e.nota)}</p>` : ''}
+      ${e.notaExterna ? `<p style="font-size:.8rem;color:var(--laranja-texto);margin-top:4px;font-style:italic;">📧 ${escH(e.notaExterna)}</p>` : ''}
     ` : '';
     const respHtml = e.responsavel ? `<p style="font-size:.75rem;color:var(--ink-3);margin-top:4px;">👤 ${e.responsavel} ${e.concluidoEm ? '· '+new Date(e.concluidoEm).toLocaleDateString('pt-BR') : ''}</p>` : '';
 
@@ -490,15 +526,21 @@ const Adm = {
           <div class="etapa-info">
             <p class="etapa-nome">${TIPO_ICON[e.tipo]||''} ${e.nome}</p>
             <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-              <span class="dept-badge dept-${e.departamento}">${e.deptLabel}</span>
+              ${podeEditar ? `
+              <select class="dept-badge dept-${e.departamento} dept-select" title="Departamento responsável por preencher esta etapa (vale para todos os processos em andamento e novos)"
+                      onclick="event.stopPropagation()" onchange="Adm.trocarDept('${e.codigo}', this, '${e.departamento}')">
+                ${DEPTS.map(([v,l]) => `<option value="${v}" ${v===e.departamento?'selected':''}>${l}</option>`).join('')}
+              </select>` : `<span class="dept-badge dept-${e.departamento}">${e.deptLabel}</span>`}
               <span class="pill pill--${e.status}" style="font-size:.68rem;">${STATUS_LABEL[e.status]||e.status}</span>
+              ${e.reaberta ? `<span class="pill" style="font-size:.68rem;background:rgba(91,141,239,.12);color:var(--info);">↩ Reaberta</span>` : ''}
+              ${devolvida ? `<span class="pill" style="font-size:.68rem;background:rgba(255,82,82,.12);color:var(--alerta);">⚠ Não aceito na Bernhoeft</span>` : ''}
               ${e.prazo_dias ? `<span style="font-size:.7rem;color:var(--ink-3);">⏱ ${e.prazo_dias}d</span>` : ''}
             </div>
           </div>
           <span class="etapa-chevron ${isAtiva?'etapa-chevron--open':''}">▼</span>
         </div>
         <div class="etapa-body" id="body-${e.id}" style="${isAtiva?'':'display:none'}">
-          ${notaHtml}${respHtml}${docsHtml}${uploadHtml}${actionsHtml}
+          ${notaHtml}${respHtml}${docsHtml}${uploadHtml}${actionsHtml}${reabrirHtml}
         </div>
       </div>`;
   },
@@ -512,21 +554,48 @@ const Adm = {
   },
 
   async atualizarEtapa(processoId, etapaId, status) {
-    const nota  = document.getElementById(`nota-${etapaId}`)?.value || '';
+    let nota    = (document.getElementById(`nota-${etapaId}`)?.value || '').trim();
+    const ext   = (document.getElementById(`nota-externa-${etapaId}`)?.value || '').trim();
     const etapa = (currentProcesso?.etapas || []).find(x => x.id === etapaId);
+    const bernhoeftValidando = !!(etapa?.bernhoeft && etapa?.emValidacaoFinal);
+
+    // Motivo obrigatório para N/A, reprovar e devolver/pedir reenvio
+    if (['NAO_APLICAVEL','REPROVADO','REENVIAR'].includes(status) && !nota && !ext) {
+      const pergunta = bernhoeftValidando && status === 'REENVIAR'
+        ? 'Por que a Bernhoeft não aceitou? (o SESMT vai receber esse motivo)'
+        : status === 'NAO_APLICAVEL' ? 'Motivo para marcar esta etapa como N/A:'
+        : status === 'REPROVADO'     ? 'Motivo da reprovação:'
+        :                              'Motivo do pedido de reenvio:';
+      const m = prompt(pergunta);
+      if (m === null) return;
+      if (!m.trim()) { alert('O motivo é obrigatório.'); return; }
+      nota = m.trim();
+    }
+    // Aprovar exige arquivo (etapas de documento) ou uma anotação
+    if (status === 'APROVADO' && etapa) {
+      const temDoc = (etapa.documentos || []).some(d => d.status !== 'REPROVADO');
+      if (etapa.tipo === 'DOCUMENTO' && !temDoc) { alert('Anexe o documento desta etapa antes de aprovar.'); return; }
+      if (etapa.tipo !== 'DOCUMENTO' && !temDoc && !nota && !ext && !(etapa.nota && !etapa.reaberta)) {
+        const m = prompt('Descreva o que foi feito nesta etapa (fica registrado na nota interna):');
+        if (m === null) return;
+        if (!m.trim()) { alert('Escreva uma nota ou anexe um arquivo antes de aprovar.'); return; }
+        nota = m.trim();
+      }
+    }
+
     const labels = {
-      APROVADO:  etapa?.handoffPara ? `Aprovar e enviar para validação do ${etapa.handoffParaLabel}?` : 'Aprovar esta etapa?',
+      APROVADO:  bernhoeftValidando ? 'Confirmar que a Bernhoeft aceitou o documento?'
+               : etapa?.handoffPara ? (etapa.bernhoeft ? `Enviar para o ${etapa.handoffParaLabel} mandar à Bernhoeft?` : `Aprovar e enviar para validação do ${etapa.handoffParaLabel}?`)
+               : 'Aprovar esta etapa?',
       REPROVADO: '⚠️ Reprovar cancela o processo. Confirmar?',
-      REENVIAR:  etapa?.emValidacaoFinal ? 'Devolver para quem anexou os documentos corrigir/reenviar?' : 'Solicitar reenvio de documentação?'
+      REENVIAR:  bernhoeftValidando ? 'Devolver a etapa para o SESMT corrigir? Eles serão avisados por e-mail.'
+               : etapa?.emValidacaoFinal ? 'Devolver para quem anexou os documentos corrigir/reenviar?' : 'Solicitar reenvio de documentação?',
+      NAO_APLICAVEL: 'Marcar esta etapa como Não Aplicável?'
     };
     if (!confirm(labels[status])) return;
     try {
       await req(`/api/processos/${processoId}/etapas/${etapaId}`, {
-        method:'PATCH', body:JSON.stringify({
-          status,
-          nota,
-          notaExterna: document.getElementById(`nota-externa-${etapaId}`)?.value || ''
-        })
+        method:'PATCH', body:JSON.stringify({ status, nota, notaExterna: ext })
       });
       // Invalida cache do processo e da lista para forçar dados frescos
       invalidateCache(processoId);
@@ -534,6 +603,40 @@ const Adm = {
       await Adm.loadStats();
       await Adm.loadLista();
     } catch(e) { alert('Erro: ' + e.message); }
+  },
+
+  async trocarDept(codigo, sel, anterior) {
+    const novo  = sel.value;
+    const nomeE = (currentProcesso?.etapas || []).find(x => x.codigo === codigo)?.nome || codigo;
+    const label = (DEPTS.find(d => d[0] === novo) || [novo, novo])[1];
+    if (!confirm(`Mudar o responsável por "${nomeE}" para ${label}?\n\nVale para todos os processos em andamento (etapas ainda abertas) e para os próximos processos.`)) {
+      sel.value = anterior; return;
+    }
+    try {
+      const r = await req(`/api/processos/etapas-config/${encodeURIComponent(codigo)}`, {
+        method:'PUT', body: JSON.stringify({ departamento: novo })
+      });
+      Object.keys(_cache).forEach(k => delete _cache[k]);
+      await Adm.loadProcesso(currentProcessoId);
+      Adm.loadLista();
+      if (r) alert(`Responsável atualizado. ${r.processosAtualizados} processo(s) em andamento ajustado(s).`);
+    } catch (err) { sel.value = anterior; alert('Erro: ' + err.message); }
+  },
+
+  async reabrirEtapa(processoId, etapaId) {
+    const etapa = (currentProcesso?.etapas || []).find(x => x.id === etapaId);
+    const m = prompt(`Motivo para reabrir "${etapa ? etapa.nome : 'a etapa'}":`);
+    if (m === null) return;
+    if (!m.trim()) { alert('O motivo é obrigatório.'); return; }
+    try {
+      await req(`/api/processos/${processoId}/etapas/${etapaId}/reabrir`, {
+        method:'POST', body: JSON.stringify({ motivo: m.trim() })
+      });
+      invalidateCache(processoId);
+      await Adm.loadProcesso(processoId);
+      await Adm.loadStats();
+      await Adm.loadLista();
+    } catch (err) { alert('Erro: ' + err.message); }
   },
 
   async uploadDoc(processoId, etapaId, input) {

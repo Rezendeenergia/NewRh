@@ -26,15 +26,18 @@ ETAPAS_FLUXO = [
     {"ordem": 6,  "codigo": "DP_EXTERNO",            "nome": "Admissão DP Externo",            "departamento": "DP_EXTERNO", "tipo": "DOCUMENTO",   "prazo_dias": 2},
     {"ordem": 7,  "codigo": "CADASTRO_GPM",          "nome": "Cadastro no GPM",                "departamento": "TI",         "tipo": "CHECKLIST",   "prazo_dias": 1},
     {"ordem": 8,  "codigo": "ACESSO_TI",             "nome": "Criação de Email/Sistema",       "departamento": "TI",         "tipo": "CHECKLIST",   "prazo_dias": 1},
-    {"ordem": 9,  "codigo": "PRONTUARIO_SEGURANCA",  "nome": "Prontuário de Segurança",        "departamento": "SESMT",      "tipo": "DOCUMENTO",   "prazo_dias": 1},
-    {"ordem": 10, "codigo": "EPIS_UNIFORMES",        "nome": "Fornecimento EPIs e Uniformes",  "departamento": "SESMT",      "tipo": "DOCUMENTO",   "prazo_dias": 1},
-    {"ordem": 11, "codigo": "FORMACAO_NRS",          "nome": "Reciclagem NRs",                 "departamento": "SESMT",      "tipo": "DOCUMENTO",   "prazo_dias": 5},
-    {"ordem": 12, "codigo": "PROVA_DEEP",            "nome": "POP's de Segurança",             "departamento": "SESMT",      "tipo": "APROVACAO",   "prazo_dias": 3},
-    {"ordem": 13, "codigo": "ASSINATURAS",           "nome": "Coleta de Assinaturas",          "departamento": "DP",         "tipo": "DOCUMENTO",   "prazo_dias": 1},
-    {"ordem": 14, "codigo": "BEMHOEFT",              "nome": "Inclusão Prontuário Bemhoeft",   "departamento": "DP",         "tipo": "DOCUMENTO",   "prazo_dias": 3},
-    {"ordem": 15, "codigo": "GRAFICA_CRACHA",        "nome": "Confecção do Crachá",            "departamento": "DP",         "tipo": "CHECKLIST",   "prazo_dias": 1},
-    {"ordem": 16, "codigo": "INTEGRACAO_EQUATORIAL", "nome": "Integração Equatorial",          "departamento": "DP",         "tipo": "DOCUMENTO",   "prazo_dias": 1},
-    {"ordem": 17, "codigo": "LIBERADO_CAMPO",        "nome": "Liberação para Campo",           "departamento": "DP",         "tipo": "APROVACAO",   "prazo_dias": 1},
+    {"ordem": 9,  "codigo": "SOLIDES",               "nome": "Cadastro na Sólides (ponto)",    "departamento": "DP",         "tipo": "CHECKLIST",   "prazo_dias": 1},
+    {"ordem": 10, "codigo": "ATLAS",                 "nome": "Cadastro no Atlas (documentos)", "departamento": "DP",         "tipo": "CHECKLIST",   "prazo_dias": 1},
+    {"ordem": 11, "codigo": "ACEITE_BERNHOEFT",      "nome": "Aceitos na Bernhoeft",           "departamento": "DP",         "tipo": "DOCUMENTO",   "prazo_dias": 2},
+    {"ordem": 12, "codigo": "PRONTUARIO_SEGURANCA",  "nome": "Prontuário de Segurança",        "departamento": "SESMT",      "tipo": "DOCUMENTO",   "prazo_dias": 1},
+    {"ordem": 13, "codigo": "EPIS_UNIFORMES",        "nome": "Fornecimento EPIs e Uniformes",  "departamento": "SESMT",      "tipo": "DOCUMENTO",   "prazo_dias": 1},
+    {"ordem": 14, "codigo": "FORMACAO_NRS",          "nome": "Reciclagem NRs",                 "departamento": "SESMT",      "tipo": "DOCUMENTO",   "prazo_dias": 5},
+    {"ordem": 15, "codigo": "PROVA_DEEP",            "nome": "POP's de Segurança",             "departamento": "SESMT",      "tipo": "APROVACAO",   "prazo_dias": 3},
+    {"ordem": 16, "codigo": "ASSINATURAS",           "nome": "Coleta de Assinaturas",          "departamento": "DP",         "tipo": "DOCUMENTO",   "prazo_dias": 1},
+    {"ordem": 17, "codigo": "BEMHOEFT",              "nome": "Inclusão Prontuário Bemhoeft",   "departamento": "DP",         "tipo": "DOCUMENTO",   "prazo_dias": 3},
+    {"ordem": 18, "codigo": "GRAFICA_CRACHA",        "nome": "Confecção do Crachá",            "departamento": "DP",         "tipo": "CHECKLIST",   "prazo_dias": 1},
+    {"ordem": 19, "codigo": "INTEGRACAO_EQUATORIAL", "nome": "Integração Equatorial",          "departamento": "DP",         "tipo": "DOCUMENTO",   "prazo_dias": 1},
+    {"ordem": 20, "codigo": "LIBERADO_CAMPO",        "nome": "Liberação para Campo",           "departamento": "DP",         "tipo": "APROVACAO",   "prazo_dias": 1},
 ]
 
 DEPT_LABEL = {
@@ -55,7 +58,44 @@ DEPT_LABEL = {
 # código dela aqui.
 ETAPAS_VALIDACAO_DUPLA = {
     "CERTIFICADOS_NR": "SESMT",
+    # Documentos do SESMT: o SESMT anexa, o RH envia para a Bernhoeft e confirma o aceite.
+    # Se a Bernhoeft não aceitar, o RH devolve com o motivo e a etapa reabre para o SESMT.
+    "PRONTUARIO_SEGURANCA": "RH",
+    "EPIS_UNIFORMES":       "RH",
+    "FORMACAO_NRS":         "RH",
 }
+ETAPAS_BERNHOEFT = {"PRONTUARIO_SEGURANCA", "EPIS_UNIFORMES", "FORMACAO_NRS"}
+
+DEPARTAMENTOS = ["RH", "DP", "DP_EXTERNO", "SESMT", "TI"]
+
+# Quem pode fazer edições avançadas no fluxo (trocar departamento responsável,
+# reabrir etapas concluídas). Vale para todas as etapas.
+EDITORES = {
+    "ti@rezendeenergia.com.br",
+    "mariane.froz@rezendeenergia.com.br",
+}
+
+
+def _is_editor(db, username):
+    if not username:
+        return False
+    u = db.query(models.User).filter_by(username=username).first()
+    return bool(u and (u.email or "").lower() in EDITORES)
+
+
+def _depts_padrao(db):
+    """codigo -> departamento responsável padrão (config do portal, senão o fluxo fixo)."""
+    base = {e["codigo"]: e["departamento"] for e in ETAPAS_FLUXO}
+    try:
+        for c in db.query(models.EtapaConfig).all():
+            base[c.codigo] = c.departamento
+    except Exception as ex:
+        print(f"[ETAPA_CONFIG] {ex}")
+    return base
+
+
+def _tem_texto(*vals):
+    return any((v or "").strip() for v in vals)
 
 
 def doc_to_dict(d):
@@ -94,6 +134,11 @@ def etapa_to_dict(e):
         "nota":         e.nota,
         "notaExterna":  getattr(e, "nota_externa", None) or "",
         "responsavel":  e.responsavel,
+        "bernhoeft":         e.codigo in ETAPAS_BERNHOEFT,
+        "motivoDevolucao":   getattr(e, "motivo_devolucao", None) or "",
+        "devolvidoEm":       e.devolvido_em.isoformat() if getattr(e, "devolvido_em", None) else None,
+        "devolvidoPor":      getattr(e, "devolvido_por", None) or "",
+        "reaberta":          bool(getattr(e, "reaberta", False)),
         "handoffPara":       handoff_para,
         "handoffParaLabel":  DEPT_LABEL.get(handoff_para) if handoff_para else None,
         "emValidacaoFinal":  em_validacao_final,
@@ -168,13 +213,34 @@ def processo_to_dict(p):
 
 
 def _criar_etapas(processo_id, db):
+    depts = _depts_padrao(db)
     for e in ETAPAS_FLUXO:
         db.add(models.EtapaProcesso(
             processo_id=processo_id,
             ordem=e["ordem"], codigo=e["codigo"], nome=e["nome"],
-            departamento=e["departamento"], tipo=e["tipo"],
+            departamento=depts.get(e["codigo"], e["departamento"]), tipo=e["tipo"],
             prazo_dias=e["prazo_dias"], status="PENDENTE",
         ))
+
+
+def _recalcular_processo(processo, db):
+    """Usado ao concluir uma etapa REABERTA: não puxa a próxima etapa pendente,
+    só atualiza a etapa atual (ou conclui o processo se não sobrou nada)."""
+    etapas = sorted(processo.etapas, key=lambda x: x.ordem)
+    andamento = [e for e in etapas if e.status in ("EM_ANDAMENTO", "REENVIAR")]
+    pendentes = [e for e in etapas if e.status == "PENDENTE"]
+    if andamento:
+        processo.etapa_atual = andamento[0].nome
+        processo.status = "EM_ANDAMENTO"
+        db.commit()
+    elif pendentes:
+        _avancar_etapa(processo, db)
+    else:
+        processo.status      = "CONCLUIDO"
+        processo.etapa_atual = "Concluído"
+        if not processo.concluido_em:
+            processo.concluido_em = datetime.now(timezone.utc)
+        db.commit()
 
 
 def _avancar_etapa(processo, db):
@@ -428,7 +494,11 @@ def por_etapa():
 def detalhe(processo_id):
     hit = _cache.get(f"proc:{processo_id}")
     if hit is not None:
-        return jsonify(hit)
+        db = get_db()
+        try:
+            return jsonify({**hit, "podeEditar": _is_editor(db, request.username)})
+        finally:
+            db.close()
     db = get_db()
     try:
         # Eager load completo: etapas + documentos em 1 query
@@ -447,7 +517,7 @@ def detalhe(processo_id):
             return jsonify({"message": "Processo não encontrado"}), 404
         result = processo_to_dict(p)
         _cache.set(f"proc:{processo_id}", result, ttl=20)
-        return jsonify(result)
+        return jsonify({**result, "podeEditar": _is_editor(db, request.username)})
     finally:
         db.close()
 
@@ -485,6 +555,23 @@ def atualizar_etapa(processo_id, etapa_id):
         old_status = e.status
         etapa_nome = e.nome
         old_departamento = e.departamento
+        era_reaberta = bool(getattr(e, "reaberta", False))
+
+        nota_nova    = (data.get("nota") or "").strip()
+        externa_nova = (data.get("notaExterna") or "").strip()
+
+        # ── Regras para concluir/mexer na etapa ───────────────────────────
+        # N/A, Reprovar e Reenviar sempre pedem motivo escrito.
+        if novo_status in ("NAO_APLICAVEL", "REPROVADO", "REENVIAR") and not _tem_texto(nota_nova, externa_nova):
+            return jsonify({"message": "Informe o motivo (na nota) para marcar N/A, reprovar ou pedir reenvio."}), 400
+        # Aprovar: etapa de documento precisa de arquivo; as demais precisam de uma anotação.
+        if novo_status == "APROVADO":
+            docs_validos = [d for d in e.documentos if d.status != "REPROVADO"]
+            if e.tipo == "DOCUMENTO":
+                if not docs_validos:
+                    return jsonify({"message": "Anexe o documento desta etapa antes de aprovar."}), 400
+            elif not (docs_validos or _tem_texto(nota_nova, externa_nova, None if era_reaberta else e.nota)):
+                return jsonify({"message": "Escreva uma nota (o que foi feito) ou anexe um arquivo antes de aprovar."}), 400
 
         cand       = p.candidatura
         cand_email = cand.email
@@ -496,10 +583,7 @@ def atualizar_etapa(processo_id, etapa_id):
         # ── Validação dupla (ex: RH confere, SESMT valida) ────────────────
         validador_final = ETAPAS_VALIDACAO_DUPLA.get(e.codigo)
         # Departamento de origem "dono" da etapa é sempre o do fluxo padrão
-        origem_padrao = next(
-            (x["departamento"] for x in ETAPAS_FLUXO if x["codigo"] == e.codigo),
-            old_departamento
-        )
+        origem_padrao = _depts_padrao(db).get(e.codigo, old_departamento)
         # RH (origem) está aprovando, mas ainda falta passar pelo validador
         is_handoff_para_validador = (
             novo_status == "APROVADO" and validador_final
@@ -511,9 +595,13 @@ def atualizar_etapa(processo_id, etapa_id):
             and old_departamento == validador_final
         )
 
+        is_devolucao_bernhoeft = bool(is_devolucao_do_validador and e.codigo in ETAPAS_BERNHOEFT)
+
         e.status       = novo_status
-        e.nota         = data.get("nota", e.nota)
-        e.nota_externa = data.get("notaExterna", getattr(e, "nota_externa", None))
+        if nota_nova:
+            e.nota = nota_nova
+        if externa_nova:
+            e.nota_externa = externa_nova
         e.observacao   = data.get("observacao", e.observacao)
         e.responsavel  = request.username
         e.concluido_em = datetime.now(timezone.utc) if novo_status in ("APROVADO", "REPROVADO", "NAO_APLICAVEL") else None
@@ -536,10 +624,21 @@ def atualizar_etapa(processo_id, etapa_id):
             e.status       = "EM_ANDAMENTO"
             e.departamento = origem_padrao
             e.concluido_em = None
-            detail_extra   = f" — devolvido para {DEPT_LABEL.get(origem_padrao, origem_padrao)} corrigir"
+            if is_devolucao_bernhoeft:
+                e.motivo_devolucao = nota_nova or externa_nova
+                e.devolvido_em     = datetime.now(timezone.utc)
+                e.devolvido_por    = request.username
+                detail_extra = (f" — não aceito na Bernhoeft, devolvido para "
+                                f"{DEPT_LABEL.get(origem_padrao, origem_padrao)}: {e.motivo_devolucao}")
+            else:
+                detail_extra = f" — devolvido para {DEPT_LABEL.get(origem_padrao, origem_padrao)} corrigir"
             db.commit()
         elif novo_status in ("APROVADO", "NAO_APLICAVEL"):
-            _avancar_etapa(p, db)
+            e.reaberta = False
+            if era_reaberta:
+                _recalcular_processo(p, db)
+            else:
+                _avancar_etapa(p, db)
         else:
             db.commit()
 
@@ -553,7 +652,8 @@ def atualizar_etapa(processo_id, etapa_id):
         # ── Notificação ao candidato ──────────────────────────────────────────
         # (não notifica o candidato no handoff RH→SESMT: para ele, a etapa
         # ainda não terminou de fato — só quando o validador final aprovar)
-        if novo_status in ("APROVADO", "REPROVADO", "REENVIAR") and not is_handoff_para_validador:
+        if (novo_status in ("APROVADO", "REPROVADO", "REENVIAR") and not is_handoff_para_validador
+                and not is_devolucao_bernhoeft):
             try:
                 from email_service import notify_etapa_candidato
                 class _Cand:
@@ -598,8 +698,20 @@ def atualizar_etapa(processo_id, etapa_id):
                 processo_id   = processo_id,
             )
 
+            # Bernhoeft não aceitou: alerta o departamento que preenche a etapa (SESMT)
+            if is_devolucao_bernhoeft:
+                from email_service import notify_devolucao_bernhoeft
+                notify_devolucao_bernhoeft(
+                    candidatura  = cd,
+                    etapa_nome   = etapa_nome,
+                    departamento = origem_padrao,
+                    motivo       = nota_nova or externa_nova,
+                    responsavel  = request.username,
+                    processo_id  = processo_id,
+                )
+
             # Se o processo foi concluído (última etapa aprovada), notifica todos
-            if p.status == "CONCLUIDO":
+            if p.status == "CONCLUIDO" and not era_reaberta:
                 notify_depts_admissao_concluida(cd, processo_id, request.username)
 
         except Exception as ex:
@@ -623,6 +735,136 @@ def atualizar_etapa(processo_id, etapa_id):
 
         db.refresh(p)
         return jsonify(processo_to_dict(p))
+    finally:
+        db.close()
+
+
+# ── Departamento responsável padrão de cada etapa (editores) ─────
+
+@bp.get("/etapas-config")
+@require_auth
+def etapas_config():
+    db = get_db()
+    try:
+        depts = _depts_padrao(db)
+        return jsonify({
+            "podeEditar": _is_editor(db, request.username),
+            "departamentos": [{"codigo": d, "label": DEPT_LABEL.get(d, d)} for d in DEPARTAMENTOS],
+            "etapas": [{**e, "departamento": depts.get(e["codigo"], e["departamento"]),
+                        "departamentoOriginal": e["departamento"]} for e in ETAPAS_FLUXO],
+        })
+    finally:
+        db.close()
+
+
+@bp.put("/etapas-config/<codigo>")
+@require_auth
+def definir_dept_etapa(codigo):
+    """Troca o departamento responsável por uma etapa em TODOS os processos em
+    andamento (etapas ainda não concluídas) e nos processos novos."""
+    data = request.get_json() or {}
+    dept = (data.get("departamento") or "").upper()
+    if dept not in DEPARTAMENTOS:
+        return jsonify({"message": "Departamento inválido"}), 400
+    etapa = next((x for x in ETAPAS_FLUXO if x["codigo"] == codigo), None)
+    if not etapa:
+        return jsonify({"message": "Etapa não encontrada"}), 404
+    db = get_db()
+    try:
+        if not _is_editor(db, request.username):
+            return jsonify({"message": "Sem permissão para editar o fluxo"}), 403
+        anterior = _depts_padrao(db).get(codigo, etapa["departamento"])
+
+        cfg = db.query(models.EtapaConfig).filter_by(codigo=codigo).first()
+        if not cfg:
+            cfg = models.EtapaConfig(codigo=codigo, departamento=dept)
+            db.add(cfg)
+        cfg.departamento   = dept
+        cfg.atualizado_por = request.username
+
+        # Aplica nas etapas abertas dos processos em andamento.
+        # Não mexe numa etapa que está agora com o validador (ex.: RH conferindo
+        # o aceite da Bernhoeft) — ela volta para o novo responsável se for devolvida.
+        validador = ETAPAS_VALIDACAO_DUPLA.get(codigo)
+        q = (db.query(models.EtapaProcesso)
+               .join(models.ProcessoAdmissao, models.ProcessoAdmissao.id == models.EtapaProcesso.processo_id)
+               .filter(models.ProcessoAdmissao.status == "EM_ANDAMENTO",
+                       models.EtapaProcesso.codigo == codigo,
+                       models.EtapaProcesso.status.in_(["PENDENTE", "EM_ANDAMENTO", "REENVIAR"])))
+        afetadas = 0
+        ids = set()
+        for e in q.all():
+            if validador and e.departamento == validador and anterior != validador and e.status == "EM_ANDAMENTO":
+                continue
+            e.departamento = dept
+            afetadas += 1
+            ids.add(e.processo_id)
+        db.commit()
+
+        audit.log(request.username, "ETAPA_DEPT_ALTERADO", entity="etapa", entity_id=None,
+                  detail=f"{etapa['nome']}: {anterior} → {dept} ({afetadas} processo(s) em andamento)")
+        for pid in ids:
+            _cache.invalidate_processo(pid)
+        _cache.invalidate("lista:", "stats", "por_etapa")
+        return jsonify({"codigo": codigo, "departamento": dept, "processosAtualizados": afetadas})
+    finally:
+        db.close()
+
+
+@bp.post("/<int:processo_id>/etapas/<int:etapa_id>/reabrir")
+@require_auth
+def reabrir_etapa(processo_id, etapa_id):
+    """Editor reabre uma etapa já concluída (aprovada, N/A ou reprovada), com motivo."""
+    data   = request.get_json() or {}
+    motivo = (data.get("motivo") or "").strip()
+    if not motivo:
+        return jsonify({"message": "Informe o motivo para reabrir a etapa."}), 400
+    db = get_db()
+    try:
+        if not _is_editor(db, request.username):
+            return jsonify({"message": "Sem permissão para reabrir etapas"}), 403
+        p = (db.query(models.ProcessoAdmissao)
+               .options(selectinload(models.ProcessoAdmissao.etapas)
+                        .selectinload(models.EtapaProcesso.documentos))
+               .filter_by(id=processo_id).first())
+        if not p:
+            return jsonify({"message": "Processo não encontrado"}), 404
+        e = next((x for x in p.etapas if x.id == etapa_id), None)
+        if not e:
+            return jsonify({"message": "Etapa não encontrada"}), 404
+        if e.status not in ("APROVADO", "NAO_APLICAVEL", "REPROVADO"):
+            return jsonify({"message": "Esta etapa não está concluída."}), 400
+        if p.status == "CANCELADO" and e.status != "REPROVADO":
+            return jsonify({"message": "Processo cancelado: reabra a etapa em que o candidato foi reprovado."}), 400
+
+        status_antes = e.status
+        e.departamento = _depts_padrao(db).get(e.codigo, e.departamento)
+        e.status       = "EM_ANDAMENTO"
+        e.concluido_em = None
+        e.iniciado_em  = datetime.now(timezone.utc)
+        e.nota         = f"Reaberta por {request.username}: {motivo}"
+        e.responsavel  = request.username
+
+        if p.status == "CANCELADO" and status_antes == "REPROVADO":
+            # Reabrir a etapa que reprovou o candidato reativa o processo daquele ponto.
+            p.status      = "EM_ANDAMENTO"
+            p.etapa_atual = e.nome
+            e.reaberta    = False
+        else:
+            e.reaberta = True
+            if p.status != "EM_ANDAMENTO":
+                p.status = "EM_ANDAMENTO"
+            abertas = sorted([x for x in p.etapas if x.status in ("EM_ANDAMENTO", "REENVIAR")],
+                             key=lambda x: x.ordem)
+            p.etapa_atual = abertas[0].nome if abertas else e.nome
+        db.commit()
+
+        audit.log(request.username, "ETAPA_REABERTA", entity="processo", entity_id=processo_id,
+                  detail=f"{e.nome}: {status_antes} → EM_ANDAMENTO — {motivo}")
+        _cache.invalidate_processo(processo_id)
+        _cache.invalidate("por_etapa")
+        db.refresh(p)
+        return jsonify({**processo_to_dict(p), "podeEditar": True})
     finally:
         db.close()
 
