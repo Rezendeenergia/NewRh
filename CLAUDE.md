@@ -15,7 +15,12 @@ Sistema de RH da Rezende Energia: **vagas** (abertas pelo RH ou por **solicitaç
 
 ## Papéis
 
-JWT com `role`: `ROLE_OWNER` e `ROLE_ADMIN` (editam), `ROLE_VIEWER` (Equipe RH, só leitura — bloqueado nas rotas de escrita). Candidatos têm login separado (`candidato_contas`). Ainda não usa o PortalRez para decidir o acesso.
+JWT com `role`: `ROLE_OWNER` e `ROLE_ADMIN` (editam), `ROLE_VIEWER` (só leitura — bloqueado nas rotas que usam `require_admin`). Candidatos têm login separado (`candidato_contas`).
+
+- Quem entra no painel de gestão e com qual `role` é decidido pelo **Portal Rezende** (`backend/portal_client.py`, setor **RH**), consultado a cada login via `GET /api/integracao/acesso?sistema=newrh&email=…` (cache de 1 min, tolera até 15 min de portal fora do ar). Nível do portal → role: `administrar`/`editar` → `ROLE_ADMIN`, `visualizar` → `ROLE_VIEWER`.
+- `ROLE_OWNER` (hoje só Rafael, em `DONOS_APROVACAO`) é uma permissão isolada só para aprovar abertura de vaga (`routers/solicitacoes.py`) — não é um nível do portal, fica como lista própria por cima do que o portal disser.
+- `ROLE_GESTOR` (gerentes de campo que só pedem abertura de vaga, em `GESTORES_CAMPO`) também fica fora do portal: não são da equipe de RH/DP, então não fazem sentido no setor RH. **Atenção:** `require_admin` só bloqueia `ROLE_VIEWER` — hoje um `ROLE_GESTOR` passa por qualquer rota que não seja `ROLE_OWNER`-only, mais acesso do que "só solicitar vaga" sugere; não criei essa restrição, é um comportamento pré-existente.
+- O cadastro local (`models.User`) é espelho: `role` é sempre sobrescrito no login a partir do portal (ou das listas acima) — editar `role` direto no banco não pega.
 
 ## Processo de admissão
 
@@ -26,7 +31,7 @@ JWT com `role`: `ROLE_OWNER` e `ROLE_ADMIN` (editam), `ROLE_VIEWER` (Equipe RH, 
 
 ## Variáveis (Render)
 
-`DATABASE_URL`, `SECRET_KEY`, `MS_CLIENT_ID/MS_CLIENT_SECRET/MS_TENANT_ID`, `MS_SENDER_EMAIL`, `BASE_URL`, `RH_EMAIL`, `EMAIL_ENABLED`, `ALERTA_DIAS_PARADO`.
+`DATABASE_URL`, `SECRET_KEY`, `MS_CLIENT_ID/MS_CLIENT_SECRET/MS_TENANT_ID`, `MS_SENDER_EMAIL`, `BASE_URL`, `RH_EMAIL`, `EMAIL_ENABLED`, `ALERTA_DIAS_PARADO`, `PORTAL_URL` (`https://portalrez.onrender.com`), `PORTAL_INTEGRACAO_TOKEN` (mesmo valor do `INTEGRACAO_TOKEN` configurado no PortalRez).
 
 ## Cuidados
 

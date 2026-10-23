@@ -12,6 +12,7 @@ from security import create_token
 from database import get_db
 import models
 import audit
+import portal_client
 
 bp_ms = Blueprint("auth_microsoft", __name__)
 
@@ -20,41 +21,24 @@ CLIENT_ID     = os.getenv("MS_CLIENT_ID", "")
 CLIENT_SECRET = os.getenv("MS_CLIENT_SECRET", "")
 BASE_URL      = os.getenv("BASE_URL", "https://carreiras.rezendeenergia.com.br")
 
-# ── Lista de acesso autorizado ────────────────────────────────
-# ROLE_OWNER  → Rafael (aprovação de vagas)
-# ROLE_ADMIN  → Gestores de RH (controle total)
-# ROLE_VIEWER → Equipe DP/RH (acompanha e move candidatos, sem aprovar vagas)
-# ROLE_GESTOR → Gerentes/supervisores (só podem solicitar abertura de vagas)
-
-GESTORES = {
-    "leonardo@rezendeenergia.com.br":         "ROLE_ADMIN",
-    "gabrielle.lira@rezendeenergia.com.br":   "ROLE_ADMIN",
-    "pedrohueb@rezendeenergia.com.br":         "ROLE_ADMIN",
-    "demetrius.pereira@rezendeenergia.com.br": "ROLE_ADMIN",
-    "bruno@rezendeenergia.com.br":             "ROLE_ADMIN",
-    "rafael@rezendeenergia.com.br":            "ROLE_OWNER",
+# ── Quem entra no painel de gestão (RH/DP/TI) ──────────────────
+# Decidido pelo Portal Rezende, setor RH (visualizar/editar/administrar),
+# consultado a cada login em portal_client.verificar_acesso(). Nível do
+# portal -> role do NewRh:
+NIVEL_PORTAL_PARA_ROLE = {
+    "administrar": "ROLE_ADMIN",
+    "editar":      "ROLE_ADMIN",
+    "visualizar":  "ROLE_VIEWER",
 }
 
-EQUIPE_DP_RH = {
-    "mariane.froz@rezendeenergia.com.br":     "ROLE_VIEWER",
-    "kailany.castanha@rezendeenergia.com.br": "ROLE_VIEWER",
-    "andreiaazevedo@rezendeenergia.com.br":   "ROLE_VIEWER",
-    "edmar.moura@rezendeenergia.com.br":      "ROLE_VIEWER",
-    "gabriel.costa@rezendeenergia.com.br":    "ROLE_VIEWER",
-    "carlos.firmino@rezendeenergia.com.br":   "ROLE_VIEWER",
-    "danielpedroso@rezendeenergia.com.br":    "ROLE_VIEWER",
-    "cleidiananeres@rezendeenergia.com.br":   "ROLE_VIEWER",
-    "jarlisson.souza@rezendeenergia.com.br":  "ROLE_VIEWER",
-    "mara.chaves@rezendeenergia.com.br":      "ROLE_VIEWER",
-    "nathany.bentes@rezendeenergia.com.br":   "ROLE_VIEWER"
-}
+# ROLE_OWNER é uma permissão isolada (só aprova abertura de vaga), não um
+# nível geral de acesso — continua numa lista pequena e explícita por cima
+# do que o portal disser.
+DONOS_APROVACAO = {"rafael@rezendeenergia.com.br"}
 
-EQUIPE_TI = {
-    "ti@rezendeenergia.com.br": "ROLE_ADMIN",
-}
-
-# ROLE_GESTOR → Gerentes/supervisores que podem APENAS solicitar abertura de vagas
-# A solicitação vai para aprovação do Rafael normalmente
+# ROLE_GESTOR → Gerentes/supervisores de campo que só podem solicitar
+# abertura de vaga. Não são da equipe de RH/DP, então não entram pelo
+# setor RH do portal — continuam numa lista própria, fora do portal.
 GESTORES_CAMPO = {
     "helio@rezendeenergia.com.br":          "ROLE_GESTOR",  # Hélio Barbosa Costa
     "jose.lima@rezendeenergia.com.br":      "ROLE_GESTOR",  # José Luis Silva de Lima
@@ -62,8 +46,6 @@ GESTORES_CAMPO = {
     "andre.sousa@rezendeenergia.com.br":    "ROLE_GESTOR",  # André Luis Aguiar de Sousa
     "marcos.lopes@rezendeenergia.com.br":   "ROLE_GESTOR",  # Marcos Vinicius Lopes de Jesus
 }
-
-USUARIOS_AUTORIZADOS = {**GESTORES, **EQUIPE_DP_RH, **EQUIPE_TI, **GESTORES_CAMPO}
 
 REDIRECT_URI   = f"{BASE_URL}/api/auth/microsoft/callback"
 AUTH_URL       = f"https://login.microsoftonline.com/{TENANT_ID}/oauth2/v2.0/authorize"
@@ -118,13 +100,21 @@ def ms_callback():
     email        = me_data.get("mail") or me_data.get("userPrincipalName", "")
     display_name = me_data.get("displayName", email.split("@")[0])
 
-    # Valida se o e-mail está na lista autorizada
+    # Gerente de campo (só solicita vaga): lista própria, fora do portal.
     email_lower = email.lower()
-    if email_lower not in USUARIOS_AUTORIZADOS:
-        print(f"[MS_AUTH] Bloqueado: {email_lower} não está na whitelist")
-        return redirect("/login?erro=sem_acesso")
-
-    role_correto = USUARIOS_AUTORIZADOS[email_lower]
+    if email_lower in GESTORES_CAMPO:
+        role_correto = GESTORES_CAMPO[email_lower]
+    else:
+        # Equipe RH/DP/TI: quem entra e com qual nível é o Portal Rezende
+        # (setor RH) que decide.
+        acesso = portal_client.verificar_acesso(email_lower)
+        if not acesso["permitido"]:
+            erro = "portal_indisponivel" if acesso["motivo"] == "portal_indisponivel" else "sem_acesso"
+            print(f"[MS_AUTH] Bloqueado: {email_lower} ({acesso['motivo']})")
+            return redirect(f"/login?erro={erro}")
+        role_correto = NIVEL_PORTAL_PARA_ROLE.get(acesso["nivel"], "ROLE_VIEWER")
+        if email_lower in DONOS_APROVACAO and role_correto == "ROLE_ADMIN":
+            role_correto = "ROLE_OWNER"
 
     # Verifica/cria usuário no banco
     db = get_db()
