@@ -571,11 +571,13 @@ const Adm = {
       if (!m.trim()) { alert('O motivo é obrigatório.'); return; }
       nota = m.trim();
     }
-    // Aprovar exige arquivo (etapas de documento) ou uma anotação
+    // Aprovar exige arquivo (etapas de documento) ou uma anotação.
+    // Verificação de Certificados NRs é exceção: não exige anexo, só a nota.
     if (status === 'APROVADO' && etapa) {
       const temDoc = (etapa.documentos || []).some(d => d.status !== 'REPROVADO');
-      if (etapa.tipo === 'DOCUMENTO' && !temDoc) { alert('Anexe o documento desta etapa antes de aprovar.'); return; }
-      if (etapa.tipo !== 'DOCUMENTO' && !temDoc && !nota && !ext && !(etapa.nota && !etapa.reaberta)) {
+      const exigeDoc = etapa.tipo === 'DOCUMENTO' && etapa.codigo !== 'CERTIFICADOS_NR';
+      if (exigeDoc && !temDoc) { alert('Anexe o documento desta etapa antes de aprovar.'); return; }
+      if (!exigeDoc && !temDoc && !nota && !ext && !(etapa.nota && !etapa.reaberta)) {
         const m = prompt('Descreva o que foi feito nesta etapa (fica registrado na nota interna):');
         if (m === null) return;
         if (!m.trim()) { alert('Escreva uma nota ou anexe um arquivo antes de aprovar.'); return; }
