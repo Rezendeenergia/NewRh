@@ -98,6 +98,18 @@
   </div>
 </div>
 
+<!-- Modal: Ficha do Candidato (mesma ficha da aba Candidaturas) -->
+<div class="modal" id="ficha-modal" onclick="Adm.closeFicha()">
+  <div class="modal__box" onclick="event.stopPropagation()" style="max-width:720px;">
+    <h3 class="modal__title" id="ficha-modal-title">Ficha do Candidato</h3>
+    <div id="ficha-modal-body">Carregando...</div>
+    <div style="display:flex;gap:10px;margin-top:20px;">
+      <button class="btn btn--ghost btn--full" onclick="Adm.closeFicha()">Fechar</button>
+      <button class="btn btn--outline btn--full" id="ficha-print-btn" style="display:none;" onclick="Adm.printFicha()">🖨️ Imprimir</button>
+    </div>
+  </div>
+</div>
+
 <script src="js/rz-sessao.js"></script>
 <script>
 // Cache simples para evitar re-fetch desnecessário
@@ -294,7 +306,8 @@ const Adm = {
             <span style="font-size:.8rem;color:var(--ink-3);">📱 ${c.phone}</span>
           </div>
         </div>
-        <div style="text-align:right;">
+        <div style="text-align:right;display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+          <button class="btn btn--outline btn--small" onclick="Adm.verFicha(${p.id})">📋 Ver ficha completa</button>
           ${p.sharepointUrl ? `<a href="${p.sharepointUrl}" target="_blank" class="btn btn--ghost btn--small">📁 Pasta SharePoint</a>` : '<span style="font-size:.75rem;color:var(--ink-3);">📁 Pasta SharePoint criando...</span>'}
         </div>
       </div>
@@ -693,6 +706,123 @@ const Adm = {
   },
 
   closeModal() { document.getElementById('action-modal').style.display = 'none'; },
+
+  // ── Ficha do Candidato (mesma ficha da aba Candidaturas) ────────
+  _fichaAtual: null,
+
+  async verFicha(processoId) {
+    const modal = document.getElementById('ficha-modal');
+    const body  = document.getElementById('ficha-modal-body');
+    document.getElementById('ficha-print-btn').style.display = 'none';
+    body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--ink-3);">Carregando...</div>';
+    modal.classList.add('modal--open');
+    modal.style.display = 'flex';
+    try {
+      const d = await req(`/api/processos/${processoId}/ficha`);
+      Adm._fichaAtual = d;
+      document.getElementById('ficha-modal-title').textContent = `Ficha — ${d.fullName}`;
+      body.innerHTML = Adm.renderFicha(d);
+      document.getElementById('ficha-print-btn').style.display = '';
+    } catch (e) {
+      body.innerHTML = `<p style="color:var(--alerta);padding:20px;">Erro ao carregar a ficha: ${escH(e.message)}</p>`;
+    }
+  },
+
+  closeFicha() {
+    const modal = document.getElementById('ficha-modal');
+    modal.classList.remove('modal--open');
+    modal.style.display = 'none';
+  },
+
+  _fichaCell(label, value) {
+    return `<div class="detail-cell">
+      <span class="detail-cell__label">${escH(label)}</span>
+      <span class="detail-cell__value">${value ? escH(value) : '—'}</span>
+    </div>`;
+  },
+
+  renderFicha(d) {
+    const dataNasc = d.dataNascimento ? new Date(d.dataNascimento + 'T12:00:00').toLocaleDateString('pt-BR') : null;
+    const C = Adm._fichaCell;
+    return `
+      <div id="ficha-print-area">
+        <p class="detail-section-title">Dados Pessoais</p>
+        <div class="detail-grid">
+          ${C('Nome', d.fullName)}${C('CPF', d.cpf)}${C('RG', d.rg)}${C('Nascimento', dataNasc)}
+          ${C('Tipo Sang.', d.tipoSanguineo)}${C('Nome da Mãe', d.nomeMae)}
+          ${C('Cidade Natal', d.cidadeNatal)}${C('Cidade Atual', d.cidadeAtual)}
+        </div>
+
+        <p class="detail-section-title">Contato</p>
+        <div class="detail-grid">
+          ${C('Telefone', d.phone)}${C('E-mail', d.email)}${C('LinkedIn', d.linkedin)}
+        </div>
+
+        <p class="detail-section-title">Vaga</p>
+        <div class="detail-grid">
+          ${C('Função', d.job?.position)}${C('Regional', d.job?.location)}
+        </div>
+
+        <p class="detail-section-title">Formação & EPI</p>
+        <div class="detail-grid">
+          ${C('Formação', d.education)}${C('Experiência', d.experience)}${C('Disp. Viagem', d.disponibilidadeViagem)}
+          ${C('Calça', d.tamanhoCalca)}${C('Camisa', d.tamanhoCamisa)}${C('Bota', d.tamanhoBota)}
+        </div>
+
+        <p class="detail-section-title">Habilitações & Certificações</p>
+        <div class="detail-grid">
+          ${C('CNH', (d.carteira || []).join(', '))}
+          ${C('NRs', (d.nrs || []).join(', '))}
+          ${C('Escolas', (d.escolas || []).join(', '))}
+          ${d.hasResume
+            ? `<div class="detail-cell">
+                 <span class="detail-cell__label">Currículo</span>
+                 <button class="btn btn--small btn--outline" style="margin-top:4px;" onclick="Adm.baixarCurriculo(${d.id},'${d.resumeName || 'curriculo.pdf'}')">⬇ Baixar PDF</button>
+               </div>`
+            : Adm._fichaCell('Currículo', 'Não enviado')}
+        </div>
+
+        ${d.motivation ? `<p class="detail-section-title">Motivação</p><div class="detail-text-block">${escH(d.motivation)}</div>` : ''}
+        ${d.observacoes ? `<p class="detail-section-title">Observações Internas (RH)</p><div class="detail-text-block">${escH(d.observacoes)}</div>` : ''}
+      </div>`;
+  },
+
+  async baixarCurriculo(candidaturaId, filename) {
+    try {
+      const r = await fetch(`${API}/api/candidaturas/${candidaturaId}/resume`, { headers: { Authorization: 'Bearer ' + TOKEN } });
+      if (!r.ok) throw new Error('Arquivo não encontrado');
+      const blob = await r.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename || 'curriculo.pdf';
+      a.click();
+    } catch (e) { alert('Erro: ' + e.message); }
+  },
+
+  printFicha() {
+    const content = document.getElementById('ficha-print-area');
+    const d = Adm._fichaAtual;
+    if (!content || !d) return;
+    const win = window.open('', '_blank', 'width=900,height=700');
+    win.document.write(`
+      <!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+      <title>Ficha — ${d.fullName}</title>
+      <style>
+        * { box-sizing:border-box; margin:0; padding:0; }
+        body { font-family:-apple-system,sans-serif; background:#fff; color:#111; font-size:13px; padding:28px 32px; line-height:1.5; }
+        .detail-section-title { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:#FF6A00; margin:16px 0 8px; padding-bottom:4px; border-bottom:1px solid #111; }
+        .detail-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+        .detail-cell { background:#f3f3f3; border-radius:5px; padding:7px 10px; }
+        .detail-cell__label { display:block; font-size:9px; font-weight:700; text-transform:uppercase; color:#FF6A00; letter-spacing:.07em; margin-bottom:2px; }
+        .detail-cell__value { font-size:12px; font-weight:500; }
+        .detail-text-block { background:#f3f3f3; border-radius:6px; padding:10px 12px; font-size:12px; line-height:1.7; margin-top:8px; }
+        button { display:none; }
+      </style></head>
+      <body>${content.innerHTML}</body></html>`);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); win.close(); }, 400);
+  },
 
   _bancoData: [],
 

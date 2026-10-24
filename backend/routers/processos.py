@@ -522,6 +522,34 @@ def detalhe(processo_id):
         db.close()
 
 
+@bp.get("/<int:processo_id>/ficha")
+@require_auth
+def ficha_candidato(processo_id):
+    """Ficha completa do candidato (os mesmos dados da ficha em Candidaturas),
+    para os departamentos consultarem durante a admissão sem precisar voltar
+    para a aba de Candidaturas."""
+    hit = _cache.get(f"ficha:{processo_id}")
+    if hit is not None:
+        return jsonify(hit)
+    db = get_db()
+    try:
+        p = (
+            db.query(models.ProcessoAdmissao)
+            .options(joinedload(models.ProcessoAdmissao.candidatura)
+                     .joinedload(models.Candidatura.job))
+            .filter_by(id=processo_id)
+            .first()
+        )
+        if not p:
+            return jsonify({"message": "Processo não encontrado"}), 404
+        from routers.candidaturas import candidatura_to_dict
+        result = candidatura_to_dict(p.candidatura)
+        _cache.set(f"ficha:{processo_id}", result, ttl=30)
+        return jsonify(result)
+    finally:
+        db.close()
+
+
 # ── Atualizar etapa ───────────────────────────────────────────
 
 @bp.patch("/<int:processo_id>/etapas/<int:etapa_id>")
