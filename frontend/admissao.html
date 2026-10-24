@@ -101,12 +101,14 @@
 <!-- Modal: Ficha do Candidato (mesma ficha da aba Candidaturas) -->
 <div class="modal" id="ficha-modal" onclick="Adm.closeFicha()">
   <div class="modal__box" onclick="event.stopPropagation()" style="max-width:720px;">
-    <h3 class="modal__title" id="ficha-modal-title">Ficha do Candidato</h3>
-    <div id="ficha-modal-body">Carregando...</div>
-    <div style="display:flex;gap:10px;margin-top:20px;">
-      <button class="btn btn--ghost btn--full" onclick="Adm.closeFicha()">Fechar</button>
-      <button class="btn btn--outline btn--full" id="ficha-print-btn" style="display:none;" onclick="Adm.printFicha()">🖨️ Imprimir</button>
+    <div class="modal__header">
+      <h3 id="ficha-modal-title">Ficha do Candidato</h3>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn btn--outline btn--small" id="ficha-print-btn" style="display:none;" onclick="Adm.printFicha()">🖨️ Imprimir</button>
+        <button class="modal__close" onclick="Adm.closeFicha()">✕</button>
+      </div>
     </div>
+    <div class="modal__body" id="ficha-modal-body">Carregando...</div>
   </div>
 </div>
 
