@@ -567,7 +567,9 @@ def atualizar_etapa(processo_id, etapa_id):
         # Aprovar: etapa de documento precisa de arquivo; as demais precisam de uma anotação.
         if novo_status == "APROVADO":
             docs_validos = [d for d in e.documentos if d.status != "REPROVADO"]
-            if e.tipo == "DOCUMENTO":
+            # Verificação de Certificados NRs: não exige anexo (o RH confere fora do
+            # sistema às vezes) — basta uma nota, como nas etapas que não são de documento.
+            if e.tipo == "DOCUMENTO" and e.codigo != "CERTIFICADOS_NR":
                 if not docs_validos:
                     return jsonify({"message": "Anexe o documento desta etapa antes de aprovar."}), 400
             elif not (docs_validos or _tem_texto(nota_nova, externa_nova, None if era_reaberta else e.nota)):
