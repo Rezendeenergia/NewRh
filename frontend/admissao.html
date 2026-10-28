@@ -190,6 +190,8 @@ async function reqForm(url, fd) {
 const STATUS_LABEL = { PENDENTE:'Pendente', EM_ANDAMENTO:'Em andamento', APROVADO:'Aprovado', REPROVADO:'Reprovado', REENVIAR:'Reenviar doc.', NAO_APLICAVEL:'N/A' };
 const DEPTS = [['RH','Recursos Humanos'],['DP','Departamento Pessoal'],['DP_EXTERNO','DP Externo'],['SESMT','SESMT'],['TI','TI']];
 const escH = t => String(t ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// Escapa um texto para usar como string JS (aspas simples) dentro de um atributo onclick="..." (aspas duplas).
+const escJsAttr = t => String(t ?? '').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
 const STATUS_ICON  = { PENDENTE:'○', EM_ANDAMENTO:'◉', APROVADO:'✅', REPROVADO:'❌', REENVIAR:'🔄' };
 const TIPO_ICON    = { APROVACAO:'🗂', DOCUMENTO:'📄', CHECKLIST:'☑', ENTREVISTA:'🎤' };
 
@@ -398,8 +400,16 @@ const Adm = {
           <div style="flex-direction:column;align-items:stretch;" class="doc-item">
             <div style="display:flex;align-items:center;gap:6px;width:100%;">
               <span>📄</span>
-              <span class="doc-item__name" style="flex:1;min-width:0;">${d.nome}${d.versao>1?`<span style="font-size:10px;background:rgba(91,141,239,.2);color:var(--info);border-radius:4px;padding:1px 5px;margin-left:4px;">v${d.versao}</span>`:''}</span>
+              <a href="#" onclick="Adm.visualizarDoc(${processoId},${e.id},${d.id},'${escJsAttr(d.nome||'documento.pdf')}');return false;"
+                 title="Abrir e visualizar o arquivo"
+                 class="doc-item__name" style="flex:1;min-width:0;color:inherit;text-decoration:underline;cursor:pointer;">${escH(d.nome)}${d.versao>1?`<span style="font-size:10px;background:rgba(91,141,239,.2);color:var(--info);border-radius:4px;padding:1px 5px;margin-left:4px;">v${d.versao}</span>`:''}</a>
               <span class="pill pill--${d.status}" style="font-size:.68rem;flex-shrink:0;">${STATUS_LABEL[d.status]||d.status}</span>
+              <button onclick="Adm.visualizarDoc(${processoId},${e.id},${d.id},'${escJsAttr(d.nome||'documento.pdf')}')"
+                      title="Visualizar arquivo"
+                      style="background:none;border:1px solid var(--ov-120);color:var(--texto-2);
+                             border-radius:5px;padding:1px 6px;font-size:.68rem;cursor:pointer;flex-shrink:0;">
+                👁 Ver
+              </button>
               ${d.sharepointUrl
                 ? `<a href="${d.sharepointUrl}" target="_blank" style="color:var(--fire);font-size:.75rem;text-decoration:none;flex-shrink:0;">SP ↗</a>`
                 : `<button onclick="Adm.reenviarSharepoint(${processoId},${e.id},${d.id})"
@@ -799,6 +809,28 @@ const Adm = {
       a.download = filename || 'curriculo.pdf';
       a.click();
     } catch (e) { alert('Erro: ' + e.message); }
+  },
+
+  // Abre o documento da etapa (ex.: Ficha EPI) direto do sistema, numa nova aba,
+  // sem depender do link do SharePoint — qualquer departamento com acesso ao
+  // processo consegue visualizar o arquivo que foi anexado.
+  async visualizarDoc(processoId, etapaId, docId, filename) {
+    try {
+      const r = await fetch(`${API}/api/processos/${processoId}/etapas/${etapaId}/documentos/${docId}/download`,
+        { headers: { Authorization: 'Bearer ' + TOKEN } });
+      if (!r.ok) throw new Error('Arquivo não encontrado');
+      const blob = await r.blob();
+      const url  = URL.createObjectURL(blob);
+      const aba  = window.open(url, '_blank');
+      if (!aba) {
+        // bloqueador de pop-up: baixa o arquivo em vez de abrir a aba
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename || 'documento.pdf';
+        a.click();
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (e) { alert('Erro ao abrir o arquivo: ' + e.message); }
   },
 
   printFicha() {
