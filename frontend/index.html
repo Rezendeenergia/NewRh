@@ -1226,109 +1226,196 @@
         <div id="folha-vazio" style="display:none;color:var(--ink-3);text-align:center;padding:40px;">Nenhuma folha importada ainda — use o formulário acima.</div>
 
         <div id="folha-conteudo" style="display:none;">
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:20px;">
-            <div class="stat-card">
-              <div class="stat-card__number" id="folha-total-geral" style="font-size:1.6rem;">—</div>
-              <div class="stat-card__label">TOTAL DA FOLHA (CLT + PJ)</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-card__number" id="folha-total-clt" style="font-size:1.6rem;">—</div>
-              <div class="stat-card__label">TOTAL CLT <span id="folha-qtd-clt"></span></div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-card__number" id="folha-total-pj" style="font-size:1.6rem;">—</div>
-              <div class="stat-card__label">TOTAL PJ <span id="folha-qtd-pj"></span></div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-card__number" id="folha-pct-pj" style="font-size:1.6rem;">—</div>
-              <div class="stat-card__label">% PJ DO TOTAL</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-card__number" id="folha-custo-medio-clt" style="font-size:1.6rem;">—</div>
-              <div class="stat-card__label">CUSTO MÉDIO / CLT</div>
-            </div>
+          <div class="subtab-bar" style="margin-bottom:20px;">
+            <button type="button" class="subtab subtab--active" data-folha-aba="resumo" onclick="FolhaBI.trocarAba('resumo')">📊 Resumo</button>
+            <button type="button" class="subtab" data-folha-aba="auditoria" onclick="FolhaBI.trocarAba('auditoria')">🔍 Auditoria de Salários</button>
           </div>
 
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
-            <div class="card chart-card">
-              <div class="card__header"><span class="card__title">📍 Folha CLT por Regional</span></div>
-              <div class="card__body"><canvas id="folha-chart-regional"></canvas></div>
-            </div>
-            <div class="card chart-card">
-              <div class="card__header"><span class="card__title">⚙️ MOD (operacional) × MOI (administrativo)</span></div>
-              <div class="card__body chart-card__body--small"><canvas id="folha-chart-classificacao"></canvas></div>
-            </div>
-          </div>
-
-          <div class="card" style="margin-bottom:20px;">
-            <div class="card__header"><span class="card__title">📈 Evolução Mensal — CLT × PJ</span></div>
-            <div class="card__body"><canvas id="folha-chart-evolucao"></canvas></div>
-          </div>
-
-          <div class="card" style="margin-bottom:20px;">
-            <div class="card__header"><span class="card__title">🧾 Encargos e Benefícios (total da competência)</span></div>
-            <div class="card__body" id="folha-rubricas-body" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;"></div>
-          </div>
-
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
-            <div class="card">
-              <div class="card__header"><span class="card__title">💼 Por Função (top 10)</span></div>
-              <div class="card__body" style="padding:0;">
-                <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
-                  <thead><tr style="border-bottom:1px solid var(--ov-80);">
-                    <th style="padding:8px 12px;text-align:left;color:var(--ink-3);">Função</th>
-                    <th style="padding:8px 12px;text-align:center;color:var(--ink-3);">Qtd</th>
-                    <th style="padding:8px 12px;text-align:right;color:var(--ink-3);">Total</th>
-                  </tr></thead>
-                  <tbody id="folha-funcao-tbody"></tbody>
-                </table>
+          <!-- ═══ ABA: RESUMO ═══ -->
+          <div id="folha-aba-resumo">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:20px;">
+              <div class="stat-card">
+                <div class="stat-card__number" id="folha-total-geral" style="font-size:1.6rem;">—</div>
+                <div class="stat-card__label">TOTAL DA FOLHA (CLT + PJ)</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card__number" id="folha-total-clt" style="font-size:1.6rem;">—</div>
+                <div class="stat-card__label">TOTAL CLT <span id="folha-qtd-clt"></span></div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card__number" id="folha-total-pj" style="font-size:1.6rem;">—</div>
+                <div class="stat-card__label">TOTAL PJ <span id="folha-qtd-pj"></span></div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card__number" id="folha-qtd-colaboradores" style="font-size:1.6rem;">—</div>
+                <div class="stat-card__label">TOTAL DE COLABORADORES (CLT + PJ)</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card__number" id="folha-pct-pj" style="font-size:1.6rem;">—</div>
+                <div class="stat-card__label">% PJ DO TOTAL</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card__number" id="folha-custo-medio-clt" style="font-size:1.6rem;">—</div>
+                <div class="stat-card__label">CUSTO MÉDIO / CLT</div>
               </div>
             </div>
-            <div class="card">
-              <div class="card__header"><span class="card__title">🏢 PJ por Setor</span></div>
-              <div class="card__body" style="padding:0;">
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+              <div class="card chart-card">
+                <div class="card__header"><span class="card__title">📍 Folha CLT por Regional</span></div>
+                <div class="card__body"><canvas id="folha-chart-regional"></canvas></div>
+              </div>
+              <div class="card chart-card">
+                <div class="card__header"><span class="card__title">⚙️ MOD (operacional) × MOI (tudo o que não é operacional)</span></div>
+                <div class="card__body chart-card__body--small"><canvas id="folha-chart-classificacao"></canvas></div>
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+              <div class="card chart-card">
+                <div class="card__header"><span class="card__title">📈 Evolução Mensal — CLT</span></div>
+                <div class="card__body"><canvas id="folha-chart-evolucao-clt"></canvas></div>
+              </div>
+              <div class="card chart-card">
+                <div class="card__header"><span class="card__title">📈 Evolução Mensal — PJ</span></div>
+                <div class="card__body"><canvas id="folha-chart-evolucao-pj"></canvas></div>
+              </div>
+            </div>
+
+            <div class="card" style="margin-bottom:20px;">
+              <div class="card__header" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+                <span class="card__title">👥 Evolução de Colaboradores (mensal)</span>
+                <select id="folha-filtro-funcao" onchange="FolhaBI.carregarEvolucaoHeadcount()" style="padding:6px 10px;border-radius:8px;border:1px solid var(--ov-80);background:var(--fundo-2);color:var(--ink-1);min-width:200px;">
+                  <option value="">Todas as funções (CLT + PJ)</option>
+                </select>
+              </div>
+              <div class="card__body"><canvas id="folha-chart-evolucao-headcount"></canvas></div>
+            </div>
+
+            <div class="card" style="margin-bottom:20px;">
+              <div class="card__header"><span class="card__title">🧾 Encargos e Benefícios (total da competência)</span></div>
+              <div class="card__body" id="folha-rubricas-body" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;"></div>
+              <div style="padding:0 16px 16px;font-size:.78rem;color:var(--ink-3);line-height:1.6;">
+                <strong>Como calculamos:</strong> cada card soma essa rubrica de todos os colaboradores CLT da competência selecionada —
+                <strong>Salário Base</strong> (soma do salário base de todos), <strong>INSS</strong> e <strong>IRPF</strong> (descontos recolhidos),
+                <strong>FGTS</strong> (depósito devido) e <strong>Ajuda de Custo</strong> (benefício pago) — não incluem valores de PJ, que não têm esses encargos.
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+              <div class="card chart-card">
+                <div class="card__header"><span class="card__title">🏢 Custo por Setor (PJ) — maior → menor</span></div>
+                <div class="card__body"><canvas id="folha-chart-setor"></canvas></div>
+              </div>
+              <div class="card chart-card">
+                <div class="card__header"><span class="card__title">📄 Custo por Contrato (CLT) — maior → menor</span></div>
+                <div class="card__body"><canvas id="folha-chart-contrato"></canvas></div>
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+              <div class="card">
+                <div class="card__header"><span class="card__title">💼 Por Função (top 10)</span></div>
+                <div class="card__body" style="padding:0;">
+                  <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
+                    <thead><tr style="border-bottom:1px solid var(--ov-80);">
+                      <th style="padding:8px 12px;text-align:left;color:var(--ink-3);">Função</th>
+                      <th style="padding:8px 12px;text-align:center;color:var(--ink-3);">Qtd</th>
+                      <th style="padding:8px 12px;text-align:right;color:var(--ink-3);">Total</th>
+                    </tr></thead>
+                    <tbody id="folha-funcao-tbody"></tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card__header"><span class="card__title">🏢 PJ por Setor</span></div>
+                <div class="card__body" style="padding:0;">
+                  <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
+                    <thead><tr style="border-bottom:1px solid var(--ov-80);">
+                      <th style="padding:8px 12px;text-align:left;color:var(--ink-3);">Setor</th>
+                      <th style="padding:8px 12px;text-align:center;color:var(--ink-3);">Qtd</th>
+                      <th style="padding:8px 12px;text-align:right;color:var(--ink-3);">Total</th>
+                    </tr></thead>
+                    <tbody id="folha-setor-tbody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div class="card" style="margin-bottom:20px;">
+              <div class="card__header"><span class="card__title">🤝 Prestadores PJ da competência</span></div>
+              <div class="card__body" style="padding:0;overflow-x:auto;">
                 <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
                   <thead><tr style="border-bottom:1px solid var(--ov-80);">
+                    <th style="padding:8px 12px;text-align:left;color:var(--ink-3);">Fornecedor</th>
                     <th style="padding:8px 12px;text-align:left;color:var(--ink-3);">Setor</th>
-                    <th style="padding:8px 12px;text-align:center;color:var(--ink-3);">Qtd</th>
-                    <th style="padding:8px 12px;text-align:right;color:var(--ink-3);">Total</th>
+                    <th style="padding:8px 12px;text-align:left;color:var(--ink-3);">Descrição</th>
+                    <th style="padding:8px 12px;text-align:right;color:var(--ink-3);">Valor</th>
                   </tr></thead>
-                  <tbody id="folha-setor-tbody"></tbody>
+                  <tbody id="folha-pj-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card__header" style="display:flex;justify-content:space-between;align-items:center;">
+                <span class="card__title">🗂 Importações</span>
+              </div>
+              <div class="card__body" style="padding:0;">
+                <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
+                  <thead><tr style="border-bottom:1px solid var(--ov-80);">
+                    <th style="padding:8px 12px;text-align:left;color:var(--ink-3);">Competência</th>
+                    <th style="padding:8px 12px;text-align:left;color:var(--ink-3);">Arquivo</th>
+                    <th style="padding:8px 12px;text-align:left;color:var(--ink-3);">Importado por</th>
+                    <th style="padding:8px 12px;text-align:right;color:var(--ink-3);">Total</th>
+                    <th style="padding:8px 12px;"></th>
+                  </tr></thead>
+                  <tbody id="folha-importacoes-tbody"></tbody>
                 </table>
               </div>
             </div>
           </div>
 
-          <div class="card" style="margin-bottom:20px;">
-            <div class="card__header"><span class="card__title">🤝 Prestadores PJ da competência</span></div>
-            <div class="card__body" style="padding:0;overflow-x:auto;">
-              <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
-                <thead><tr style="border-bottom:1px solid var(--ov-80);">
-                  <th style="padding:8px 12px;text-align:left;color:var(--ink-3);">Fornecedor</th>
-                  <th style="padding:8px 12px;text-align:left;color:var(--ink-3);">Setor</th>
-                  <th style="padding:8px 12px;text-align:left;color:var(--ink-3);">Descrição</th>
-                  <th style="padding:8px 12px;text-align:right;color:var(--ink-3);">Valor</th>
-                </tr></thead>
-                <tbody id="folha-pj-tbody"></tbody>
-              </table>
+          <!-- ═══ ABA: AUDITORIA DE SALÁRIOS ═══ -->
+          <div id="folha-aba-auditoria" style="display:none;">
+            <div class="card" style="margin-bottom:20px;">
+              <div class="card__header"><span class="card__title">🔍 Auditoria de Salários — CLT e PJ</span></div>
+              <div class="card__body">
+                <p id="folha-auditoria-competencias" style="color:var(--ink-3);font-size:.85rem;margin-bottom:10px;"></p>
+                <p style="color:var(--ink-3);font-size:.8rem;">Compara cada colaborador (CLT pelo nome, PJ pelo fornecedor) com a competência anterior. Quem é novo na folha não aparece aqui — só quem já existia e teve o valor alterado.</p>
+              </div>
             </div>
-          </div>
-
-          <div class="card">
-            <div class="card__header" style="display:flex;justify-content:space-between;align-items:center;">
-              <span class="card__title">🗂 Importações</span>
-            </div>
-            <div class="card__body" style="padding:0;">
-              <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
-                <thead><tr style="border-bottom:1px solid var(--ov-80);">
-                  <th style="padding:8px 12px;text-align:left;color:var(--ink-3);">Competência</th>
-                  <th style="padding:8px 12px;text-align:left;color:var(--ink-3);">Arquivo</th>
-                  <th style="padding:8px 12px;text-align:left;color:var(--ink-3);">Importado por</th>
-                  <th style="padding:8px 12px;text-align:right;color:var(--ink-3);">Total</th>
-                  <th style="padding:8px 12px;"></th>
-                </tr></thead>
-                <tbody id="folha-importacoes-tbody"></tbody>
-              </table>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+              <div class="card">
+                <div class="card__header"><span class="card__title">📈 Variações Positivas (aumentou)</span></div>
+                <div class="card__body" style="padding:0;overflow-x:auto;">
+                  <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
+                    <thead><tr style="border-bottom:1px solid var(--ov-80);">
+                      <th style="padding:8px 12px;text-align:left;color:var(--ink-3);">Nome</th>
+                      <th style="padding:8px 12px;text-align:left;color:var(--ink-3);">Tipo</th>
+                      <th style="padding:8px 12px;text-align:right;color:var(--ink-3);">Anterior</th>
+                      <th style="padding:8px 12px;text-align:right;color:var(--ink-3);">Atual</th>
+                      <th style="padding:8px 12px;text-align:right;color:var(--ink-3);">Variação</th>
+                    </tr></thead>
+                    <tbody id="folha-auditoria-positivas-tbody"></tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card__header"><span class="card__title">📉 Variações Negativas (diminuiu)</span></div>
+                <div class="card__body" style="padding:0;overflow-x:auto;">
+                  <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
+                    <thead><tr style="border-bottom:1px solid var(--ov-80);">
+                      <th style="padding:8px 12px;text-align:left;color:var(--ink-3);">Nome</th>
+                      <th style="padding:8px 12px;text-align:left;color:var(--ink-3);">Tipo</th>
+                      <th style="padding:8px 12px;text-align:right;color:var(--ink-3);">Anterior</th>
+                      <th style="padding:8px 12px;text-align:right;color:var(--ink-3);">Atual</th>
+                      <th style="padding:8px 12px;text-align:right;color:var(--ink-3);">Variação</th>
+                    </tr></thead>
+                    <tbody id="folha-auditoria-negativas-tbody"></tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </div>
         </div>

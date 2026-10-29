@@ -2772,13 +2772,15 @@ const BancoTalentosPublico = {
 // Gráficos usam canvas (não herdam variáveis CSS): ao trocar claro/escuro, redesenha
 window.addEventListener('rz:tema', () => {
   if (Object.keys(chartInstances).length && document.getElementById('chart-by-job')) Manager.loadCharts();
-  if (FolhaBI._ultimoResumo) FolhaBI._desenharGraficos(FolhaBI._ultimoResumo);
+  if (FolhaBI._ultimoResumo) { FolhaBI._desenharGraficos(FolhaBI._ultimoResumo); FolhaBI.carregarEvolucaoHeadcount(); }
 });
 
 // ── Folha Salarial (dashboard CLT + PJ) ──────────────────────
 const FolhaBI = {
   _ultimoResumo: null,
   _carregouLista: false,
+  _importacaoAtual: null,
+  _abaAtual: 'resumo',
 
   _fmtMoeda(v) {
     return (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
@@ -2872,6 +2874,7 @@ const FolhaBI = {
 
   async carregar(importacaoId) {
     if (!importacaoId) return;
+    this._importacaoAtual = importacaoId;
     try {
       const r = await request(`/api/folha/resumo?importacao_id=${importacaoId}`);
       this._ultimoResumo = r;
@@ -2881,10 +2884,19 @@ const FolhaBI = {
       document.getElementById('folha-total-geral').textContent    = this._fmtMoeda(r.totais.geral);
       document.getElementById('folha-total-clt').textContent      = this._fmtMoeda(r.totais.clt);
       document.getElementById('folha-total-pj').textContent       = this._fmtMoeda(r.totais.pj);
+      document.getElementById('folha-qtd-colaboradores').textContent = r.totais.qtdColaboradores;
       document.getElementById('folha-pct-pj').textContent         = `${r.totais.percentualPj}%`;
       document.getElementById('folha-custo-medio-clt').textContent = this._fmtMoeda(r.totais.custoMedioClt);
       document.getElementById('folha-qtd-clt').textContent        = `(${r.totais.qtdClt})`;
       document.getElementById('folha-qtd-pj').textContent         = `(${r.totais.qtdPj})`;
+
+      const selFuncao = document.getElementById('folha-filtro-funcao');
+      if (selFuncao) {
+        const atual = selFuncao.value;
+        selFuncao.innerHTML = '<option value="">Todas as funções (CLT + PJ)</option>' +
+          (r.funcoes || []).map(f => `<option value="${f}">${f}</option>`).join('');
+        selFuncao.value = (r.funcoes || []).includes(atual) ? atual : '';
+      }
 
       document.getElementById('folha-rubricas-body').innerHTML = `
         <div class="stat-card"><div class="stat-card__number" style="font-size:1.1rem;">${this._fmtMoeda(r.rubricas.salarioBase)}</div><div class="stat-card__label">SALÁRIO BASE</div></div>
@@ -2916,6 +2928,74 @@ const FolhaBI = {
         </tr>`).join('') || '<tr><td colspan="4" style="padding:16px;text-align:center;color:var(--ink-3);">Nenhum PJ nessa competência</td></tr>';
 
       this._desenharGraficos(r);
+      await this.carregarEvolucaoHeadcount();
+      if (this._abaAtual === 'auditoria') await this.carregarAuditoria();
+    } catch (e) {
+      showToast('Erro', e.message, 'error');
+    }
+  },
+
+  trocarAba(nome) {
+    this._abaAtual = nome;
+    document.querySelectorAll('[data-folha-aba]').forEach(btn => {
+      btn.classList.toggle('subtab--active', btn.dataset.folhaAba === nome);
+    });
+    document.getElementById('folha-aba-resumo').style.display    = nome === 'resumo' ? 'block' : 'none';
+    document.getElementById('folha-aba-auditoria').style.display = nome === 'auditoria' ? 'block' : 'none';
+    if (nome === 'auditoria') this.carregarAuditoria();
+  },
+
+  async carregarEvolucaoHeadcount() {
+    const funcao = document.getElementById('folha-filtro-funcao')?.value || '';
+    try {
+      const r = await request(`/api/folha/evolucao-headcount${funcao ? `?funcao=${encodeURIComponent(funcao)}` : ''}`);
+      const el = document.getElementById('folha-chart-evolucao-headcount');
+      if (!el) return;
+      if (chartInstances['folha-chart-evolucao-headcount']) { chartInstances['folha-chart-evolucao-headcount'].destroy(); delete chartInstances['folha-chart-evolucao-headcount']; }
+      chartInstances['folha-chart-evolucao-headcount'] = new Chart(el.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: r.pontos.map(x => x.competenciaLabel),
+          datasets: [{
+            label: funcao || 'Total de colaboradores', data: r.pontos.map(x => x.qtd),
+            borderColor: 'rgba(168,85,247,1)', backgroundColor: 'rgba(168,85,247,0.15)', tension: 0.35, fill: true,
+          }],
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { labels: { color: rzCor('texto-2') } } },
+          scales: {
+            x: { ticks: { color: rzCor('texto-3') }, grid: { color: rzCor('graf-grade') } },
+            y: { ticks: { color: rzCor('texto-3'), precision: 0 }, grid: { color: rzCor('graf-grade') }, beginAtZero: true },
+          },
+        },
+      });
+    } catch (e) {
+      showToast('Erro', e.message, 'error');
+    }
+  },
+
+  async carregarAuditoria() {
+    if (!this._importacaoAtual) return;
+    try {
+      const r = await request(`/api/folha/auditoria?importacao_id=${this._importacaoAtual}`);
+      document.getElementById('folha-auditoria-competencias').textContent = r.competenciaAnterior
+        ? `Comparando ${r.competenciaAtual} com ${r.competenciaAnterior}.`
+        : `${r.competenciaAtual}: ${r.message || 'sem competência anterior para comparar.'}`;
+
+      const linha = v => `
+        <tr style="border-bottom:1px solid var(--ov-80);">
+          <td style="padding:8px 12px;color:var(--texto);">${v.nome}${v.referencia ? ` <span style="color:var(--ink-3);">(${v.referencia})</span>` : ''}</td>
+          <td style="padding:8px 12px;color:var(--ink-2);">${v.tipo}</td>
+          <td style="padding:8px 12px;text-align:right;color:var(--ink-2);">${this._fmtMoeda(v.valorAnterior)}</td>
+          <td style="padding:8px 12px;text-align:right;color:var(--texto);font-weight:600;">${this._fmtMoeda(v.valorAtual)}</td>
+          <td style="padding:8px 12px;text-align:right;font-weight:600;color:${v.delta > 0 ? 'var(--ok-texto,#22c55e)' : 'var(--erro-texto,#ef4444)'};">${v.delta > 0 ? '+' : ''}${this._fmtMoeda(v.delta)}${v.percentual != null ? ` (${v.delta > 0 ? '+' : ''}${v.percentual}%)` : ''}</td>
+        </tr>`;
+
+      document.getElementById('folha-auditoria-positivas-tbody').innerHTML =
+        (r.positivas || []).map(linha).join('') || '<tr><td colspan="5" style="padding:16px;text-align:center;color:var(--ink-3);">Sem aumentos nessa comparação</td></tr>';
+      document.getElementById('folha-auditoria-negativas-tbody').innerHTML =
+        (r.negativas || []).map(linha).join('') || '<tr><td colspan="5" style="padding:16px;text-align:center;color:var(--ink-3);">Sem reduções nessa comparação</td></tr>';
     } catch (e) {
       showToast('Erro', e.message, 'error');
     }
@@ -2962,27 +3042,63 @@ const FolhaBI = {
       });
     }
 
-    // Evolução mensal
-    const elEvo = document.getElementById('folha-chart-evolucao');
-    if (elEvo) {
-      destruir('folha-chart-evolucao');
-      chartInstances['folha-chart-evolucao'] = new Chart(elEvo.getContext('2d'), {
+    // Evolução mensal — CLT e PJ em gráficos de linha separados
+    const linhaOpts = {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: rzCor('texto-3') }, grid: { color: rzCor('graf-grade') } },
+        y: { ticks: { color: rzCor('texto-3'), callback: v => 'R$ ' + (v / 1000) + 'k' }, grid: { color: rzCor('graf-grade') }, beginAtZero: true },
+      },
+    };
+    const elEvoClt = document.getElementById('folha-chart-evolucao-clt');
+    if (elEvoClt) {
+      destruir('folha-chart-evolucao-clt');
+      chartInstances['folha-chart-evolucao-clt'] = new Chart(elEvoClt.getContext('2d'), {
         type: 'line',
-        data: {
-          labels: r.evolucao.map(x => x.competenciaLabel),
-          datasets: [
-            { label: 'CLT', data: r.evolucao.map(x => x.totalClt), borderColor: 'rgba(247,147,30,1)', backgroundColor: 'rgba(247,147,30,0.15)', tension: 0.35, fill: true },
-            { label: 'PJ',  data: r.evolucao.map(x => x.totalPj),  borderColor: 'rgba(59,130,246,1)',  backgroundColor: 'rgba(59,130,246,0.15)',  tension: 0.35, fill: true },
-          ],
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { labels: { color: rzCor('texto-2') } } },
-          scales: {
-            x: { ticks: { color: rzCor('texto-3') }, grid: { color: rzCor('graf-grade') } },
-            y: { ticks: { color: rzCor('texto-3'), callback: v => 'R$ ' + (v / 1000) + 'k' }, grid: { color: rzCor('graf-grade') }, beginAtZero: true },
-          },
-        },
+        data: { labels: r.evolucao.map(x => x.competenciaLabel), datasets: [
+          { label: 'CLT', data: r.evolucao.map(x => x.totalClt), borderColor: 'rgba(247,147,30,1)', backgroundColor: 'rgba(247,147,30,0.15)', tension: 0.35, fill: true },
+        ] },
+        options: linhaOpts,
+      });
+    }
+    const elEvoPj = document.getElementById('folha-chart-evolucao-pj');
+    if (elEvoPj) {
+      destruir('folha-chart-evolucao-pj');
+      chartInstances['folha-chart-evolucao-pj'] = new Chart(elEvoPj.getContext('2d'), {
+        type: 'line',
+        data: { labels: r.evolucao.map(x => x.competenciaLabel), datasets: [
+          { label: 'PJ', data: r.evolucao.map(x => x.totalPj), borderColor: 'rgba(59,130,246,1)', backgroundColor: 'rgba(59,130,246,0.15)', tension: 0.35, fill: true },
+        ] },
+        options: linhaOpts,
+      });
+    }
+
+    // Custo por Setor (PJ) e por Contrato (CLT) — barra vertical, maior → menor (backend já ordena desc)
+    const barraOpts = {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: rzCor('texto-3') }, grid: { color: rzCor('graf-grade') } },
+        y: { ticks: { color: rzCor('texto-3'), callback: v => 'R$ ' + (v / 1000) + 'k' }, grid: { color: rzCor('graf-grade') }, beginAtZero: true },
+      },
+    };
+    const elSetor = document.getElementById('folha-chart-setor');
+    if (elSetor) {
+      destruir('folha-chart-setor');
+      chartInstances['folha-chart-setor'] = new Chart(elSetor.getContext('2d'), {
+        type: 'bar',
+        data: { labels: (r.porSetorPj || []).map(x => x.chave), datasets: [{ data: (r.porSetorPj || []).map(x => x.total), backgroundColor: 'rgba(34,197,94,0.8)', borderRadius: 4 }] },
+        options: barraOpts,
+      });
+    }
+    const elContrato = document.getElementById('folha-chart-contrato');
+    if (elContrato) {
+      destruir('folha-chart-contrato');
+      chartInstances['folha-chart-contrato'] = new Chart(elContrato.getContext('2d'), {
+        type: 'bar',
+        data: { labels: (r.porContrato || []).map(x => x.chave), datasets: [{ data: (r.porContrato || []).map(x => x.total), backgroundColor: 'rgba(239,68,68,0.8)', borderRadius: 4 }] },
+        options: barraOpts,
       });
     }
   },

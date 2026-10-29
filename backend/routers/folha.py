@@ -14,17 +14,19 @@ A aba "FINANCEIRO PAGAMENTO" é um resumo das mesmas pessoas e não é lida
 (evita duplicar/divergir dos números de "Detalhado Relatorio").
 
 Rotas:
-  POST   /api/folha/importar                 — sobe o .xlsx de uma competência
-  GET    /api/folha/importacoes               — lista competências já importadas
-  GET    /api/folha/resumo?importacao_id=     — indicadores da competência (default: mais recente)
-  DELETE /api/folha/importacoes/<id>          — apaga uma importação (reimportar manda de novo)
+  POST   /api/folha/importar                      — sobe o .xlsx de uma competência
+  GET    /api/folha/importacoes                    — lista competências já importadas
+  GET    /api/folha/resumo?importacao_id=          — indicadores da competência (default: mais recente)
+  GET    /api/folha/evolucao-headcount?funcao=     — qtd de colaboradores por competência (mensal)
+  GET    /api/folha/auditoria?importacao_id=       — variações de valor vs. a competência anterior (CLT+PJ)
+  DELETE /api/folha/importacoes/<id>               — apaga uma importação (reimportar manda de novo)
 """
 import io
 from datetime import date, datetime
 
 import openpyxl
 from flask import Blueprint, request, jsonify
-from sqlalchemy import func as sa_func
+from sqlalchemy import func as sa_func, and_ as sa_and, or_ as sa_or
 
 import audit
 import models
@@ -43,13 +45,14 @@ COLUNAS_DETALHADO = [
     "desconto_coparticipacao", "desconto_consignado", "adiantamento",
     "desconto_falta", "desconto_odr", "desconto_antecipacao_ferias",
     "inss", "irpf", "fgts", "ajuda_custo", "total_liquido",
-    "perspectiva_salarial", "custo_raw", "regional", "observacoes",
+    "perspectiva_salarial", "custo_raw", "regional", "contrato",
 ]
 
-CUSTO_PARA_CLASSIFICACAO = {
-    "OPERACIONAL": "MOD",      # mão de obra direta
-    "ADMINISTRATIVO": "MOI",   # mão de obra indireta
-}
+# Regra: tudo que é OPERACIONAL é MOD (mão de obra direta); qualquer outra
+# coisa — ADMINISTRATIVO, em branco, ou qualquer outro valor — é MOI
+# (mão de obra indireta). Não existe mais "Não informado" nessa classificação.
+def _classificacao(custo_raw):
+    return "MOD" if (custo_raw or "").upper() == "OPERACIONAL" else "MOI"
 
 MESES_PT = [
     "", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -75,6 +78,10 @@ def _txt(v):
     return s or None
 
 
+def _normaliza_nome(s):
+    return (s or "").strip().upper()
+
+
 def _parse_detalhado(ws):
     """Lê a aba 'Detalhado Relatorio' até a linha de total (primeira linha sem
     nome na coluna A depois de começarem os dados), devolve lista de dicts."""
@@ -95,8 +102,7 @@ def _parse_detalhado(ws):
         elif not isinstance(data_adm, date):
             data_adm = None
 
-        custo_raw = (_txt(d["custo_raw"]) or "").upper()
-        classificacao = CUSTO_PARA_CLASSIFICACAO.get(custo_raw)
+        classificacao = _classificacao(_txt(d["custo_raw"]))
 
         linhas.append({
             "nome": nome,
@@ -123,7 +129,7 @@ def _parse_detalhado(ws):
             "ajuda_custo": _num(d["ajuda_custo"]),
             "total_liquido": _num(d["total_liquido"]),
             "perspectiva_salarial": _num(d["perspectiva_salarial"]),
-            "observacoes": _txt(d["observacoes"]),
+            "contrato": _txt(d["contrato"]),
         })
     return linhas
 
@@ -310,6 +316,8 @@ def resumo():
         por_regional      = agrupar(lambda c: c.regional)
         por_classificacao = agrupar(lambda c: c.classificacao)
         por_funcao        = agrupar(lambda c: c.funcao)[:10]
+        por_contrato      = agrupar(lambda c: c.contrato)
+        funcoes = sorted({c.funcao for c in colabs if c.funcao})
 
         def agrupar_pj_por_setor():
             grupos = {}
@@ -357,11 +365,14 @@ def resumo():
                 "custoMedioClt": round(float(importacao.total_clt) / importacao.qtd_clt, 2) if importacao.qtd_clt else 0,
                 "custoMedioPj": round(float(importacao.total_pj) / importacao.qtd_pj, 2) if importacao.qtd_pj else 0,
                 "percentualPj": round(float(importacao.total_pj) / float(importacao.total_geral) * 100, 1) if importacao.total_geral else 0,
+                "qtdColaboradores": importacao.qtd_clt + importacao.qtd_pj,
             },
             "porRegional": por_regional,
             "porClassificacao": por_classificacao,  # MOD / MOI
             "porFuncao": por_funcao,
             "porSetorPj": por_setor_pj,
+            "porContrato": por_contrato,
+            "funcoes": funcoes,
             "rubricas": {k: round(v, 2) for k, v in rubricas.items()},
             "pj": [{"fornecedor": p.fornecedor, "valor": float(p.valor or 0), "descricao": p.descricao, "setor": p.setor} for p in pjs],
             "evolucao": [{
@@ -369,7 +380,151 @@ def resumo():
                 "totalClt": float(h.total_clt),
                 "totalPj": float(h.total_pj),
                 "totalGeral": float(h.total_geral),
+                "qtdClt": h.qtd_clt,
+                "qtdPj": h.qtd_pj,
+                "qtdColaboradores": h.qtd_clt + h.qtd_pj,
             } for h in historico],
+        })
+    finally:
+        db.close()
+
+
+@bp.route("/evolucao-headcount", methods=["GET"])
+@require_role_admin
+def evolucao_headcount():
+    """Quantidade de colaboradores por competência (mensal), com filtro opcional de função.
+    Sem filtro: CLT + PJ. Com filtro: só CLT com aquela função (PJ não tem função)."""
+    db = get_db()
+    try:
+        funcao = (request.args.get("funcao") or "").strip() or None
+
+        importacoes = (
+            db.query(models.FolhaImportacao)
+            .order_by(models.FolhaImportacao.competencia_ano.desc(), models.FolhaImportacao.competencia_mes.desc())
+            .limit(24)
+            .all()
+        )
+        importacoes = list(reversed(importacoes))
+
+        pontos = []
+        for imp in importacoes:
+            if funcao:
+                qtd = (
+                    db.query(sa_func.count(models.FolhaColaborador.id))
+                    .filter(
+                        models.FolhaColaborador.importacao_id == imp.id,
+                        models.FolhaColaborador.funcao == funcao,
+                    )
+                    .scalar()
+                ) or 0
+            else:
+                qtd = imp.qtd_clt + imp.qtd_pj
+            pontos.append({
+                "competenciaLabel": f"{MESES_PT[imp.competencia_mes]}/{imp.competencia_ano}",
+                "qtd": qtd,
+            })
+
+        return jsonify({"funcao": funcao, "pontos": pontos})
+    finally:
+        db.close()
+
+
+@bp.route("/auditoria", methods=["GET"])
+@require_role_admin
+def auditoria():
+    """Compara a competência selecionada com a competência anterior (a mais
+    recente antes dela), CLT e PJ juntos: quem subiu e quem caiu de valor.
+    CLT casa por nome, PJ casa por fornecedor — quem não existia na
+    competência anterior (contratação nova) não aparece aqui."""
+    db = get_db()
+    try:
+        importacao_id = request.args.get("importacao_id", type=int)
+        if importacao_id:
+            atual = db.query(models.FolhaImportacao).get(importacao_id)
+        else:
+            atual = (
+                db.query(models.FolhaImportacao)
+                .order_by(models.FolhaImportacao.competencia_ano.desc(), models.FolhaImportacao.competencia_mes.desc())
+                .first()
+            )
+        if not atual:
+            return jsonify({"message": "Nenhuma folha importada ainda"}), 404
+
+        anterior = (
+            db.query(models.FolhaImportacao)
+            .filter(sa_or(
+                models.FolhaImportacao.competencia_ano < atual.competencia_ano,
+                sa_and(
+                    models.FolhaImportacao.competencia_ano == atual.competencia_ano,
+                    models.FolhaImportacao.competencia_mes < atual.competencia_mes,
+                ),
+            ))
+            .order_by(models.FolhaImportacao.competencia_ano.desc(), models.FolhaImportacao.competencia_mes.desc())
+            .first()
+        )
+
+        competencia_atual_label = f"{MESES_PT[atual.competencia_mes]}/{atual.competencia_ano}"
+
+        if not anterior:
+            return jsonify({
+                "competenciaAtual": competencia_atual_label,
+                "competenciaAnterior": None,
+                "positivas": [],
+                "negativas": [],
+                "message": "Não há competência anterior para comparar",
+            })
+
+        colabs_atual = db.query(models.FolhaColaborador).filter_by(importacao_id=atual.id).all()
+        colabs_ant   = db.query(models.FolhaColaborador).filter_by(importacao_id=anterior.id).all()
+        pjs_atual    = db.query(models.FolhaPJ).filter_by(importacao_id=atual.id).all()
+        pjs_ant      = db.query(models.FolhaPJ).filter_by(importacao_id=anterior.id).all()
+
+        mapa_ant_clt = {_normaliza_nome(c.nome): c for c in colabs_ant}
+        mapa_ant_pj  = {_normaliza_nome(p.fornecedor): p for p in pjs_ant}
+
+        variacoes = []
+        for c in colabs_atual:
+            ant = mapa_ant_clt.get(_normaliza_nome(c.nome))
+            if not ant:
+                continue
+            delta = round(float(c.total_liquido or 0) - float(ant.total_liquido or 0), 2)
+            if delta == 0:
+                continue
+            variacoes.append({
+                "tipo": "CLT",
+                "nome": c.nome,
+                "referencia": c.funcao,
+                "valorAnterior": float(ant.total_liquido or 0),
+                "valorAtual": float(c.total_liquido or 0),
+                "delta": delta,
+                "percentual": round(delta / float(ant.total_liquido) * 100, 1) if ant.total_liquido else None,
+            })
+
+        for p in pjs_atual:
+            ant = mapa_ant_pj.get(_normaliza_nome(p.fornecedor))
+            if not ant:
+                continue
+            delta = round(float(p.valor or 0) - float(ant.valor or 0), 2)
+            if delta == 0:
+                continue
+            variacoes.append({
+                "tipo": "PJ",
+                "nome": p.fornecedor,
+                "referencia": p.setor,
+                "valorAnterior": float(ant.valor or 0),
+                "valorAtual": float(p.valor or 0),
+                "delta": delta,
+                "percentual": round(delta / float(ant.valor) * 100, 1) if ant.valor else None,
+            })
+
+        positivas = sorted([v for v in variacoes if v["delta"] > 0], key=lambda v: -v["delta"])
+        negativas = sorted([v for v in variacoes if v["delta"] < 0], key=lambda v: v["delta"])
+
+        return jsonify({
+            "competenciaAtual": competencia_atual_label,
+            "competenciaAnterior": f"{MESES_PT[anterior.competencia_mes]}/{anterior.competencia_ano}",
+            "positivas": positivas,
+            "negativas": negativas,
         })
     finally:
         db.close()
