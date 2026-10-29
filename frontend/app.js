@@ -2900,19 +2900,20 @@ const FolhaBI = {
           <td style="padding:8px 12px;text-align:right;color:var(--texto);font-weight:600;">${this._fmtMoeda(f.total)}</td>
         </tr>`).join('') || '<tr><td colspan="3" style="padding:16px;text-align:center;color:var(--ink-3);">Sem dados</td></tr>';
 
-      document.getElementById('folha-maiores-tbody').innerHTML = r.maioresRemuneracoes.map(c => `
+      document.getElementById('folha-setor-tbody').innerHTML = (r.porSetorPj || []).map(s => `
         <tr style="border-bottom:1px solid var(--ov-80);">
-          <td style="padding:8px 12px;color:var(--texto);">${c.nome}</td>
-          <td style="padding:8px 12px;color:var(--ink-2);">${c.funcao || '—'}</td>
-          <td style="padding:8px 12px;text-align:right;color:var(--texto);font-weight:600;">${this._fmtMoeda(c.totalLiquido)}</td>
+          <td style="padding:8px 12px;color:var(--texto);">${s.chave}</td>
+          <td style="padding:8px 12px;text-align:center;color:var(--ink-2);">${s.qtd}</td>
+          <td style="padding:8px 12px;text-align:right;color:var(--texto);font-weight:600;">${this._fmtMoeda(s.total)}</td>
         </tr>`).join('') || '<tr><td colspan="3" style="padding:16px;text-align:center;color:var(--ink-3);">Sem dados</td></tr>';
 
       document.getElementById('folha-pj-tbody').innerHTML = r.pj.map(p => `
         <tr style="border-bottom:1px solid var(--ov-80);">
           <td style="padding:8px 12px;color:var(--texto);">${p.fornecedor}</td>
+          <td style="padding:8px 12px;color:var(--ink-2);">${p.setor || '—'}</td>
           <td style="padding:8px 12px;color:var(--ink-2);">${p.descricao || '—'}</td>
           <td style="padding:8px 12px;text-align:right;color:var(--texto);font-weight:600;">${this._fmtMoeda(p.valor)}</td>
-        </tr>`).join('') || '<tr><td colspan="3" style="padding:16px;text-align:center;color:var(--ink-3);">Nenhum PJ nessa competência</td></tr>';
+        </tr>`).join('') || '<tr><td colspan="4" style="padding:16px;text-align:center;color:var(--ink-3);">Nenhum PJ nessa competência</td></tr>';
 
       this._desenharGraficos(r);
     } catch (e) {

@@ -474,5 +474,6 @@ class FolhaPJ(Base):
     fornecedor     = Column(String(150), nullable=False)
     valor          = Column(Numeric(12, 2), default=0)
     descricao      = Column(String(255), nullable=True)
+    setor          = Column(String(100), nullable=True)   # 4ª coluna da aba PJ (ex.: PROGRAMACAO, SESMT, FROTA)
 
     importacao = relationship("FolhaImportacao", back_populates="pjs")

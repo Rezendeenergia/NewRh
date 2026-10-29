@@ -136,7 +136,8 @@ def _parse_pj(ws):
             continue
         valor = _num(row[1]) if len(row) > 1 else 0.0
         descricao = _txt(row[2]) if len(row) > 2 else None
-        linhas.append({"fornecedor": fornecedor, "valor": valor, "descricao": descricao})
+        setor = _txt(row[3]) if len(row) > 3 else None   # 4ª coluna, quando a planilha tiver (opcional)
+        linhas.append({"fornecedor": fornecedor, "valor": valor, "descricao": descricao, "setor": setor})
     return linhas
 
 
@@ -310,6 +311,18 @@ def resumo():
         por_classificacao = agrupar(lambda c: c.classificacao)
         por_funcao        = agrupar(lambda c: c.funcao)[:10]
 
+        def agrupar_pj_por_setor():
+            grupos = {}
+            for p in pjs:
+                chave = p.setor or "Não informado"
+                g = grupos.setdefault(chave, {"total": 0.0, "qtd": 0})
+                g["total"] += float(p.valor or 0)
+                g["qtd"] += 1
+            return [{"chave": k, "total": round(v["total"], 2), "qtd": v["qtd"]} for k, v in
+                    sorted(grupos.items(), key=lambda kv: -kv[1]["total"])]
+
+        por_setor_pj = agrupar_pj_por_setor()
+
         rubricas = {
             "inss": sum(float(c.inss or 0) for c in colabs),
             "fgts": sum(float(c.fgts or 0) for c in colabs),
@@ -317,8 +330,6 @@ def resumo():
             "ajudaCusto": sum(float(c.ajuda_custo or 0) for c in colabs),
             "salarioBase": sum(float(c.salario_base or 0) for c in colabs),
         }
-
-        maiores = sorted(colabs, key=lambda c: float(c.total_liquido or 0), reverse=True)[:10]
 
         # evolução: últimas até 12 competências (mais antiga → mais recente)
         historico = (
@@ -350,12 +361,9 @@ def resumo():
             "porRegional": por_regional,
             "porClassificacao": por_classificacao,  # MOD / MOI
             "porFuncao": por_funcao,
+            "porSetorPj": por_setor_pj,
             "rubricas": {k: round(v, 2) for k, v in rubricas.items()},
-            "maioresRemuneracoes": [{
-                "nome": c.nome, "funcao": c.funcao, "regional": c.regional,
-                "totalLiquido": float(c.total_liquido or 0),
-            } for c in maiores],
-            "pj": [{"fornecedor": p.fornecedor, "valor": float(p.valor or 0), "descricao": p.descricao} for p in pjs],
+            "pj": [{"fornecedor": p.fornecedor, "valor": float(p.valor or 0), "descricao": p.descricao, "setor": p.setor} for p in pjs],
             "evolucao": [{
                 "competenciaLabel": f"{MESES_PT[h.competencia_mes]}/{h.competencia_ano}",
                 "totalClt": float(h.total_clt),
