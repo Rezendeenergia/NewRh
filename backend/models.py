@@ -460,7 +460,7 @@ class FolhaColaborador(Base):
     ajuda_custo                           = Column(Numeric(12, 2), default=0)
     total_liquido                         = Column(Numeric(12, 2), default=0)
     perspectiva_salarial                  = Column(Numeric(12, 2), default=0)
-    observacoes                           = Column(Text, nullable=True)
+    contrato                              = Column(Text, nullable=True)  # coluna "Contrato" da planilha (antes "Observações")
 
     importacao = relationship("FolhaImportacao", back_populates="colaboradores")
 
