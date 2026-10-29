@@ -70,3 +70,25 @@ def require_admin(f):
         request.role     = role
         return f(*args, **kwargs)
     return decorated
+
+
+def require_role_admin(f):
+    """Só ROLE_ADMIN (administrador no Portal). Bloqueia ROLE_OWNER, ROLE_GESTOR e ROLE_VIEWER.
+    Usado em dados sensíveis (ex.: folha salarial) onde 'admin' tem que ser literal,
+    diferente de require_admin (que também deixa ROLE_OWNER/ROLE_GESTOR passarem)."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth_header = request.headers.get("Authorization", "")
+        if not auth_header.startswith("Bearer "):
+            return jsonify({"message": "Token não fornecido"}), 401
+        token = auth_header[7:]
+        payload = decode_token(token)
+        if not payload:
+            return jsonify({"message": "Token inválido ou expirado"}), 401
+        role = payload.get("role", "ROLE_ADMIN")
+        if role != "ROLE_ADMIN":
+            return jsonify({"message": "Acesso restrito a administradores"}), 403
+        request.username = payload["sub"]
+        request.role     = role
+        return f(*args, **kwargs)
+    return decorated

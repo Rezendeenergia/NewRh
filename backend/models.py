@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, Date, DateTime, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, Date, DateTime, Boolean, ForeignKey, Numeric, SmallInteger, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database import Base
@@ -403,3 +403,76 @@ class BancoTalentos(Base):
     observacoes_gestor  = Column(Text,        nullable=True)
     created_at          = Column(DateTime,    server_default=func.now())
     updated_at          = Column(DateTime,    server_default=func.now(), onupdate=func.now())
+
+
+# ── Folha Salarial (dashboard CLT + PJ) ────────────────────────
+class FolhaImportacao(Base):
+    """Uma importação da planilha de folha = uma competência (mês/ano)."""
+    __tablename__ = "folha_importacoes"
+
+    id              = Column(Integer, primary_key=True, index=True)
+    competencia_mes = Column(SmallInteger, nullable=False)
+    competencia_ano = Column(SmallInteger, nullable=False)
+    arquivo_nome    = Column(String(255), nullable=True)
+    importado_por   = Column(String(150), nullable=False)
+    total_clt       = Column(Numeric(14, 2), nullable=False, default=0)
+    total_pj        = Column(Numeric(14, 2), nullable=False, default=0)
+    total_geral     = Column(Numeric(14, 2), nullable=False, default=0)
+    qtd_clt         = Column(Integer, nullable=False, default=0)
+    qtd_pj          = Column(Integer, nullable=False, default=0)
+    created_at      = Column(DateTime, server_default=func.now())
+
+    colaboradores = relationship("FolhaColaborador", back_populates="importacao", cascade="all, delete")
+    pjs           = relationship("FolhaPJ", back_populates="importacao", cascade="all, delete")
+
+    __table_args__ = (UniqueConstraint("competencia_mes", "competencia_ano", name="uq_folha_competencia"),)
+
+
+class FolhaColaborador(Base):
+    """Colaborador CLT de uma competência (vem da aba 'Detalhado Relatorio')."""
+    __tablename__ = "folha_colaboradores"
+
+    id             = Column(Integer, primary_key=True, index=True)
+    importacao_id  = Column(Integer, ForeignKey("folha_importacoes.id", ondelete="CASCADE"), nullable=False)
+
+    nome           = Column(String(150), nullable=False)
+    funcao         = Column(String(150), nullable=True)
+    data_admissao  = Column(Date, nullable=True)
+    regional       = Column(String(60), nullable=True)
+    classificacao  = Column(String(10), nullable=True)   # MOD (operacional) ou MOI (administrativo)
+
+    salario_base                = Column(Numeric(12, 2), default=0)
+    periculosidade              = Column(Numeric(12, 2), default=0)
+    gratificacao                = Column(Numeric(12, 2), default=0)
+    ferias                      = Column(Numeric(12, 2), default=0)
+    salario_familia              = Column(Numeric(12, 2), default=0)
+    cesta_basica                  = Column(Numeric(12, 2), default=0)
+    plano_saude                    = Column(Numeric(12, 2), default=0)
+    desconto_coparticipacao        = Column(Numeric(12, 2), default=0)
+    desconto_consignado             = Column(Numeric(12, 2), default=0)
+    adiantamento                      = Column(Numeric(12, 2), default=0)
+    desconto_falta                     = Column(Numeric(12, 2), default=0)
+    desconto_odr                        = Column(Numeric(12, 2), default=0)
+    desconto_antecipacao_ferias          = Column(Numeric(12, 2), default=0)
+    inss                                  = Column(Numeric(12, 2), default=0)
+    irpf                                  = Column(Numeric(12, 2), default=0)
+    fgts                                  = Column(Numeric(12, 2), default=0)
+    ajuda_custo                           = Column(Numeric(12, 2), default=0)
+    total_liquido                         = Column(Numeric(12, 2), default=0)
+    perspectiva_salarial                  = Column(Numeric(12, 2), default=0)
+    observacoes                           = Column(Text, nullable=True)
+
+    importacao = relationship("FolhaImportacao", back_populates="colaboradores")
+
+
+class FolhaPJ(Base):
+    """Prestador PJ de uma competência (vem da aba 'PJ')."""
+    __tablename__ = "folha_pj"
+
+    id             = Column(Integer, primary_key=True, index=True)
+    importacao_id  = Column(Integer, ForeignKey("folha_importacoes.id", ondelete="CASCADE"), nullable=False)
+    fornecedor     = Column(String(150), nullable=False)
+    valor          = Column(Numeric(12, 2), default=0)
+    descricao      = Column(String(255), nullable=True)
+
+    importacao = relationship("FolhaImportacao", back_populates="pjs")
