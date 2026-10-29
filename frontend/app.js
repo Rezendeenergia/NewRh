@@ -828,6 +828,10 @@ const Manager = {
       this.loadJobList();
       setTimeout(() => Solicitacoes.loadBadge(), 500);
     }
+
+    // Folha Salarial: dado financeiro sensível, só ROLE_ADMIN (administrador no Portal) vê a aba
+    const abaFolha = document.querySelector('.subtab[data-subtab="folha"]');
+    if (abaFolha) abaFolha.style.display = (AppState.role === 'ROLE_ADMIN') ? '' : 'none';
   },
 
   logout() {
@@ -2188,6 +2192,7 @@ document.querySelectorAll('.subtab').forEach(tab => {
     if (tab.dataset.subtab === 'talentos-cadastros') BancoTalentosPublico.load();
     if (tab.dataset.subtab === 'solicitacoes')  Solicitacoes.loadLista();
     if (tab.dataset.subtab === 'colaboradores-admitidos') Manager.loadColaboradoresAdmitidos();
+    if (tab.dataset.subtab === 'folha') FolhaBI.init();
   });
 });
 
@@ -2767,7 +2772,220 @@ const BancoTalentosPublico = {
 // Gráficos usam canvas (não herdam variáveis CSS): ao trocar claro/escuro, redesenha
 window.addEventListener('rz:tema', () => {
   if (Object.keys(chartInstances).length && document.getElementById('chart-by-job')) Manager.loadCharts();
+  if (FolhaBI._ultimoResumo) FolhaBI._desenharGraficos(FolhaBI._ultimoResumo);
 });
+
+// ── Folha Salarial (dashboard CLT + PJ) ──────────────────────
+const FolhaBI = {
+  _ultimoResumo: null,
+  _carregouLista: false,
+
+  _fmtMoeda(v) {
+    return (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+  },
+
+  async init() {
+    const anoInput = document.getElementById('folha-ano');
+    if (anoInput && !anoInput.value) anoInput.value = new Date().getFullYear();
+    await this._carregarImportacoes();
+  },
+
+  async importar(ev) {
+    ev.preventDefault();
+    const mes     = document.getElementById('folha-mes').value;
+    const ano     = document.getElementById('folha-ano').value;
+    const arquivo = document.getElementById('folha-arquivo').files[0];
+    const btn     = document.getElementById('folha-import-btn');
+    clearAlert('folha-import-alert');
+    if (!arquivo) { showAlert('folha-import-alert', 'Selecione o arquivo .xlsx da folha.'); return; }
+
+    const fd = new FormData();
+    fd.append('arquivo', arquivo);
+    fd.append('mes', mes);
+    fd.append('ano', ano);
+
+    btn.disabled = true; btn.textContent = '⏳ Importando...';
+    try {
+      const r = await fetch(API_BASE + '/api/folha/importar', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + sessionToken },
+        body: fd,
+      });
+      const d = await r.json().catch(() => null);
+      if (!r.ok) throw new Error((d && d.message) || `Erro ${r.status}`);
+
+      showToast('Folha importada!', `${d.qtdClt} CLT + ${d.qtdPj} PJ — total ${this._fmtMoeda(d.totalGeral)}`, 'success');
+      document.getElementById('folha-import-form').reset();
+      document.getElementById('folha-ano').value = ano;
+      await this._carregarImportacoes(d.importacaoId);
+    } catch (e) {
+      showAlert('folha-import-alert', '❌ ' + e.message);
+    } finally {
+      btn.disabled = false; btn.textContent = '⬆ Importar';
+    }
+  },
+
+  async _carregarImportacoes(selecionarId) {
+    try {
+      const lista = await request('/api/folha/importacoes');
+      const sel = document.getElementById('folha-competencia-select');
+      if (!lista.length) {
+        sel.innerHTML = '';
+        document.getElementById('folha-vazio').style.display = 'block';
+        document.getElementById('folha-conteudo').style.display = 'none';
+        return;
+      }
+      sel.innerHTML = lista.map(i => `<option value="${i.id}">${i.competenciaLabel} — ${this._fmtMoeda(i.totalGeral)}</option>`).join('');
+      sel.value = selecionarId || lista[0].id;
+      this._renderImportacoesTable(lista);
+      await this.carregar(sel.value);
+    } catch (e) {
+      showToast('Erro', e.message, 'error');
+    }
+  },
+
+  _renderImportacoesTable(lista) {
+    const tbody = document.getElementById('folha-importacoes-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = lista.map(i => `
+      <tr style="border-bottom:1px solid var(--ov-80);">
+        <td style="padding:8px 12px;color:var(--texto);font-weight:600;">${i.competenciaLabel}</td>
+        <td style="padding:8px 12px;color:var(--ink-2);">${i.arquivoNome || '—'}</td>
+        <td style="padding:8px 12px;color:var(--ink-2);">${i.importadoPor}</td>
+        <td style="padding:8px 12px;text-align:right;color:var(--texto);font-weight:600;">${this._fmtMoeda(i.totalGeral)}</td>
+        <td style="padding:8px 12px;text-align:right;">
+          <button class="btn btn--ghost btn--small" onclick="FolhaBI.apagar(${i.id},'${i.competenciaLabel}')">🗑</button>
+        </td>
+      </tr>`).join('');
+  },
+
+  async apagar(id, label) {
+    if (!confirm(`Apagar a importação de ${label}? Isso remove os dados dessa competência (você pode reimportar depois).`)) return;
+    try {
+      await request(`/api/folha/importacoes/${id}`, { method: 'DELETE' });
+      showToast('Importação removida', label, 'success');
+      await this._carregarImportacoes();
+    } catch (e) {
+      showToast('Erro', e.message, 'error');
+    }
+  },
+
+  async carregar(importacaoId) {
+    if (!importacaoId) return;
+    try {
+      const r = await request(`/api/folha/resumo?importacao_id=${importacaoId}`);
+      this._ultimoResumo = r;
+      document.getElementById('folha-vazio').style.display = 'none';
+      document.getElementById('folha-conteudo').style.display = 'block';
+
+      document.getElementById('folha-total-geral').textContent    = this._fmtMoeda(r.totais.geral);
+      document.getElementById('folha-total-clt').textContent      = this._fmtMoeda(r.totais.clt);
+      document.getElementById('folha-total-pj').textContent       = this._fmtMoeda(r.totais.pj);
+      document.getElementById('folha-pct-pj').textContent         = `${r.totais.percentualPj}%`;
+      document.getElementById('folha-custo-medio-clt').textContent = this._fmtMoeda(r.totais.custoMedioClt);
+      document.getElementById('folha-qtd-clt').textContent        = `(${r.totais.qtdClt})`;
+      document.getElementById('folha-qtd-pj').textContent         = `(${r.totais.qtdPj})`;
+
+      document.getElementById('folha-rubricas-body').innerHTML = `
+        <div class="stat-card"><div class="stat-card__number" style="font-size:1.1rem;">${this._fmtMoeda(r.rubricas.salarioBase)}</div><div class="stat-card__label">SALÁRIO BASE</div></div>
+        <div class="stat-card"><div class="stat-card__number" style="font-size:1.1rem;">${this._fmtMoeda(r.rubricas.inss)}</div><div class="stat-card__label">INSS</div></div>
+        <div class="stat-card"><div class="stat-card__number" style="font-size:1.1rem;">${this._fmtMoeda(r.rubricas.fgts)}</div><div class="stat-card__label">FGTS</div></div>
+        <div class="stat-card"><div class="stat-card__number" style="font-size:1.1rem;">${this._fmtMoeda(r.rubricas.irpf)}</div><div class="stat-card__label">IRPF</div></div>
+        <div class="stat-card"><div class="stat-card__number" style="font-size:1.1rem;">${this._fmtMoeda(r.rubricas.ajudaCusto)}</div><div class="stat-card__label">AJUDA DE CUSTO</div></div>`;
+
+      document.getElementById('folha-funcao-tbody').innerHTML = r.porFuncao.map(f => `
+        <tr style="border-bottom:1px solid var(--ov-80);">
+          <td style="padding:8px 12px;color:var(--texto);">${f.chave}</td>
+          <td style="padding:8px 12px;text-align:center;color:var(--ink-2);">${f.qtd}</td>
+          <td style="padding:8px 12px;text-align:right;color:var(--texto);font-weight:600;">${this._fmtMoeda(f.total)}</td>
+        </tr>`).join('') || '<tr><td colspan="3" style="padding:16px;text-align:center;color:var(--ink-3);">Sem dados</td></tr>';
+
+      document.getElementById('folha-maiores-tbody').innerHTML = r.maioresRemuneracoes.map(c => `
+        <tr style="border-bottom:1px solid var(--ov-80);">
+          <td style="padding:8px 12px;color:var(--texto);">${c.nome}</td>
+          <td style="padding:8px 12px;color:var(--ink-2);">${c.funcao || '—'}</td>
+          <td style="padding:8px 12px;text-align:right;color:var(--texto);font-weight:600;">${this._fmtMoeda(c.totalLiquido)}</td>
+        </tr>`).join('') || '<tr><td colspan="3" style="padding:16px;text-align:center;color:var(--ink-3);">Sem dados</td></tr>';
+
+      document.getElementById('folha-pj-tbody').innerHTML = r.pj.map(p => `
+        <tr style="border-bottom:1px solid var(--ov-80);">
+          <td style="padding:8px 12px;color:var(--texto);">${p.fornecedor}</td>
+          <td style="padding:8px 12px;color:var(--ink-2);">${p.descricao || '—'}</td>
+          <td style="padding:8px 12px;text-align:right;color:var(--texto);font-weight:600;">${this._fmtMoeda(p.valor)}</td>
+        </tr>`).join('') || '<tr><td colspan="3" style="padding:16px;text-align:center;color:var(--ink-3);">Nenhum PJ nessa competência</td></tr>';
+
+      this._desenharGraficos(r);
+    } catch (e) {
+      showToast('Erro', e.message, 'error');
+    }
+  },
+
+  _desenharGraficos(r) {
+    const orange  = 'rgba(247,147,30,0.85)';
+    const paleta  = ['rgba(247,147,30,0.85)', 'rgba(34,197,94,0.8)', 'rgba(59,130,246,0.8)', 'rgba(239,68,68,0.8)', 'rgba(168,85,247,0.8)', 'rgba(234,179,8,0.8)'];
+
+    const destruir = id => { if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; } };
+
+    // Por regional
+    const elReg = document.getElementById('folha-chart-regional');
+    if (elReg) {
+      destruir('folha-chart-regional');
+      chartInstances['folha-chart-regional'] = new Chart(elReg.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: r.porRegional.map(x => x.chave),
+          datasets: [{ data: r.porRegional.map(x => x.total), backgroundColor: orange, borderRadius: 4 }],
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: rzCor('texto-3') }, grid: { color: rzCor('graf-grade') } },
+            y: { ticks: { color: rzCor('texto-3'), callback: v => 'R$ ' + (v / 1000) + 'k' }, grid: { color: rzCor('graf-grade') }, beginAtZero: true },
+          },
+        },
+      });
+    }
+
+    // MOD × MOI
+    const elClass = document.getElementById('folha-chart-classificacao');
+    if (elClass) {
+      destruir('folha-chart-classificacao');
+      chartInstances['folha-chart-classificacao'] = new Chart(elClass.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+          labels: r.porClassificacao.map(x => x.chave),
+          datasets: [{ data: r.porClassificacao.map(x => x.total), backgroundColor: paleta, borderWidth: 2 }],
+        },
+        options: { responsive: true, plugins: { legend: { labels: { color: rzCor('texto-2') } } } },
+      });
+    }
+
+    // Evolução mensal
+    const elEvo = document.getElementById('folha-chart-evolucao');
+    if (elEvo) {
+      destruir('folha-chart-evolucao');
+      chartInstances['folha-chart-evolucao'] = new Chart(elEvo.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: r.evolucao.map(x => x.competenciaLabel),
+          datasets: [
+            { label: 'CLT', data: r.evolucao.map(x => x.totalClt), borderColor: 'rgba(247,147,30,1)', backgroundColor: 'rgba(247,147,30,0.15)', tension: 0.35, fill: true },
+            { label: 'PJ',  data: r.evolucao.map(x => x.totalPj),  borderColor: 'rgba(59,130,246,1)',  backgroundColor: 'rgba(59,130,246,0.15)',  tension: 0.35, fill: true },
+          ],
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { labels: { color: rzCor('texto-2') } } },
+          scales: {
+            x: { ticks: { color: rzCor('texto-3') }, grid: { color: rzCor('graf-grade') } },
+            y: { ticks: { color: rzCor('texto-3'), callback: v => 'R$ ' + (v / 1000) + 'k' }, grid: { color: rzCor('graf-grade') }, beginAtZero: true },
+          },
+        },
+      });
+    }
+  },
+};
 
 // ─── Init ──────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {

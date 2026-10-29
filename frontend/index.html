@@ -635,6 +635,7 @@
         <button class="subtab" data-subtab="colaboradores-admitidos">🎓 Colaboradores Admitidos</button>
         <button class="subtab" data-subtab="menor-aprendiz">🌟 Menor Aprendiz <span class="subtab__count" id="count-aprendiz" style="display:none;background:var(--aviso);color:var(--sobre-laranja);"></span></button>
         <button class="subtab" data-subtab="talentos-cadastros">🏅 Banco de Talentos — Cadastros <span class="subtab__count" id="count-talentos-cadastros" style="display:none;background:var(--info);color:var(--sobre-laranja);"></span></button>
+        <button class="subtab" data-subtab="folha" style="display:none;">💰 Folha Salarial</button>
       </div>
 
       <!-- Funil de Candidatos -->
@@ -1179,6 +1180,155 @@
           <div class="card chart-card">
             <div class="card__header"><span class="card__title">🎯 Status Geral</span></div>
             <div class="card__body chart-card__body--small"><canvas id="chart-by-status"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Folha Salarial -->
+      <div class="subtab-panel" id="subtab-folha">
+        <div class="card" style="margin-bottom:20px;">
+          <div class="card__header" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+            <span class="card__title">📥 Importar Folha do Mês</span>
+            <span style="font-size:11px;color:var(--ink-3);">Só leitura/análise — não altera nenhuma folha, só soma os números</span>
+          </div>
+          <div class="card__body">
+            <form id="folha-import-form" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;" onsubmit="FolhaBI.importar(event)">
+              <div>
+                <label style="display:block;font-size:12px;color:var(--ink-3);margin-bottom:4px;">Mês</label>
+                <select id="folha-mes" required style="padding:10px;border-radius:8px;border:1px solid var(--ov-80);background:var(--fundo-2);color:var(--ink-1);">
+                  <option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Março</option>
+                  <option value="4">Abril</option><option value="5">Maio</option><option value="6">Junho</option>
+                  <option value="7">Julho</option><option value="8">Agosto</option><option value="9">Setembro</option>
+                  <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
+                </select>
+              </div>
+              <div>
+                <label style="display:block;font-size:12px;color:var(--ink-3);margin-bottom:4px;">Ano</label>
+                <input type="number" id="folha-ano" required min="2020" max="2100" style="width:100px;padding:10px;border-radius:8px;border:1px solid var(--ov-80);background:var(--fundo-2);color:var(--ink-1);">
+              </div>
+              <div style="flex:1;min-width:220px;">
+                <label style="display:block;font-size:12px;color:var(--ink-3);margin-bottom:4px;">Arquivo (.xlsx — mesmo layout de sempre: abas "Detalhado Relatorio" e "PJ")</label>
+                <input type="file" id="folha-arquivo" accept=".xlsx,.xlsm" required style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--ov-80);background:var(--fundo-2);color:var(--ink-1);">
+              </div>
+              <button type="submit" class="btn btn--primary" id="folha-import-btn">⬆ Importar</button>
+            </form>
+            <div id="folha-import-alert" class="alert" style="display:none;margin-top:12px;"></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:20px;">
+          <div class="card__header" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+            <span class="card__title">📅 Competência</span>
+            <select id="folha-competencia-select" onchange="FolhaBI.carregar(this.value)" style="padding:8px 12px;border-radius:8px;border:1px solid var(--ov-80);background:var(--fundo-2);color:var(--ink-1);min-width:200px;"></select>
+          </div>
+        </div>
+
+        <div id="folha-vazio" style="display:none;color:var(--ink-3);text-align:center;padding:40px;">Nenhuma folha importada ainda — use o formulário acima.</div>
+
+        <div id="folha-conteudo" style="display:none;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:20px;">
+            <div class="stat-card">
+              <div class="stat-card__number" id="folha-total-geral" style="font-size:1.6rem;">—</div>
+              <div class="stat-card__label">TOTAL DA FOLHA (CLT + PJ)</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card__number" id="folha-total-clt" style="font-size:1.6rem;">—</div>
+              <div class="stat-card__label">TOTAL CLT <span id="folha-qtd-clt"></span></div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card__number" id="folha-total-pj" style="font-size:1.6rem;">—</div>
+              <div class="stat-card__label">TOTAL PJ <span id="folha-qtd-pj"></span></div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card__number" id="folha-pct-pj" style="font-size:1.6rem;">—</div>
+              <div class="stat-card__label">% PJ DO TOTAL</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card__number" id="folha-custo-medio-clt" style="font-size:1.6rem;">—</div>
+              <div class="stat-card__label">CUSTO MÉDIO / CLT</div>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+            <div class="card chart-card">
+              <div class="card__header"><span class="card__title">📍 Folha CLT por Regional</span></div>
+              <div class="card__body"><canvas id="folha-chart-regional"></canvas></div>
+            </div>
+            <div class="card chart-card">
+              <div class="card__header"><span class="card__title">⚙️ MOD (operacional) × MOI (administrativo)</span></div>
+              <div class="card__body chart-card__body--small"><canvas id="folha-chart-classificacao"></canvas></div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-bottom:20px;">
+            <div class="card__header"><span class="card__title">📈 Evolução Mensal — CLT × PJ</span></div>
+            <div class="card__body"><canvas id="folha-chart-evolucao"></canvas></div>
+          </div>
+
+          <div class="card" style="margin-bottom:20px;">
+            <div class="card__header"><span class="card__title">🧾 Encargos e Benefícios (total da competência)</span></div>
+            <div class="card__body" id="folha-rubricas-body" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;"></div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+            <div class="card">
+              <div class="card__header"><span class="card__title">💼 Por Função (top 10)</span></div>
+              <div class="card__body" style="padding:0;">
+                <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
+                  <thead><tr style="border-bottom:1px solid var(--ov-80);">
+                    <th style="padding:8px 12px;text-align:left;color:var(--ink-3);">Função</th>
+                    <th style="padding:8px 12px;text-align:center;color:var(--ink-3);">Qtd</th>
+                    <th style="padding:8px 12px;text-align:right;color:var(--ink-3);">Total</th>
+                  </tr></thead>
+                  <tbody id="folha-funcao-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card__header"><span class="card__title">🏅 Maiores Remunerações (CLT, top 10)</span></div>
+              <div class="card__body" style="padding:0;">
+                <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
+                  <thead><tr style="border-bottom:1px solid var(--ov-80);">
+                    <th style="padding:8px 12px;text-align:left;color:var(--ink-3);">Nome</th>
+                    <th style="padding:8px 12px;text-align:left;color:var(--ink-3);">Função</th>
+                    <th style="padding:8px 12px;text-align:right;color:var(--ink-3);">Total Líquido</th>
+                  </tr></thead>
+                  <tbody id="folha-maiores-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-bottom:20px;">
+            <div class="card__header"><span class="card__title">🤝 Prestadores PJ da competência</span></div>
+            <div class="card__body" style="padding:0;overflow-x:auto;">
+              <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
+                <thead><tr style="border-bottom:1px solid var(--ov-80);">
+                  <th style="padding:8px 12px;text-align:left;color:var(--ink-3);">Fornecedor</th>
+                  <th style="padding:8px 12px;text-align:left;color:var(--ink-3);">Descrição</th>
+                  <th style="padding:8px 12px;text-align:right;color:var(--ink-3);">Valor</th>
+                </tr></thead>
+                <tbody id="folha-pj-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card__header" style="display:flex;justify-content:space-between;align-items:center;">
+              <span class="card__title">🗂 Importações</span>
+            </div>
+            <div class="card__body" style="padding:0;">
+              <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
+                <thead><tr style="border-bottom:1px solid var(--ov-80);">
+                  <th style="padding:8px 12px;text-align:left;color:var(--ink-3);">Competência</th>
+                  <th style="padding:8px 12px;text-align:left;color:var(--ink-3);">Arquivo</th>
+                  <th style="padding:8px 12px;text-align:left;color:var(--ink-3);">Importado por</th>
+                  <th style="padding:8px 12px;text-align:right;color:var(--ink-3);">Total</th>
+                  <th style="padding:8px 12px;"></th>
+                </tr></thead>
+                <tbody id="folha-importacoes-tbody"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>

@@ -25,7 +25,8 @@
     'banco-talentos': '<circle cx="12" cy="9" r="5.5"/><path d="m8.5 13.5-1.5 7.5 5-3 5 3-1.5-7.5"/>',
     'colaboradores-admitidos': '<path d="m2 9 10-5 10 5-10 5z"/><path d="M6 11.2V16c0 1.4 2.7 3 6 3s6-1.6 6-3v-4.8M22 9v6"/>',
     'menor-aprendiz': '<path d="M12 21v-8M12 13c0-4 3-6.5 8-6.5 0 4-3 6.5-8 6.5zM12 15c0-3-2.2-5-6.5-5 0 3 2.2 5 6.5 5z"/>',
-    'talentos-cadastros': '<circle cx="9" cy="8" r="3.4"/><path d="M3 20a6 6 0 0 1 12 0M18 8v6M15 11h6"/>'
+    'talentos-cadastros': '<circle cx="9" cy="8" r="3.4"/><path d="M3 20a6 6 0 0 1 12 0M18 8v6M15 11h6"/>',
+    'folha': '<circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5c0-1.4 1.1-2.5 2.5-2.5s2.5 .9 2.5 2.2c0 2.8-5 1.8-5 4.6 0 1.3 1.1 2.2 2.5 2.2s2.5-1.1 2.5-2.5"/>'
   };
   var ROTULO_ROLE = { ROLE_ADMIN: 'Admin', ROLE_OWNER: 'Aprovador', ROLE_VIEWER: 'Equipe RH', ROLE_GESTOR: 'Gestor' };
 

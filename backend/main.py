@@ -194,7 +194,7 @@ def email_test_send():
 
     return jsonify(result)
 
-from routers import auth, jobs, candidaturas, processos, solicitacoes, menor_aprendiz, banco_talentos
+from routers import auth, jobs, candidaturas, processos, solicitacoes, menor_aprendiz, banco_talentos, folha
 from colaboradores_router import bp_colab
 app.register_blueprint(auth.bp)
 
@@ -212,6 +212,7 @@ app.register_blueprint(solicitacoes.bp)
 app.register_blueprint(menor_aprendiz.bp)
 app.register_blueprint(banco_talentos.bp)
 app.register_blueprint(bp_colab)
+app.register_blueprint(folha.bp)
 
 @app.route("/revisar-solicitacao")
 def revisar_solicitacao():
