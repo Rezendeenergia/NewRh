@@ -104,25 +104,40 @@ def _get_colaboradores_raw() -> list:
             return []
 
         sheets = r.json().get("value", [])
-        print(f"[COLAB][diag] abas encontradas: {[s.get('name') for s in sheets]}")
+        nomes_abas = [s.get("name") for s in sheets]
+        print(f"[COLAB][diag] abas encontradas: {nomes_abas}")
         if not sheets:
             print("[COLAB] Erro: planilha não tem nenhuma aba")
             return []
 
-        # Usa a primeira aba — mesmo drive_id/file_id resolvidos acima
-        sheet_name = sheets[0]["name"]
-        url_range = f"{GRAPH_BASE}/drives/{drive_id}/items/{file_id}/workbook/worksheets('{sheet_name}')/usedRange"
-        r2 = requests.get(url_range, headers=headers, timeout=15)
-        print(f"[COLAB][diag] usedRange da aba {sheet_name!r}: status={r2.status_code}")
-        if r2.status_code != 200:
-            print(f"[COLAB] Erro ao ler range: {r2.status_code} -- corpo: {r2.text[:300]}")
-            return []
+        # A planilha tem várias abas (ex.: "Planilha1" em branco, "PJ",
+        # "COLABORADORES DE BENEFICIO INSS" etc.) — a aba com os colaboradores
+        # ativos (a que interessa pra CIPA e pra "Mudança de Função") é
+        # "COLABORADORES ATIVOS". Procura por ela primeiro (tolerando espaços/
+        # acentuação no nome da aba); se não achar, tenta as outras em ordem
+        # até achar uma com dados de verdade.
+        def _chave_aba(nome):
+            return 0 if _normalizar_nome(nome) == "COLABORADORES ATIVOS" else 1
+        ordem_abas = sorted(nomes_abas, key=_chave_aba)
 
-        data = r2.json()
-        values = data.get("values", [])
-        print(f"[COLAB][diag] linhas lidas (com cabeçalho): {len(values)}")
+        values = []
+        sheet_name = None
+        for candidata in ordem_abas:
+            url_range = f"{GRAPH_BASE}/drives/{drive_id}/items/{file_id}/workbook/worksheets('{candidata}')/usedRange"
+            r2 = requests.get(url_range, headers=headers, timeout=15)
+            print(f"[COLAB][diag] usedRange da aba {candidata!r}: status={r2.status_code}")
+            if r2.status_code != 200:
+                print(f"[COLAB] Erro ao ler range da aba {candidata!r}: {r2.status_code} -- corpo: {r2.text[:300]}")
+                continue
+            valores_aba = r2.json().get("values", [])
+            print(f"[COLAB][diag] linhas lidas na aba {candidata!r} (com cabeçalho): {len(valores_aba)}")
+            if len(valores_aba) >= 2:
+                sheet_name = candidata
+                values = valores_aba
+                break
+
         if len(values) < 2:
-            print("[COLAB] Erro: planilha retornou sem linhas de dados (só cabeçalho ou vazia)")
+            print("[COLAB] Erro: nenhuma aba retornou linhas de dados (só cabeçalho ou vazia)")
             return []
 
         # Monta lista de colaboradores
@@ -147,7 +162,7 @@ def _get_colaboradores_raw() -> list:
 
         _cache_colaboradores["data"] = colaboradores
         _cache_colaboradores["ts"]   = now
-        print(f"[COLAB] {len(colaboradores)} colaboradores carregados do SharePoint")
+        print(f"[COLAB] {len(colaboradores)} colaboradores carregados do SharePoint (aba {sheet_name!r})")
         return colaboradores
 
     except Exception as e:
