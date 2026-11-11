@@ -69,6 +69,40 @@
     .td-motivo { max-width:420px; white-space:pre-wrap; color:var(--ink-2); }
 
     .loading { padding:32px; text-align:center; color:var(--ink-3); }
+
+    /* ---------- Painel de gestão do ciclo ---------- */
+    .gestao-card {
+      background:var(--surface); border:1px solid var(--ov-60);
+      border-radius:16px; padding:22px 24px; margin-bottom:24px;
+    }
+    .gestao-card__topo { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:16px; }
+    .gestao-card__ano { font-family:var(--f-titulo); font-weight:900; font-size:1.3rem; }
+    .gestao-card__fase {
+      display:inline-block; padding:4px 12px; border-radius:20px; font-size:.75rem; font-weight:700;
+      background:rgba(255,106,0,.12); color:var(--brand); text-transform:uppercase; letter-spacing:.04em;
+    }
+    .gestao-card__acoes { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+    .btn {
+      padding:8px 16px; border-radius:8px; font-size:.82rem; font-weight:600;
+      border:1px solid var(--ov-80); background:var(--ov-40); color:var(--ink-1);
+      cursor:pointer; font-family:inherit; transition:all .15s;
+    }
+    .btn:hover { background:var(--ov-70); }
+    .btn--principal { background:var(--brand); color:#fff; border-color:transparent; }
+    .btn--principal:hover { opacity:.9; }
+    .btn--atual { outline:2px solid var(--brand); }
+    .gestao-card__linha { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px; }
+    .gestao-card__linha input {
+      background:var(--surface); border:1px solid var(--ov-80); color:var(--ink-1);
+      border-radius:8px; padding:7px 10px; font-size:.83rem; font-family:inherit; width:110px;
+    }
+    .gestao-card__msg { font-size:.78rem; color:var(--ink-3); margin-top:8px; }
+
+    .papel-input {
+      background:var(--surface); border:1px solid var(--ov-80); color:var(--ink-1);
+      border-radius:6px; padding:5px 8px; font-size:.78rem; font-family:inherit; width:150px;
+    }
+    .td-eleito { font-weight:700; color:#4caf50; font-size:.75rem; text-transform:uppercase; }
   </style>
 </head>
 <body>
@@ -80,7 +114,7 @@
       <img class="logo-claro" src="/img/logo-rezende.png" alt="Rezende Energia"><img class="logo-escuro" src="/img/logo-rezende-branca.png" alt="Rezende Energia">
       <div>
         <div class="page-header__title">Rezende RH</div>
-        <div class="page-header__sub">Candidaturas à CIPA — Gestão 2027</div>
+        <div class="page-header__sub" id="page-sub">Candidaturas à CIPA</div>
       </div>
     </div>
     <div class="page-header__nav">
@@ -92,6 +126,30 @@
   </div>
 
   <div class="page-body">
+
+    <div class="gestao-card">
+      <div class="gestao-card__topo">
+        <div><span class="gestao-card__ano" id="gc-ano">Gestão —</span> <span class="gestao-card__fase" id="gc-fase">—</span></div>
+        <button class="btn" onclick="baixarPdf()">⬇️ Baixar PDF de todas as inscrições</button>
+      </div>
+
+      <div class="gestao-card__acoes" id="gc-fase-botoes"></div>
+
+      <div class="gestao-card__linha">
+        <label style="font-size:.82rem;">Nº de vagas (titulares) desta gestão:</label>
+        <input type="number" id="gc-vagas" min="1">
+        <button class="btn" onclick="salvarVagas()">Salvar vagas</button>
+        <button class="btn" onclick="computarEleitos()">🏆 Computar eleitos</button>
+      </div>
+
+      <div class="gestao-card__linha">
+        <label style="font-size:.82rem;">Abrir nova gestão (próximo ano):</label>
+        <input type="text" id="gc-novo-ano" placeholder="2028">
+        <button class="btn" onclick="novaGestao()">Criar nova gestão</button>
+      </div>
+
+      <div class="gestao-card__msg" id="gc-msg"></div>
+    </div>
 
     <div class="stats-row">
       <div class="stat-card">
@@ -112,11 +170,13 @@
             <th>Matrícula</th>
             <th>Cargo</th>
             <th>Por que quer participar</th>
+            <th>Votos</th>
+            <th>Papel (se eleito)</th>
             <th>Recebido em</th>
           </tr>
         </thead>
         <tbody id="table-body">
-          <tr><td colspan="5" class="loading">Carregando...</td></tr>
+          <tr><td colspan="7" class="loading">Carregando...</td></tr>
         </tbody>
       </table>
     </div>
@@ -129,6 +189,161 @@
 const API = '/api';
 let token = (window.RzSessao && RzSessao.ler() || {}).token || '';
 let candidaturas = [];
+let gestaoAtual = null;
+
+const FASES = ['INSCRICAO_ABERTA', 'INSCRICAO_FECHADA', 'VOTACAO_ABERTA', 'VOTACAO_FECHADA', 'RESULTADO'];
+const FASE_LABEL = {
+  INSCRICAO_ABERTA:  'Inscrições abertas',
+  INSCRICAO_FECHADA: 'Inscrições encerradas',
+  VOTACAO_ABERTA:    'Votação aberta',
+  VOTACAO_FECHADA:   'Votação encerrada',
+  RESULTADO:         'Resultado publicado',
+};
+
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function gcMsg(msg, erro) {
+  const el = document.getElementById('gc-msg');
+  el.textContent = msg;
+  el.style.color = erro ? 'var(--alerta, #ff5252)' : 'var(--ink-3)';
+}
+
+async function loadGestao() {
+  try {
+    const r = await fetch(`${API}/cipa/gestao`);
+    gestaoAtual = await r.json();
+    document.getElementById('gc-ano').textContent = 'Gestão ' + (gestaoAtual.ano || '—');
+    document.getElementById('gc-fase').textContent = FASE_LABEL[gestaoAtual.fase] || gestaoAtual.fase;
+    document.getElementById('gc-vagas').value = gestaoAtual.numeroVagas || '';
+    document.getElementById('page-sub').textContent = 'Candidaturas à CIPA — Gestão ' + (gestaoAtual.ano || '');
+
+    document.getElementById('gc-fase-botoes').innerHTML = FASES.map(f => `
+      <button class="btn ${f === gestaoAtual.fase ? 'btn--atual' : ''}" onclick="definirFase('${f}')">${FASE_LABEL[f]}</button>
+    `).join('');
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function definirFase(fase) {
+  gcMsg('Atualizando fase...');
+  try {
+    const r = await fetch(`${API}/cipa/gestao/fase`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ fase }),
+    });
+    const data = await r.json();
+    if (r.status === 401) { RzSessao.expirou(); return; }
+    if (!r.ok) return gcMsg(data.message || 'Erro ao atualizar fase.', true);
+    gcMsg(`Fase atualizada para "${FASE_LABEL[fase] || fase}".`);
+    await loadGestao();
+  } catch (e) {
+    gcMsg('Erro de conexão ao atualizar fase.', true);
+  }
+}
+
+async function salvarVagas() {
+  const numeroVagas = Number(document.getElementById('gc-vagas').value);
+  if (!numeroVagas || numeroVagas < 1) return gcMsg('Informe um número de vagas válido.', true);
+  gcMsg('Salvando...');
+  try {
+    const r = await fetch(`${API}/cipa/gestao/vagas`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ numeroVagas }),
+    });
+    const data = await r.json();
+    if (r.status === 401) { RzSessao.expirou(); return; }
+    if (!r.ok) return gcMsg(data.message || 'Erro ao salvar vagas.', true);
+    gcMsg('Número de vagas salvo.');
+    await loadGestao();
+  } catch (e) {
+    gcMsg('Erro de conexão ao salvar vagas.', true);
+  }
+}
+
+async function novaGestao() {
+  const ano = document.getElementById('gc-novo-ano').value.trim();
+  if (!ano) return gcMsg('Informe o ano da nova gestão.', true);
+  if (!confirm(`Criar a gestão ${ano}? A gestão atual (${gestaoAtual?.ano || ''}) continua com os dados salvos, só deixa de ser a ativa.`)) return;
+  gcMsg('Criando nova gestão...');
+  try {
+    const r = await fetch(`${API}/cipa/gestao/nova`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ ano }),
+    });
+    const data = await r.json();
+    if (r.status === 401) { RzSessao.expirou(); return; }
+    if (!r.ok) return gcMsg(data.message || 'Erro ao criar nova gestão.', true);
+    gcMsg(`Gestão ${ano} criada e ativa.`);
+    document.getElementById('gc-novo-ano').value = '';
+    await loadGestao();
+    await loadData();
+  } catch (e) {
+    gcMsg('Erro de conexão ao criar nova gestão.', true);
+  }
+}
+
+async function computarEleitos() {
+  if (!confirm('Marcar os mais votados como eleitos, conforme o nº de vagas definido? Isso pode ser refeito depois se precisar.')) return;
+  gcMsg('Computando eleitos...');
+  try {
+    const r = await fetch(`${API}/cipa/eleitos/computar`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await r.json();
+    if (r.status === 401) { RzSessao.expirou(); return; }
+    if (!r.ok) return gcMsg(data.message || 'Erro ao computar eleitos.', true);
+    gcMsg(data.message || 'Eleitos computados.');
+    await loadData();
+  } catch (e) {
+    gcMsg('Erro de conexão ao computar eleitos.', true);
+  }
+}
+
+async function salvarPapel(id, valor) {
+  try {
+    const r = await fetch(`${API}/cipa/eleitos/papel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ candidaturaId: id, papel: valor }),
+    });
+    if (r.status === 401) { RzSessao.expirou(); return; }
+    if (!r.ok) {
+      const data = await r.json();
+      alert(data.message || 'Erro ao salvar papel.');
+      return;
+    }
+    await loadData();
+  } catch (e) {
+    alert('Erro de conexão ao salvar papel.');
+  }
+}
+
+async function baixarPdf() {
+  try {
+    const gestaoParam = gestaoAtual?.ano ? `?gestao=${encodeURIComponent(gestaoAtual.ano)}` : '';
+    const r = await fetch(`${API}/cipa/pdf${gestaoParam}`, { headers: { Authorization: `Bearer ${token}` } });
+    if (r.status === 401) { RzSessao.expirou(); return; }
+    if (!r.ok) { alert('Erro ao gerar o PDF.'); return; }
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `candidaturas-cipa-${gestaoAtual?.ano || 'todas'}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    alert('Erro de conexão ao baixar o PDF.');
+  }
+}
 
 async function loadData() {
   try {
@@ -140,12 +355,8 @@ async function loadData() {
   } catch (e) {
     console.error(e);
     document.getElementById('table-body').innerHTML =
-      '<tr><td colspan="5" class="loading">Erro ao carregar dados</td></tr>';
+      '<tr><td colspan="7" class="loading">Erro ao carregar dados</td></tr>';
   }
-}
-
-function esc(s) {
-  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
 function renderTable() {
@@ -160,7 +371,7 @@ function renderTable() {
   }
   const tbody = document.getElementById('table-body');
   if (!itens.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="loading">Nenhuma candidatura encontrada.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="loading">Nenhuma candidatura encontrada.</td></tr>';
     return;
   }
   tbody.innerHTML = itens.map(c => `
@@ -169,11 +380,17 @@ function renderTable() {
       <td>${esc(c.matricula)}</td>
       <td>${esc(c.cargo)}</td>
       <td class="td-motivo">${esc(c.motivo)}</td>
+      <td>${c.votos ?? 0}${c.eleito ? '<div class="td-eleito">✓ Eleito</div>' : ''}</td>
+      <td>${c.eleito
+        ? `<input class="papel-input" value="${esc(c.papel || '')}" placeholder="Ex.: Presidente"
+             onchange="salvarPapel(${c.id}, this.value)">`
+        : '<span style="color:var(--ink-3); font-size:.78rem;">—</span>'}</td>
       <td class="td-sub">${c.createdAt ? new Date(c.createdAt).toLocaleString('pt-BR', { timeZone: 'America/Santarem' }) : '—'}</td>
     </tr>
   `).join('');
 }
 
+loadGestao();
 loadData();
 </script>
 

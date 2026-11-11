@@ -491,3 +491,40 @@ class CipaCandidatura(Base):
     motivo      = Column(Text,        nullable=False)   # por que quer participar da CIPA
     gestao      = Column(String(20),  nullable=False, default="2027")
     created_at  = Column(DateTime,    server_default=func.now())
+
+    # Resultado da votação (preenchidos só depois que a votação fecha)
+    votos       = Column(Integer,     nullable=False, default=0)
+    eleito      = Column(Boolean,     nullable=False, default=False)
+    papel       = Column(String(50),  nullable=True)   # texto livre: "Presidente", "Vice-Presidente", "Membro" etc — o RH decide
+
+
+class CipaGestao(Base):
+    """Uma gestão/ciclo da CIPA (ex.: 2027). Controla em que fase o processo
+    está — o mesmo fluxo se repete todo ano, só muda o 'ano' e os dados."""
+    __tablename__ = "cipa_gestoes"
+
+    # Fases, em ordem: INSCRICAO_ABERTA -> INSCRICAO_FECHADA -> VOTACAO_ABERTA
+    # -> VOTACAO_FECHADA -> RESULTADO
+    id            = Column(Integer, primary_key=True, index=True)
+    ano           = Column(String(20),  nullable=False, unique=True)
+    fase          = Column(String(30), nullable=False, default="INSCRICAO_ABERTA")
+    numero_vagas  = Column(Integer,    nullable=True)   # quantos dos mais votados viram eleitos
+    ativa         = Column(Boolean,    nullable=False, default=True)  # só uma gestão ativa por vez
+    created_at    = Column(DateTime,   server_default=func.now())
+    atualizado_em = Column(DateTime,   server_default=func.now(), onupdate=func.now())
+
+
+class CipaVotante(Base):
+    """Registra quem já votou numa gestão, só pra impedir voto duplicado.
+    Voto secreto (NR-5): não guarda em qual candidato a pessoa votou, nem o
+    nome dela — só a matrícula normalizada, pra conferir que já votou."""
+    __tablename__ = "cipa_votantes"
+
+    id             = Column(Integer, primary_key=True, index=True)
+    gestao         = Column(String(20), nullable=False)
+    matricula_norm = Column(String(30), nullable=False)
+    created_at     = Column(DateTime,   server_default=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("gestao", "matricula_norm", name="uq_cipa_votante_gestao_matricula"),
+    )
