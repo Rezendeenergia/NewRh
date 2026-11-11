@@ -86,12 +86,41 @@
     }
     .alert--error { background: rgba(255,82,82,.12); border: 1px solid rgba(255,82,82,.3); color: var(--alerta); }
 
-    .cp-success { display: none; text-align: center; padding: 60px 24px; }
+    .cp-success { display: none; text-align: center; padding: 48px 24px 24px; }
     .cp-success__icon { font-size: 60px; margin-bottom: 16px; }
     .cp-success__title { font-size: 24px; font-weight: 800; color: var(--ok); margin: 0 0 10px; }
     .cp-success__text { color: var(--texto-2); font-size: 15px; max-width: 480px; margin: 0 auto 24px; line-height: 1.7; }
-    .cp-success__back { display: inline-block; padding: 10px 24px; background: var(--ov-60); border: 1px solid var(--ov-120); border-radius: 8px; color: var(--texto-2); text-decoration: none; font-size: 14px; }
+    .cp-success__actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
+    .cp-success__back, .cp-success__print {
+      display: inline-block; padding: 10px 24px; border-radius: 8px; font-size: 14px;
+      text-decoration: none; cursor: pointer; border: 1px solid var(--ov-120); font-family: inherit;
+    }
+    .cp-success__back { background: var(--ov-60); color: var(--texto-2); }
     .cp-success__back:hover { background: var(--ov-100); color: var(--texto); }
+    .cp-success__print { background: var(--laranja-texto); color: #fff; border-color: transparent; font-weight: 700; }
+    .cp-success__print:hover { opacity: .9; }
+
+    /* ---------- Comprovante ---------- */
+    .comprovante {
+      max-width: 440px; margin: 0 auto; text-align: left;
+      border: 1px dashed var(--ov-120); border-radius: 12px;
+      padding: 18px 22px; background: var(--ov-30);
+    }
+    .comprovante__titulo {
+      font-size: 11px; font-weight: 700; color: var(--texto-3);
+      text-transform: uppercase; letter-spacing: 1px; margin: 0 0 10px;
+      border-bottom: 1px solid var(--ov-70); padding-bottom: 8px;
+    }
+    .comprovante__linha { display: flex; justify-content: space-between; gap: 14px; padding: 6px 0; font-size: 13.5px; }
+    .comprovante__linha span { color: var(--texto-3); }
+    .comprovante__linha strong { text-align: right; color: var(--texto); }
+
+    @media print {
+      body > *:not(.cp-container) { display: none !important; }
+      .cp-container > *:not(#cp-success) { display: none !important; }
+      .cp-success__actions, .no-print { display: none !important; }
+      .comprovante { border: 1px solid #000; }
+    }
   </style>
 </head>
 <body>
@@ -114,7 +143,7 @@
 
 <div class="cp-container">
 
-  <!-- Sucesso -->
+  <!-- Sucesso / Comprovante -->
   <div class="cp-success" id="cp-success">
     <div class="cp-success__icon">🎉</div>
     <div class="cp-success__title">Candidatura enviada!</div>
@@ -122,7 +151,21 @@
       Recebemos a sua candidatura para a CIPA — gestão 2027. O SESMT e o RH vão conferir
       as inscrições; qualquer novidade sobre a eleição será avisada pelos canais internos.
     </p>
-    <a href="/portal-colaborador" class="cp-success__back">← Voltar ao Portal do Colaborador</a>
+
+    <div class="comprovante" id="cp-comprovante">
+      <p class="comprovante__titulo">📋 Comprovante de Candidatura</p>
+      <div class="comprovante__linha"><span>Protocolo</span><strong id="cv-protocolo">—</strong></div>
+      <div class="comprovante__linha"><span>Nome</span><strong id="cv-nome">—</strong></div>
+      <div class="comprovante__linha"><span>Matrícula</span><strong id="cv-matricula">—</strong></div>
+      <div class="comprovante__linha"><span>Cargo</span><strong id="cv-cargo">—</strong></div>
+      <div class="comprovante__linha"><span>Gestão</span><strong id="cv-gestao">—</strong></div>
+      <div class="comprovante__linha"><span>Recebido em</span><strong id="cv-data">—</strong></div>
+    </div>
+
+    <div class="cp-success__actions no-print">
+      <button type="button" class="cp-success__print" onclick="window.print()">🖨 Imprimir / Salvar comprovante</button>
+      <a href="/portal-colaborador" class="cp-success__back">← Voltar ao Portal do Colaborador</a>
+    </div>
   </div>
 
   <!-- Formulário -->
@@ -184,6 +227,18 @@
     document.getElementById('cp-alert').style.display = 'none';
   }
 
+  function preencherComprovante(c) {
+    const protocolo = 'CIPA-' + (c.gestao || '') + '-' + String(c.id).padStart(5, '0');
+    document.getElementById('cv-protocolo').textContent = protocolo;
+    document.getElementById('cv-nome').textContent      = c.nome || '—';
+    document.getElementById('cv-matricula').textContent = c.matricula || '—';
+    document.getElementById('cv-cargo').textContent      = c.cargo || '—';
+    document.getElementById('cv-gestao').textContent     = c.gestao || '—';
+    document.getElementById('cv-data').textContent = c.createdAt
+      ? new Date(c.createdAt).toLocaleString('pt-BR', { timeZone: 'America/Santarem', dateStyle: 'short', timeStyle: 'short' })
+      : '—';
+  }
+
   async function submitForm() {
     hideAlert();
     const btn = document.getElementById('cp-submit-btn');
@@ -215,6 +270,7 @@
         return showAlert(data.message || 'Erro ao enviar. Tente novamente.');
       }
 
+      preencherComprovante(data);
       document.getElementById('cp-form-wrap').style.display = 'none';
       document.getElementById('cp-success').style.display   = 'block';
       window.scrollTo({ top: 0, behavior: 'smooth' });
