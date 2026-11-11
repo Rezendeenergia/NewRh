@@ -25,12 +25,14 @@ def _get_colaboradores_raw() -> list:
         drive_id = _get_drive_id(site_id)
         headers  = {"Authorization": f"Bearer {token}"}
 
-        # Busca o arquivo pelo ID
-        url = f"{GRAPH_BASE}/drives/{drive_id}/items/{BASE_COLAB_FILE_ID}/workbook/worksheets"
+        # Busca o arquivo pelo ID fixo
+        file_id = BASE_COLAB_FILE_ID
+        url = f"{GRAPH_BASE}/drives/{drive_id}/items/{file_id}/workbook/worksheets"
         r = requests.get(url, headers=headers, timeout=10)
 
         if r.status_code != 200:
-            # Tenta buscar pelo nome
+            # ID fixo pode ter ficado desatualizado (arquivo movido/recriado
+            # no SharePoint) — tenta achar o arquivo atual pelo nome.
             url2 = f"{GRAPH_BASE}/sites/{site_id}/drive/root/search(q='Base de Colaboradores')"
             r2 = requests.get(url2, headers=headers, timeout=10)
             if r2.status_code != 200:
@@ -42,14 +44,17 @@ def _get_colaboradores_raw() -> list:
             file_id = items[0]["id"]
             url = f"{GRAPH_BASE}/drives/{drive_id}/items/{file_id}/workbook/worksheets"
             r = requests.get(url, headers=headers, timeout=10)
+            if r.status_code != 200:
+                print(f"[COLAB] Erro ao acessar planilha (fallback): {r.status_code}")
+                return []
 
         sheets = r.json().get("value", [])
         if not sheets:
             return []
 
-        # Usa a primeira aba
+        # Usa a primeira aba — mesmo file_id resolvido acima (fixo ou do fallback)
         sheet_name = sheets[0]["name"]
-        url_range = f"{GRAPH_BASE}/drives/{drive_id}/items/{BASE_COLAB_FILE_ID}/workbook/worksheets('{sheet_name}')/usedRange"
+        url_range = f"{GRAPH_BASE}/drives/{drive_id}/items/{file_id}/workbook/worksheets('{sheet_name}')/usedRange"
         r2 = requests.get(url_range, headers=headers, timeout=15)
         if r2.status_code != 200:
             print(f"[COLAB] Erro ao ler range: {r2.status_code}")
