@@ -477,3 +477,17 @@ class FolhaPJ(Base):
     setor          = Column(String(100), nullable=True)   # 4ª coluna da aba PJ (ex.: PROGRAMACAO, SESMT, FROTA)
 
     importacao = relationship("FolhaImportacao", back_populates="pjs")
+
+
+# ── Candidatura à CIPA (Portal do Colaborador) ──────────────────
+class CipaCandidatura(Base):
+    """Inscrição de colaborador para concorrer a membro da CIPA."""
+    __tablename__ = "cipa_candidaturas"
+
+    id          = Column(Integer, primary_key=True, index=True)
+    nome        = Column(String(150), nullable=False)
+    matricula   = Column(String(30),  nullable=False)
+    cargo       = Column(String(150), nullable=False)
+    motivo      = Column(Text,        nullable=False)   # por que quer participar da CIPA
+    gestao      = Column(String(20),  nullable=False, default="2027")
+    created_at  = Column(DateTime,    server_default=func.now())
