@@ -150,12 +150,25 @@ def _get_colaboradores_raw() -> list:
         for row in values[1:]:
             obj = {}
             for i, h in enumerate(headers_norm):
-                obj[h] = str(row[i]).strip() if i < len(row) else ""
-            # Mapeia campos comuns
-            nome  = obj.get("NOME", obj.get("COLABORADOR", obj.get("FUNCIONARIO", obj.get("NOME COMPLETO", ""))))
-            cargo = obj.get("CARGO", obj.get("FUNCAO", obj.get("FUNCAO ATUAL", obj.get("CARGO ATUAL", ""))))
-            mat   = obj.get("MATRICULA", obj.get("MAT", obj.get("MATR", obj.get("ID", ""))))
-            local = obj.get("LOCALIDADE", obj.get("LOCAL", obj.get("CIDADE", obj.get("REGIONAL", ""))))
+                if h:
+                    obj[h] = str(row[i]).strip() if i < len(row) else ""
+            # Mapeia campos comuns: primeiro tenta achar uma coluna com esse
+            # nome exato; se não achar nenhuma, aceita uma coluna cujo nome
+            # CONTENHA o termo (ex.: candidato "NOME" bate com a coluna real
+            # "Nome Completo do Funcionário").
+            def _valor_coluna(*candidatos):
+                for c in candidatos:
+                    if obj.get(c):
+                        return obj[c]
+                for chave, valor in obj.items():
+                    if valor and any(c in chave for c in candidatos):
+                        return valor
+                return ""
+
+            nome  = _valor_coluna("NOME", "COLABORADOR", "FUNCIONARIO")
+            cargo = _valor_coluna("CARGO", "FUNCAO")
+            mat   = _valor_coluna("MATRICULA", "MATR", "MAT", "ID")
+            local = _valor_coluna("LOCALIDADE", "REGIONAL", "LOCAL", "CIDADE")
             if nome:
                 colaboradores.append({
                     "nome":       nome,
