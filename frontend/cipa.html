@@ -53,16 +53,17 @@
       color: var(--texto-2); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px;
     }
     .required-mark { color: var(--laranja-texto); }
-    .form-field__input, .form-field__textarea {
+    .form-field__input, .form-field__textarea, .form-field__select {
       width: 100%; box-sizing: border-box;
       background: var(--ov-60); border: 1px solid var(--ov-100);
       color: var(--texto); border-radius: 8px; padding: 10px 12px; font-size: 14px;
       transition: border-color .2s; font-family: inherit;
     }
-    .form-field__input:focus, .form-field__textarea:focus {
+    .form-field__input:focus, .form-field__textarea:focus, .form-field__select:focus {
       outline: none; border-color: rgba(255,106,0,.5);
     }
     .form-field__textarea { min-height: 120px; resize: vertical; }
+    .form-field__select option { background: var(--sup, #222); color: var(--texto); }
 
     .lgpd-box {
       background: rgba(91,141,239,.06); border: 1px solid rgba(91,141,239,.2);
@@ -179,8 +180,9 @@
         <div class="cp-card__body">
 
           <div class="form-field">
-            <label class="form-field__label" for="cp-nome">Nome <strong class="required-mark">*</strong></label>
-            <input id="cp-nome" type="text" class="form-field__input" placeholder="Seu nome completo" required>
+            <label class="form-field__label" for="cp-nome">Nome completo <strong class="required-mark">*</strong></label>
+            <input id="cp-nome" type="text" class="form-field__input" placeholder="SEU NOME COMPLETO"
+                   style="text-transform:uppercase;" autocapitalize="characters" required>
           </div>
 
           <div class="form-field">
@@ -190,7 +192,9 @@
 
           <div class="form-field">
             <label class="form-field__label" for="cp-cargo">Cargo <strong class="required-mark">*</strong></label>
-            <input id="cp-cargo" type="text" class="form-field__input" placeholder="Seu cargo atual" required>
+            <select id="cp-cargo" class="form-field__select" required>
+              <option value="">Carregando cargos...</option>
+            </select>
           </div>
 
           <div class="form-field">
@@ -227,6 +231,32 @@
     document.getElementById('cp-alert').style.display = 'none';
   }
 
+  // Nome sempre em caixa alta enquanto a pessoa digita.
+  document.getElementById('cp-nome').addEventListener('input', function () {
+    const pos = this.selectionStart;
+    this.value = this.value.toUpperCase();
+    this.setSelectionRange(pos, pos);
+  });
+
+  // Carrega os cargos da Base de Colaboradores do RH para a lista suspensa.
+  async function carregarCargos() {
+    const select = document.getElementById('cp-cargo');
+    try {
+      const resp = await fetch('/api/cipa/cargos');
+      const data = await resp.json();
+      const cargos = data.cargos || [];
+      if (!cargos.length) {
+        select.innerHTML = '<option value="">Não foi possível carregar os cargos — recarregue a página</option>';
+        return;
+      }
+      select.innerHTML = '<option value="">Selecione seu cargo</option>' +
+        cargos.map(c => `<option value="${c.replace(/"/g, '&quot;')}">${c}</option>`).join('');
+    } catch (e) {
+      select.innerHTML = '<option value="">Não foi possível carregar os cargos — recarregue a página</option>';
+    }
+  }
+  carregarCargos();
+
   function preencherComprovante(c) {
     const protocolo = 'CIPA-' + (c.gestao || '') + '-' + String(c.id).padStart(5, '0');
     document.getElementById('cv-protocolo').textContent = protocolo;
@@ -243,14 +273,15 @@
     hideAlert();
     const btn = document.getElementById('cp-submit-btn');
 
-    const nome      = document.getElementById('cp-nome').value.trim();
+    const nome      = document.getElementById('cp-nome').value.trim().toUpperCase();
     const matricula = document.getElementById('cp-matricula').value.trim();
     const cargo     = document.getElementById('cp-cargo').value.trim();
     const motivo    = document.getElementById('cp-motivo').value.trim();
 
     if (!nome)      return showAlert('Informe o nome.');
+    if (nome.split(/\s+/).filter(Boolean).length < 2) return showAlert('Informe o nome completo (nome e sobrenome).');
     if (!matricula) return showAlert('Informe a matrícula.');
-    if (!cargo)     return showAlert('Informe o cargo.');
+    if (!cargo)     return showAlert('Selecione o seu cargo.');
     if (!motivo)    return showAlert('Conte por que quer participar da CIPA.');
 
     btn.disabled = true;

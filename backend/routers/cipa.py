@@ -5,6 +5,7 @@ Públicas:
   POST /api/cipa          — candidatura (sem auth, qualquer colaborador)
                             (nome + matrícula precisam bater com a Base de
                             Colaboradores do RH, no SharePoint)
+  GET  /api/cipa/cargos    — lista de cargos (p/ preencher a lista suspensa)
 
 Protegidas (gestores RH):
   GET  /api/cipa          — lista todas as candidaturas
@@ -31,6 +32,18 @@ def _to_dict(c):
     }
 
 
+# ── Lista de cargos (p/ a lista suspensa do formulário) ──────────
+
+@bp.get("/cargos")
+def cargos():
+    try:
+        from colaboradores_service import listar_cargos
+        return jsonify({"cargos": listar_cargos()})
+    except Exception as e:
+        print(f"[CIPA] Erro ao listar cargos: {e}")
+        return jsonify({"cargos": []})
+
+
 # ── Candidatura pública ─────────────────────────────────────────
 
 @bp.post("")
@@ -42,10 +55,21 @@ def candidatar():
         if not str(data.get(field) or "").strip():
             return jsonify({"message": f"Campo obrigatório: {field}"}), 400
 
+    # Nome: sempre em caixa alta e precisa ser o nome completo (nome + sobrenome).
+    nome = " ".join(str(data["nome"]).strip().upper().split())
+    if len(nome.split(" ")) < 2:
+        return jsonify({"message": "Informe o nome completo (nome e sobrenome)."}), 400
+
+    matricula = str(data["matricula"]).strip()
+    motivo    = str(data["motivo"]).strip()
+    if not motivo:
+        return jsonify({"message": "Conte por que você quer participar da CIPA."}), 400
+
+    from colaboradores_service import validar_colaborador_ativo, listar_cargos, _normalizar_nome
+
     # Confere nome + matrícula na Base de Colaboradores do RH antes de aceitar.
     try:
-        from colaboradores_service import validar_colaborador_ativo
-        status_colab = validar_colaborador_ativo(data["nome"], data["matricula"])
+        status_colab = validar_colaborador_ativo(nome, matricula)
     except Exception as e:
         print(f"[CIPA] Erro ao validar colaborador: {e}")
         status_colab = "indisponivel"
@@ -61,13 +85,24 @@ def candidatar():
                        "Confira se digitou exatamente como está no crachá/contracheque e tente novamente."
         }), 403
 
+    # Cargo: precisa ser um dos cargos existentes na Base de Colaboradores
+    # (lista suspensa no formulário) — só valida se a lista veio, pra não
+    # bloquear candidaturas por uma falha momentânea ao buscar os cargos.
+    cargo = str(data["cargo"]).strip()
+    try:
+        cargos_validos = listar_cargos()
+    except Exception:
+        cargos_validos = []
+    if cargos_validos and not any(_normalizar_nome(c) == _normalizar_nome(cargo) for c in cargos_validos):
+        return jsonify({"message": "Selecione um cargo válido da lista."}), 400
+
     db = get_db()
     try:
         candidatura = models.CipaCandidatura(
-            nome      = data["nome"].strip(),
-            matricula = data["matricula"].strip(),
-            cargo     = data["cargo"].strip(),
-            motivo    = data["motivo"].strip(),
+            nome      = nome,
+            matricula = matricula,
+            cargo     = cargo,
+            motivo    = motivo,
         )
         db.add(candidatura)
         db.commit()
