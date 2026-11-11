@@ -133,7 +133,12 @@ def candidatar():
         if not motivo:
             return jsonify({"message": "Conte por que você quer participar da CIPA."}), 400
 
-        from colaboradores_service import validar_colaborador_ativo, listar_cargos, _normalizar_nome
+        from colaboradores_service import (
+            validar_colaborador_ativo,
+            listar_cargos,
+            _normalizar_nome,
+            _normalizar_matricula,
+        )
 
         # Confere nome + matrícula na Base de Colaboradores do RH antes de aceitar.
         try:
@@ -164,15 +169,32 @@ def candidatar():
         if cargos_validos and not any(_normalizar_nome(c) == _normalizar_nome(cargo) for c in cargos_validos):
             return jsonify({"message": "Selecione um cargo válido da lista."}), 400
 
+        # Candidatura é única por pessoa em cada gestão: confere antes (mensagem
+        # mais clara pro usuário) e também trava no banco (uq_cipa_candidatura_gestao_matricula)
+        # pra não ter condição de corrida entre dois envios ao mesmo tempo.
+        matricula_norm = _normalizar_matricula(matricula)
+        ja_existe = (
+            db.query(models.CipaCandidatura)
+            .filter_by(gestao=gestao.ano, matricula_norm=matricula_norm)
+            .first()
+        )
+        if ja_existe:
+            return jsonify({"message": "Você já enviou uma candidatura à CIPA nesta gestão."}), 409
+
         candidatura = models.CipaCandidatura(
-            nome      = nome,
-            matricula = matricula,
-            cargo     = cargo,
-            motivo    = motivo,
-            gestao    = gestao.ano,
+            nome           = nome,
+            matricula      = matricula,
+            matricula_norm = matricula_norm,
+            cargo          = cargo,
+            motivo         = motivo,
+            gestao         = gestao.ano,
         )
         db.add(candidatura)
-        db.commit()
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            return jsonify({"message": "Você já enviou uma candidatura à CIPA nesta gestão."}), 409
         db.refresh(candidatura)
 
         try:

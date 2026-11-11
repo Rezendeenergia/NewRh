@@ -484,18 +484,26 @@ class CipaCandidatura(Base):
     """Inscrição de colaborador para concorrer a membro da CIPA."""
     __tablename__ = "cipa_candidaturas"
 
-    id          = Column(Integer, primary_key=True, index=True)
-    nome        = Column(String(150), nullable=False)
-    matricula   = Column(String(30),  nullable=False)
-    cargo       = Column(String(150), nullable=False)
-    motivo      = Column(Text,        nullable=False)   # por que quer participar da CIPA
-    gestao      = Column(String(20),  nullable=False, default="2027")
-    created_at  = Column(DateTime,    server_default=func.now())
+    id              = Column(Integer, primary_key=True, index=True)
+    nome            = Column(String(150), nullable=False)
+    matricula       = Column(String(30),  nullable=False)
+    # Matrícula normalizada (sem espaço/traço/zero à esquerda), só pra
+    # impedir que a mesma pessoa se candidate duas vezes na mesma gestão
+    # mesmo digitando a matrícula de um jeito um pouco diferente.
+    matricula_norm  = Column(String(30),  nullable=False)
+    cargo           = Column(String(150), nullable=False)
+    motivo          = Column(Text,        nullable=False)   # por que quer participar da CIPA
+    gestao          = Column(String(20),  nullable=False, default="2027")
+    created_at      = Column(DateTime,    server_default=func.now())
 
     # Resultado da votação (preenchidos só depois que a votação fecha)
-    votos       = Column(Integer,     nullable=False, default=0)
-    eleito      = Column(Boolean,     nullable=False, default=False)
-    papel       = Column(String(50),  nullable=True)   # texto livre: "Presidente", "Vice-Presidente", "Membro" etc — o RH decide
+    votos           = Column(Integer,     nullable=False, default=0)
+    eleito          = Column(Boolean,     nullable=False, default=False)
+    papel           = Column(String(50),  nullable=True)   # texto livre: "Presidente", "Vice-Presidente", "Membro" etc — o RH decide
+
+    __table_args__ = (
+        UniqueConstraint("gestao", "matricula_norm", name="uq_cipa_candidatura_gestao_matricula"),
+    )
 
 
 class CipaGestao(Base):
