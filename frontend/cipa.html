@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Candidatura à CIPA — Rezende Energia</title>
+  <title>CIPA — Rezende Energia</title>
   <link rel="icon" type="image/png" href="/img/favicon.png">
   <script src="/js/rezende-tema.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -116,9 +116,49 @@
     .comprovante__linha span { color: var(--texto-3); }
     .comprovante__linha strong { text-align: right; color: var(--texto); }
 
+    /* ---------- Aviso simples (encerrado / carregando) ---------- */
+    .cp-aviso { text-align: center; padding: 60px 24px; color: var(--texto-2); }
+    .cp-aviso__icon { font-size: 48px; margin-bottom: 14px; }
+    .cp-aviso__titulo { font-size: 20px; font-weight: 800; color: var(--texto); margin: 0 0 8px; }
+
+    /* ---------- Votação ---------- */
+    .voto-opcao {
+      display: flex; align-items: center; gap: 12px;
+      border: 1px solid var(--ov-100); border-radius: 10px;
+      padding: 12px 14px; margin-bottom: 10px; cursor: pointer;
+      background: var(--ov-60); transition: border-color .15s;
+    }
+    .voto-opcao:hover { border-color: rgba(255,106,0,.5); }
+    .voto-opcao input { accent-color: var(--laranja-texto); width: 18px; height: 18px; flex-shrink: 0; }
+    .voto-opcao__nome { font-weight: 700; font-size: 14px; }
+    .voto-opcao__cargo { font-size: 12.5px; color: var(--texto-3); }
+
+    /* ---------- Resultado / ranking ---------- */
+    .ranking-roster {
+      border: 1px solid rgba(255,106,0,.3); border-radius: 14px;
+      background: rgba(255,106,0,.05); padding: 20px 22px; margin-bottom: 22px;
+    }
+    .ranking-roster__titulo { font-size: 13px; font-weight: 800; color: var(--laranja-texto); text-transform: uppercase; letter-spacing: .5px; margin: 0 0 12px; }
+    .ranking-roster__linha { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; font-size: 14.5px; border-bottom: 1px dashed var(--ov-70); }
+    .ranking-roster__linha:last-child { border-bottom: none; }
+    .ranking-roster__papel { color: var(--texto-3); font-size: 12px; text-transform: uppercase; }
+
+    .ranking-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px; border-radius: 10px; margin-bottom: 8px;
+      background: var(--ov-60); border: 1px solid var(--ov-90);
+    }
+    .ranking-item--eleito { border-color: rgba(76,175,80,.5); background: rgba(76,175,80,.07); }
+    .ranking-item__pos { font-weight: 800; font-size: 16px; color: var(--texto-3); width: 26px; text-align:center; flex-shrink: 0; }
+    .ranking-item__info { flex: 1; min-width: 0; }
+    .ranking-item__nome { font-weight: 700; font-size: 14px; }
+    .ranking-item__cargo { font-size: 12.5px; color: var(--texto-3); }
+    .ranking-item__votos { font-weight: 800; font-size: 15px; text-align: right; flex-shrink: 0; }
+    .ranking-item__tag { font-size: 10.5px; font-weight: 700; color: #4caf50; text-transform: uppercase; letter-spacing: .5px; }
+
     @media print {
       body > *:not(.cp-container) { display: none !important; }
-      .cp-container > *:not(#cp-success) { display: none !important; }
+      .cp-container > *:not(#cp-success):not(#cp-voto-sucesso) { display: none !important; }
       .cp-success__actions, .no-print { display: none !important; }
       .comprovante { border: 1px solid #000; }
     }
@@ -134,22 +174,32 @@
 
 <div class="cp-hero">
   <div class="cp-hero__badge">🦺 Eleições da CIPA</div>
-  <h1 class="cp-hero__title">Candidatura à <span>CIPA</span></h1>
-  <p class="cp-hero__desc">
-    Quer ajudar a cuidar da segurança de todos na Rezende Energia? Inscreva-se para concorrer
-    a uma vaga na Comissão Interna de Prevenção de Acidentes — gestão 2027.
-  </p>
+  <h1 class="cp-hero__title" id="cp-hero-titulo">CIPA — <span id="cp-hero-ano">Rezende Energia</span></h1>
+  <p class="cp-hero__desc" id="cp-hero-desc">Carregando...</p>
   <a href="/portal-colaborador" class="cp-hero__back">← Voltar ao Portal do Colaborador</a>
 </div>
 
 <div class="cp-container">
 
-  <!-- Sucesso / Comprovante -->
+  <!-- Carregando -->
+  <div class="cp-aviso" id="cp-carregando">
+    <div class="cp-aviso__icon">⏳</div>
+    <div class="cp-aviso__titulo">Carregando...</div>
+  </div>
+
+  <!-- Inscrições encerradas -->
+  <div class="cp-aviso" id="cp-encerrado" style="display:none;">
+    <div class="cp-aviso__icon">🔒</div>
+    <div class="cp-aviso__titulo">Inscrições encerradas</div>
+    <p>As inscrições para a CIPA desta gestão já foram encerradas. Fique de olho nos canais internos para saber quando a votação abre.</p>
+  </div>
+
+  <!-- Sucesso / Comprovante da candidatura -->
   <div class="cp-success" id="cp-success">
     <div class="cp-success__icon">🎉</div>
     <div class="cp-success__title">Candidatura enviada!</div>
     <p class="cp-success__text">
-      Recebemos a sua candidatura para a CIPA — gestão 2027. O SESMT e o RH vão conferir
+      Recebemos a sua candidatura para a CIPA. O SESMT e o RH vão conferir
       as inscrições; qualquer novidade sobre a eleição será avisada pelos canais internos.
     </p>
 
@@ -169,13 +219,13 @@
     </div>
   </div>
 
-  <!-- Formulário -->
-  <div id="cp-form-wrap">
+  <!-- Formulário de candidatura -->
+  <div id="cp-form-wrap" style="display:none;">
     <form id="cp-form" novalidate>
       <div class="cp-card">
         <div class="cp-card__header">
           <span style="font-size:18px;">🦺</span>
-          <span class="cp-card__title">Candidatura — Gestão 2027</span>
+          <span class="cp-card__title" id="cp-form-titulo">Candidatura</span>
         </div>
         <div class="cp-card__body">
 
@@ -203,7 +253,7 @@
           </div>
 
           <div class="lgpd-box">
-            📋 Seus dados serão usados apenas pelo RH e pelo SESMT para organizar a eleição da CIPA — gestão 2027,
+            📋 Seus dados serão usados apenas pelo RH e pelo SESMT para organizar a eleição da CIPA,
             conforme a Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018).
           </div>
 
@@ -217,28 +267,152 @@
     </form>
   </div>
 
+  <!-- Votação -->
+  <div id="cp-votacao-wrap" style="display:none;">
+    <div class="cp-card">
+      <div class="cp-card__header">
+        <span style="font-size:18px;">🗳️</span>
+        <span class="cp-card__title">Votação — escolha seu candidato</span>
+      </div>
+      <div class="cp-card__body">
+
+        <div class="form-field">
+          <label class="form-field__label" for="vt-nome">Nome completo <strong class="required-mark">*</strong></label>
+          <input id="vt-nome" type="text" class="form-field__input" placeholder="SEU NOME COMPLETO"
+                 style="text-transform:uppercase;" autocapitalize="characters" required>
+        </div>
+
+        <div class="form-field">
+          <label class="form-field__label" for="vt-matricula">Matrícula <strong class="required-mark">*</strong></label>
+          <input id="vt-matricula" type="text" class="form-field__input" placeholder="Seu número de matrícula" required>
+        </div>
+
+        <div class="form-field">
+          <label class="form-field__label">Candidato <strong class="required-mark">*</strong></label>
+          <div id="vt-candidatos">
+            <div class="cp-aviso__titulo" style="font-size:14px;">Carregando candidatos...</div>
+          </div>
+        </div>
+
+        <div class="lgpd-box">
+          🗳️ O voto é secreto — o sistema só confere seu nome e matrícula pra garantir um voto por colaborador.
+          Ninguém, nem o RH, consegue ver em quem você votou.
+        </div>
+
+        <div class="alert alert--error" id="vt-alert"></div>
+
+        <button type="button" class="btn-submit" id="vt-submit-btn" onclick="enviarVoto()">
+          ✅ Confirmar Voto
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sucesso do voto -->
+  <div class="cp-success" id="cp-voto-sucesso">
+    <div class="cp-success__icon">🗳️</div>
+    <div class="cp-success__title">Voto registrado!</div>
+    <p class="cp-success__text">Seu voto foi registrado com sucesso. Obrigado por participar da eleição da CIPA.</p>
+    <div class="comprovante">
+      <p class="comprovante__titulo">📋 Comprovante de Votação</p>
+      <div class="comprovante__linha"><span>Recebido em</span><strong id="vt-data">—</strong></div>
+    </div>
+    <div class="cp-success__actions no-print">
+      <button type="button" class="cp-success__print" onclick="window.print()">🖨 Imprimir / Salvar comprovante</button>
+      <a href="/portal-colaborador" class="cp-success__back">← Voltar ao Portal do Colaborador</a>
+    </div>
+  </div>
+
+  <!-- Resultado / ranking -->
+  <div id="cp-resultado-wrap" style="display:none;">
+    <div id="cp-roster"></div>
+    <div class="cp-card">
+      <div class="cp-card__header">
+        <span style="font-size:18px;">🏆</span>
+        <span class="cp-card__title">Ranking da votação</span>
+      </div>
+      <div class="cp-card__body" id="cp-ranking-lista"></div>
+    </div>
+  </div>
+
 </div>
 
 <script>
-  function showAlert(msg) {
-    const el = document.getElementById('cp-alert');
+  const FASES_LABEL = {
+    INSCRICAO_ABERTA:  'Inscrições abertas',
+    INSCRICAO_FECHADA: 'Inscrições encerradas',
+    VOTACAO_ABERTA:    'Votação aberta',
+    VOTACAO_FECHADA:   'Votação encerrada',
+    RESULTADO:         'Resultado',
+  };
+
+  function esconderTudo() {
+    ['cp-carregando', 'cp-encerrado', 'cp-form-wrap', 'cp-votacao-wrap',
+     'cp-resultado-wrap', 'cp-success', 'cp-voto-sucesso'].forEach(id => {
+      document.getElementById(id).style.display = 'none';
+    });
+  }
+
+  function showAlert(elId, msg) {
+    const el = document.getElementById(elId);
     el.textContent = msg;
     el.style.display = 'block';
     el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
-  function hideAlert() {
-    document.getElementById('cp-alert').style.display = 'none';
+  function hideAlert(elId) {
+    document.getElementById(elId).style.display = 'none';
   }
 
   // Nome sempre em caixa alta enquanto a pessoa digita.
-  document.getElementById('cp-nome').addEventListener('input', function () {
-    const pos = this.selectionStart;
-    this.value = this.value.toUpperCase();
-    this.setSelectionRange(pos, pos);
-  });
+  function ligarCaixaAlta(id) {
+    document.getElementById(id).addEventListener('input', function () {
+      const pos = this.selectionStart;
+      this.value = this.value.toUpperCase();
+      this.setSelectionRange(pos, pos);
+    });
+  }
+  ligarCaixaAlta('cp-nome');
+  ligarCaixaAlta('vt-nome');
 
-  // Carrega os cargos da Base de Colaboradores do RH para a lista suspensa.
+  // ---------- Fase atual: decide qual tela mostrar ----------
+
+  async function iniciar() {
+    esconderTudo();
+    document.getElementById('cp-carregando').style.display = 'block';
+    try {
+      const resp = await fetch('/api/cipa/gestao');
+      const gestao = await resp.json();
+      document.getElementById('cp-hero-ano').textContent = 'Gestão ' + (gestao.ano || '');
+      document.getElementById('cp-hero-desc').textContent =
+        'Comissão Interna de Prevenção de Acidentes — ' + (FASES_LABEL[gestao.fase] || gestao.fase);
+
+      esconderTudo();
+      if (gestao.fase === 'INSCRICAO_ABERTA') {
+        document.getElementById('cp-form-titulo').textContent = 'Candidatura — Gestão ' + gestao.ano;
+        document.getElementById('cp-form-wrap').style.display = 'block';
+        carregarCargos();
+      } else if (gestao.fase === 'INSCRICAO_FECHADA') {
+        document.getElementById('cp-encerrado').style.display = 'block';
+      } else if (gestao.fase === 'VOTACAO_ABERTA') {
+        document.getElementById('cp-votacao-wrap').style.display = 'block';
+        carregarCandidatosVotacao();
+      } else if (gestao.fase === 'VOTACAO_FECHADA' || gestao.fase === 'RESULTADO') {
+        document.getElementById('cp-resultado-wrap').style.display = 'block';
+        carregarResultado();
+      } else {
+        document.getElementById('cp-carregando').style.display = 'block';
+      }
+    } catch (e) {
+      esconderTudo();
+      document.getElementById('cp-carregando').style.display = 'block';
+      document.getElementById('cp-carregando').innerHTML =
+        '<div class="cp-aviso__icon">⚠️</div><div class="cp-aviso__titulo">Não foi possível carregar</div><p>Recarregue a página.</p>';
+    }
+  }
+
+  // ---------- Candidatura ----------
+
   async function carregarCargos() {
     const select = document.getElementById('cp-cargo');
     try {
@@ -255,7 +429,6 @@
       select.innerHTML = '<option value="">Não foi possível carregar os cargos — recarregue a página</option>';
     }
   }
-  carregarCargos();
 
   function preencherComprovante(c) {
     const protocolo = 'CIPA-' + (c.gestao || '') + '-' + String(c.id).padStart(5, '0');
@@ -270,7 +443,7 @@
   }
 
   async function submitForm() {
-    hideAlert();
+    hideAlert('cp-alert');
     const btn = document.getElementById('cp-submit-btn');
 
     const nome      = document.getElementById('cp-nome').value.trim().toUpperCase();
@@ -278,11 +451,11 @@
     const cargo     = document.getElementById('cp-cargo').value.trim();
     const motivo    = document.getElementById('cp-motivo').value.trim();
 
-    if (!nome)      return showAlert('Informe o nome.');
-    if (nome.split(/\s+/).filter(Boolean).length < 2) return showAlert('Informe o nome completo (nome e sobrenome).');
-    if (!matricula) return showAlert('Informe a matrícula.');
-    if (!cargo)     return showAlert('Selecione o seu cargo.');
-    if (!motivo)    return showAlert('Conte por que quer participar da CIPA.');
+    if (!nome)      return showAlert('cp-alert', 'Informe o nome.');
+    if (nome.split(/\s+/).filter(Boolean).length < 2) return showAlert('cp-alert', 'Informe o nome completo (nome e sobrenome).');
+    if (!matricula) return showAlert('cp-alert', 'Informe a matrícula.');
+    if (!cargo)     return showAlert('cp-alert', 'Selecione o seu cargo.');
+    if (!motivo)    return showAlert('cp-alert', 'Conte por que quer participar da CIPA.');
 
     btn.disabled = true;
     btn.textContent = '⏳ Enviando...';
@@ -298,20 +471,139 @@
       if (!resp.ok) {
         btn.disabled = false;
         btn.textContent = '✅ Enviar Candidatura';
-        return showAlert(data.message || 'Erro ao enviar. Tente novamente.');
+        return showAlert('cp-alert', data.message || 'Erro ao enviar. Tente novamente.');
       }
 
       preencherComprovante(data);
-      document.getElementById('cp-form-wrap').style.display = 'none';
-      document.getElementById('cp-success').style.display   = 'block';
+      esconderTudo();
+      document.getElementById('cp-success').style.display = 'block';
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
     } catch (err) {
       btn.disabled = false;
       btn.textContent = '✅ Enviar Candidatura';
-      showAlert('Erro de conexão. Verifique sua internet e tente novamente.');
+      showAlert('cp-alert', 'Erro de conexão. Verifique sua internet e tente novamente.');
     }
   }
+
+  // ---------- Votação ----------
+
+  async function carregarCandidatosVotacao() {
+    const wrap = document.getElementById('vt-candidatos');
+    try {
+      const resp = await fetch('/api/cipa/votacao/candidatos');
+      const data = await resp.json();
+      const candidatos = data.candidatos || [];
+      if (!candidatos.length) {
+        wrap.innerHTML = '<p>Nenhum candidato disponível no momento.</p>';
+        return;
+      }
+      wrap.innerHTML = candidatos.map(c => `
+        <label class="voto-opcao">
+          <input type="radio" name="vt-candidato" value="${c.id}">
+          <span>
+            <div class="voto-opcao__nome">${c.nome}</div>
+            <div class="voto-opcao__cargo">${c.cargo || ''}</div>
+          </span>
+        </label>
+      `).join('');
+    } catch (e) {
+      wrap.innerHTML = '<p>Não foi possível carregar os candidatos — recarregue a página.</p>';
+    }
+  }
+
+  async function enviarVoto() {
+    hideAlert('vt-alert');
+    const btn = document.getElementById('vt-submit-btn');
+
+    const nome      = document.getElementById('vt-nome').value.trim().toUpperCase();
+    const matricula = document.getElementById('vt-matricula').value.trim();
+    const escolhido = document.querySelector('input[name="vt-candidato"]:checked');
+
+    if (!nome)      return showAlert('vt-alert', 'Informe o nome.');
+    if (nome.split(/\s+/).filter(Boolean).length < 2) return showAlert('vt-alert', 'Informe o nome completo (nome e sobrenome).');
+    if (!matricula) return showAlert('vt-alert', 'Informe a matrícula.');
+    if (!escolhido) return showAlert('vt-alert', 'Escolha um candidato.');
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Enviando...';
+
+    try {
+      const resp = await fetch('/api/cipa/votacao/votar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome, matricula, candidaturaId: Number(escolhido.value) }),
+      });
+      const data = await resp.json();
+
+      if (!resp.ok) {
+        btn.disabled = false;
+        btn.textContent = '✅ Confirmar Voto';
+        return showAlert('vt-alert', data.message || 'Erro ao votar. Tente novamente.');
+      }
+
+      document.getElementById('vt-data').textContent =
+        new Date().toLocaleString('pt-BR', { timeZone: 'America/Santarem', dateStyle: 'short', timeStyle: 'short' });
+      esconderTudo();
+      document.getElementById('cp-voto-sucesso').style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = '✅ Confirmar Voto';
+      showAlert('vt-alert', 'Erro de conexão. Verifique sua internet e tente novamente.');
+    }
+  }
+
+  // ---------- Resultado / ranking ----------
+
+  async function carregarResultado() {
+    const roster = document.getElementById('cp-roster');
+    const lista  = document.getElementById('cp-ranking-lista');
+    try {
+      const resp = await fetch('/api/cipa/resultado');
+      const data = await resp.json();
+      const ranking = data.ranking || [];
+
+      // Card final só com os integrantes/presidente, quando já tiver eleitos.
+      const eleitos = ranking.filter(r => r.eleito);
+      if (data.fase === 'RESULTADO' && eleitos.length) {
+        roster.innerHTML = `
+          <div class="ranking-roster">
+            <p class="ranking-roster__titulo">🦺 CIPA — Gestão</p>
+            ${eleitos.map(e => `
+              <div class="ranking-roster__linha">
+                <span>${e.nome}</span>
+                <span class="ranking-roster__papel">${e.papel || 'Membro eleito'}</span>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      } else {
+        roster.innerHTML = '';
+      }
+
+      if (!ranking.length) {
+        lista.innerHTML = '<p>Nenhum resultado disponível.</p>';
+        return;
+      }
+      lista.innerHTML = ranking.map(r => `
+        <div class="ranking-item ${r.eleito ? 'ranking-item--eleito' : ''}">
+          <div class="ranking-item__pos">${r.posicao}º</div>
+          <div class="ranking-item__info">
+            <div class="ranking-item__nome">${r.nome}</div>
+            <div class="ranking-item__cargo">${r.cargo || ''}</div>
+            ${r.eleito ? `<div class="ranking-item__tag">✓ Eleito${r.papel ? ' — ' + r.papel : ''}</div>` : ''}
+          </div>
+          <div class="ranking-item__votos">${r.votos} voto${r.votos === 1 ? '' : 's'}</div>
+        </div>
+      `).join('');
+    } catch (e) {
+      lista.innerHTML = '<p>Não foi possível carregar o resultado — recarregue a página.</p>';
+    }
+  }
+
+  iniciar();
 </script>
 
 </body>
