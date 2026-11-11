@@ -140,18 +140,22 @@ def _get_colaboradores_raw() -> list:
             print("[COLAB] Erro: nenhuma aba retornou linhas de dados (só cabeçalho ou vazia)")
             return []
 
-        # Monta lista de colaboradores
-        headers_row = [str(h).strip().upper() for h in values[0]]
+        # Monta lista de colaboradores. Usa o nome da coluna normalizado (sem
+        # acento, maiúsculo, sem espaço sobrando) pra não depender de bater
+        # exatamente com a acentuação/grafia usada na planilha.
+        headers_row = [str(h).strip() for h in values[0]]
+        headers_norm = [_normalizar_nome(h) for h in headers_row]
+        print(f"[COLAB][diag] cabeçalhos da aba {sheet_name!r}: {headers_row}")
         colaboradores = []
         for row in values[1:]:
             obj = {}
-            for i, h in enumerate(headers_row):
+            for i, h in enumerate(headers_norm):
                 obj[h] = str(row[i]).strip() if i < len(row) else ""
             # Mapeia campos comuns
-            nome  = obj.get("NOME", obj.get("COLABORADOR", obj.get("FUNCIONÁRIO", "")))
-            cargo = obj.get("CARGO", obj.get("FUNÇÃO", obj.get("FUNÇÃO ATUAL", "")))
-            mat   = obj.get("MATRÍCULA", obj.get("MAT", obj.get("ID", "")))
-            local = obj.get("LOCALIDADE", obj.get("LOCAL", obj.get("CIDADE", "")))
+            nome  = obj.get("NOME", obj.get("COLABORADOR", obj.get("FUNCIONARIO", obj.get("NOME COMPLETO", ""))))
+            cargo = obj.get("CARGO", obj.get("FUNCAO", obj.get("FUNCAO ATUAL", obj.get("CARGO ATUAL", ""))))
+            mat   = obj.get("MATRICULA", obj.get("MAT", obj.get("MATR", obj.get("ID", ""))))
+            local = obj.get("LOCALIDADE", obj.get("LOCAL", obj.get("CIDADE", obj.get("REGIONAL", ""))))
             if nome:
                 colaboradores.append({
                     "nome":       nome,
