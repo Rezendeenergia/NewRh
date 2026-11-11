@@ -149,9 +149,56 @@ def validar_colaborador_ativo(nome: str, matricula: str) -> str:
     return "nao_encontrado"
 
 
+# Lista fixa de cargos, usada quando a consulta ao SharePoint não estiver
+# disponível (a planilha fica instável e os cargos quase não mudam).
+# Tirada da base de folha de pagamento em 11/11/2026 — se a empresa criar
+# um cargo novo, é só adicionar aqui.
+CARGOS_PADRAO = [
+    "AJUDANTE DE SERVIÇOS GERAIS",
+    "ALMOXARIFE",
+    "ALMOXARIFE II",
+    "ANALISTA ADMINISTRATIVO",
+    "ANALISTA DE DP",
+    "ANALISTA DE TI",
+    "ANALISTA FINANCEIRO",
+    "ANALISTA TECNICO",
+    "ASSISTENTE ADMINISTRATIVO I",
+    "ASSISTENTE ADMINISTRATIVO II",
+    "ASSISTENTE ADMINISTRATIVO III",
+    "ASSISTENTE FINANCEIRO",
+    "AUXILIAR DE ALMOXARIFADO",
+    "AUXILIAR DE LOGISTICA II",
+    "COMPRADOR",
+    "COORDENADOR OPERACIONAL",
+    "COPEIRO (A)",
+    "ELETRICISTA",
+    "ELETRICISTA CADASTRADOR",
+    "ELETRICISTA II",
+    "ENCARREGADO OPERACIONAL",
+    "FISCAL DE OBRAS",
+    "GERENTE OPERACIONAL",
+    "GERENTE RH/DP",
+    "JOVEM APRENDIZ/ ASSISTENTE LOG",
+    "MECÂNICO DE VEÍCULOS AUTOMOTORES",
+    "MOTORISTA OPERADOR DE MUNCK",
+    "OPERADOR DE MAQUINAS",
+    "OPERADOR DE MAQUINAS II",
+    "OPERADOR DE MOTOSSERRA",
+    "OPERADOR DE MOTOSSERRA II",
+    "SUPERVISOR",
+    "SUPERVISOR TECNICO EM SEGURANÇA DO TRABALHO",
+    "TEC EM SEGURANCA NO TRABALHO",
+]
+
+
 def listar_cargos() -> list:
     """Lista única (ordenada) dos cargos existentes na Base de Colaboradores,
-    para preencher listas suspensas em formulários públicos."""
+    para preencher listas suspensas em formulários públicos.
+
+    Tenta buscar ao vivo no SharePoint; se não vier nada (planilha fora do
+    ar, erro de acesso etc.), usa a lista fixa CARGOS_PADRAO como reserva."""
     todos = _get_colaboradores_raw()
     cargos = {c["cargo"].strip() for c in todos if c.get("cargo") and c["cargo"].strip()}
+    if not cargos:
+        return list(CARGOS_PADRAO)
     return sorted(cargos, key=_normalizar_nome)
