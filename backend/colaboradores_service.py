@@ -1,7 +1,7 @@
 """
 Serviço para buscar colaboradores da Base de Colaboradores.xlsx no SharePoint.
 """
-import os, requests
+import os, re, unicodedata, requests
 from sharepoint_service import _get_token, _get_site_id, _get_drive_id
 
 # ID do arquivo Base de Colaboradores - extraído da URL fornecida
@@ -100,3 +100,45 @@ def buscar_colaboradores(q: str = "", limit: int = 20) -> list:
         c for c in todos
         if q_lower in c["nome"].lower() or q_lower in c["cargo"].lower()
     ][:limit]
+
+
+# ── Validação de colaborador ativo (formulários públicos) ──────
+
+def _normalizar_nome(texto: str) -> str:
+    """Remove acentos e espaços extras e deixa em caixa alta, p/ comparar nomes
+    com tolerância a diferenças de acentuação/espaçamento na digitação."""
+    texto = unicodedata.normalize("NFKD", str(texto or "")).encode("ascii", "ignore").decode("ascii")
+    return " ".join(texto.upper().split())
+
+
+def _normalizar_matricula(valor: str) -> str:
+    """Remove espaços/traços e zeros à esquerda (quando só números), p/ tolerar
+    "0045" vs "45" continuando a exigir que o número seja o mesmo."""
+    m = re.sub(r"[^A-Za-z0-9]", "", str(valor or "")).upper()
+    if m.isdigit():
+        m = m.lstrip("0") or "0"
+    return m
+
+
+def validar_colaborador_ativo(nome: str, matricula: str) -> str:
+    """Confere se existe, na Base de Colaboradores do RH, um colaborador ativo
+    com esse nome E matrícula (tolerando acento/caixa/espaços/zeros à esquerda).
+
+    Retorna:
+      "ok"            — encontrado
+      "nao_encontrado"— não existe esse nome+matrícula juntos na planilha
+      "indisponivel"  — não foi possível consultar a planilha agora
+    """
+    todos = _get_colaboradores_raw()
+    if not todos:
+        return "indisponivel"
+
+    nome_norm = _normalizar_nome(nome)
+    mat_norm  = _normalizar_matricula(matricula)
+    if not nome_norm or not mat_norm:
+        return "nao_encontrado"
+
+    for c in todos:
+        if _normalizar_nome(c.get("nome")) == nome_norm and _normalizar_matricula(c.get("matricula")) == mat_norm:
+            return "ok"
+    return "nao_encontrado"

@@ -3,6 +3,8 @@ Rotas para a candidatura à CIPA (Portal do Colaborador).
 
 Públicas:
   POST /api/cipa          — candidatura (sem auth, qualquer colaborador)
+                            (nome + matrícula precisam bater com a Base de
+                            Colaboradores do RH, no SharePoint)
 
 Protegidas (gestores RH):
   GET  /api/cipa          — lista todas as candidaturas
@@ -39,6 +41,25 @@ def candidatar():
     for field in ["nome", "matricula", "cargo", "motivo"]:
         if not str(data.get(field) or "").strip():
             return jsonify({"message": f"Campo obrigatório: {field}"}), 400
+
+    # Confere nome + matrícula na Base de Colaboradores do RH antes de aceitar.
+    try:
+        from colaboradores_service import validar_colaborador_ativo
+        status_colab = validar_colaborador_ativo(data["nome"], data["matricula"])
+    except Exception as e:
+        print(f"[CIPA] Erro ao validar colaborador: {e}")
+        status_colab = "indisponivel"
+
+    if status_colab == "indisponivel":
+        return jsonify({
+            "message": "Não foi possível confirmar seus dados na base de colaboradores agora. "
+                       "Tente novamente em alguns minutos."
+        }), 503
+    if status_colab != "ok":
+        return jsonify({
+            "message": "Não encontramos esse nome e matrícula juntos na nossa base de colaboradores ativos. "
+                       "Confira se digitou exatamente como está no crachá/contracheque e tente novamente."
+        }), 403
 
     db = get_db()
     try:
