@@ -53,6 +53,27 @@
 
     .pc-back { display: block; text-align: center; margin-top: 28px; font-size: 13px; color: rgba(255,106,0,.7); text-decoration: none; }
     .pc-back:hover { color: var(--laranja-texto); }
+
+    /* Card da CIPA é só visualização quando o resultado já saiu — sem hover de link */
+    .pc-card--cipa.pc-card--visualizacao { cursor: default; }
+    .pc-card--cipa.pc-card--visualizacao:hover { border-color: var(--ov-80); background: var(--ov-40); transform: none; }
+
+    .pc-cipa-lista { display: flex; flex-direction: column; gap: 6px; margin-top: 2px; }
+    .pc-cipa-lista__item {
+      display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+      font-size: 13px; padding: 7px 10px; border-radius: 9px;
+      background: rgba(255,106,0,.08); border: 1px solid rgba(255,106,0,.18);
+    }
+    .pc-cipa-lista__nome { font-weight: 700; }
+    .pc-cipa-lista__papel { color: var(--laranja-texto); font-weight: 700; font-size: 12px; white-space: nowrap; }
+
+    .pc-cipa-cta-link {
+      margin-top: 6px; font-size: 13px; font-weight: 700; color: var(--laranja-texto);
+      display: flex; align-items: center; gap: 6px; text-decoration: none;
+    }
+    .pc-cipa-cta-texto {
+      margin-top: 6px; font-size: 12.5px; color: var(--texto-3); font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -84,20 +105,110 @@
       <div class="pc-card__cta">Abrir chamado ↗</div>
     </a>
 
-    <a class="pc-card" href="/cipa">
-      <div class="pc-card__icon">🦺</div>
-      <div class="pc-card__title">Candidatura à CIPA 2027</div>
-      <div class="pc-card__desc">
-        Quer concorrer a uma vaga na Comissão Interna de Prevenção de Acidentes? Preencha a sua
-        candidatura para a gestão 2027.
-      </div>
-      <div class="pc-card__cta">Candidatar-se →</div>
-    </a>
+    <div class="pc-card pc-card--cipa" id="pc-cipa-card">
+      <div class="pc-card__icon" id="pc-cipa-icon">🦺</div>
+      <div class="pc-card__title" id="pc-cipa-title">CIPA</div>
+      <div class="pc-card__desc" id="pc-cipa-desc">Carregando...</div>
+      <div id="pc-cipa-lista" class="pc-cipa-lista" style="display:none;"></div>
+      <div id="pc-cipa-cta-wrap"></div>
+    </div>
 
   </div>
 
   <a href="/" class="pc-back">← Voltar ao Portal de Vagas</a>
 </div>
+
+<script>
+  // Card da CIPA muda de acordo com a fase atual da gestão (inscrição,
+  // votação, resultado) — a mesma fase que decide o que a página /cipa mostra.
+  (async function carregarCardCipa() {
+    const card   = document.getElementById('pc-cipa-card');
+    const icone  = document.getElementById('pc-cipa-icon');
+    const titulo = document.getElementById('pc-cipa-title');
+    const desc   = document.getElementById('pc-cipa-desc');
+    const lista  = document.getElementById('pc-cipa-lista');
+    const ctaWrap = document.getElementById('pc-cipa-cta-wrap');
+
+    function ctaLink(texto) {
+      ctaWrap.innerHTML = '';
+      const a = document.createElement('a');
+      a.href = '/cipa';
+      a.className = 'pc-cipa-cta-link';
+      a.textContent = texto;
+      ctaWrap.appendChild(a);
+    }
+
+    function ctaTexto(texto) {
+      ctaWrap.innerHTML = '<div class="pc-cipa-cta-texto">' + texto + '</div>';
+    }
+
+    try {
+      const resp = await fetch('/api/cipa/gestao');
+      const gestao = await resp.json();
+      const ano = gestao.ano || '';
+
+      if (gestao.fase === 'INSCRICAO_ABERTA') {
+        icone.textContent = '🦺';
+        titulo.textContent = 'Candidatura à CIPA ' + ano;
+        desc.textContent = 'Quer concorrer a uma vaga na Comissão Interna de Prevenção de Acidentes? '
+          + 'Preencha a sua candidatura para a gestão ' + ano + '.';
+        ctaLink('Candidatar-se →');
+
+      } else if (gestao.fase === 'INSCRICAO_FECHADA') {
+        icone.textContent = '🦺';
+        titulo.textContent = 'CIPA ' + ano + ' — Inscrições encerradas';
+        desc.textContent = 'As inscrições para a gestão ' + ano + ' já encerraram. '
+          + 'A votação será aberta em breve.';
+        ctaLink('Acompanhar →');
+
+      } else if (gestao.fase === 'VOTACAO_ABERTA') {
+        icone.textContent = '🗳️';
+        titulo.textContent = 'Votação da CIPA ' + ano;
+        desc.textContent = 'A votação para a CIPA ' + ano + ' está aberta. Vote no candidato '
+          + 'que você quer ver representando os colaboradores.';
+        ctaLink('Votar →');
+
+      } else if (gestao.fase === 'VOTACAO_FECHADA' || gestao.fase === 'RESULTADO') {
+        // Depois que a votação fecha, busca o resultado pra saber se os
+        // eleitos já foram definidos pelo RH.
+        const respRes = await fetch('/api/cipa/resultado');
+        const dadosRes = await respRes.json();
+        const eleitos = (dadosRes.ranking || []).filter(c => c.eleito);
+
+        icone.textContent = '🦺';
+        card.classList.add('pc-card--visualizacao');
+
+        if (eleitos.length > 0) {
+          titulo.textContent = 'CIPA ' + ano;
+          desc.textContent = 'Integrantes eleitos para a gestão ' + ano + ':';
+          lista.innerHTML = eleitos.map(c =>
+            '<div class="pc-cipa-lista__item">'
+            + '<span class="pc-cipa-lista__nome">' + c.nome + '</span>'
+            + '<span class="pc-cipa-lista__papel">' + (c.papel || 'Membro') + '</span>'
+            + '</div>'
+          ).join('');
+          lista.style.display = 'flex';
+          ctaLink('Ver ranking completo →');
+        } else {
+          titulo.textContent = 'Votação da CIPA ' + ano + ' encerrada';
+          desc.textContent = 'A votação já fechou. Assim que o RH definir os eleitos, '
+            + 'os integrantes da CIPA ' + ano + ' aparecem aqui.';
+          ctaLink('Ver ranking →');
+        }
+
+      } else {
+        icone.textContent = '🦺';
+        titulo.textContent = 'CIPA';
+        desc.textContent = 'Comissão Interna de Prevenção de Acidentes.';
+        ctaLink('Saiba mais →');
+      }
+    } catch (e) {
+      titulo.textContent = 'CIPA';
+      desc.textContent = 'Não foi possível carregar as informações agora.';
+      ctaTexto('Tente novamente mais tarde');
+    }
+  })();
+</script>
 
 </body>
 </html>
