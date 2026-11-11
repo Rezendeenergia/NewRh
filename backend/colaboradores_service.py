@@ -142,3 +142,11 @@ def validar_colaborador_ativo(nome: str, matricula: str) -> str:
         if _normalizar_nome(c.get("nome")) == nome_norm and _normalizar_matricula(c.get("matricula")) == mat_norm:
             return "ok"
     return "nao_encontrado"
+
+
+def listar_cargos() -> list:
+    """Lista única (ordenada) dos cargos existentes na Base de Colaboradores,
+    para preencher listas suspensas em formulários públicos."""
+    todos = _get_colaboradores_raw()
+    cargos = {c["cargo"].strip() for c in todos if c.get("cargo") and c["cargo"].strip()}
+    return sorted(cargos, key=_normalizar_nome)
