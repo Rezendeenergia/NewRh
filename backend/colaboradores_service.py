@@ -1,14 +1,82 @@
 """
 Serviço para buscar colaboradores da Base de Colaboradores.xlsx no SharePoint.
 """
-import os, re, unicodedata, requests
+import os, re, unicodedata, base64, requests
 from sharepoint_service import _get_token, _get_site_id, _get_drive_id
 
-# ID do arquivo Base de Colaboradores - extraído da URL fornecida
+# Link de compartilhamento da planilha "Base de Colaboradores - Rezende Energia.xlsx",
+# copiado direto do SharePoint. É a forma mais confiável de achar o arquivo: a Graph
+# API resolve esse link pro item certo (endpoint /shares), sem depender de um ID
+# interno fixo, que já ficou desatualizado uma vez (o arquivo foi movido/recriado).
+BASE_COLAB_SHARE_URL = (
+    "https://rezendeenergia.sharepoint.com/:x:/r/sites/Intranet/_layouts/15/doc2.aspx"
+    "?sourcedoc=%7BF01BC0D3-1EF0-4E29-8CCF-61FF00DD2CD8%7D"
+    "&file=Base%20de%20Colaboradores%20-%20Rezende%20Energia.xlsx"
+    "&action=default"
+)
+
+# ID antigo, mantido só como última tentativa (ficou desatualizado em algum
+# momento — por isso a leitura por link acima veio antes).
 BASE_COLAB_FILE_ID = "5D573B4E-466F-49FA-84C2-CCC533509818"
 GRAPH_BASE = "https://graph.microsoft.com/v1.0"
 
 _cache_colaboradores = {"data": None, "ts": 0}
+
+
+def _encode_share_url(url: str) -> str:
+    """Codifica uma URL de compartilhamento do SharePoint/OneDrive no formato
+    que a Graph API espera para resolver o item direto pelo link
+    (endpoint /shares/{id}/driveItem)."""
+    b64 = base64.urlsafe_b64encode(url.encode("utf-8")).decode("utf-8").rstrip("=")
+    return f"u!{b64}"
+
+
+def _resolver_arquivo(headers: dict):
+    """Acha o drive_id e o file_id da planilha de colaboradores.
+
+    Tenta primeiro resolver pelo link de compartilhamento (BASE_COLAB_SHARE_URL);
+    se não der certo, cai para o método antigo (ID fixo + busca por nome).
+    Retorna (drive_id, file_id) ou (None, None) se não achar de jeito nenhum."""
+
+    # 1) Resolve direto pelo link de compartilhamento.
+    share_id = _encode_share_url(BASE_COLAB_SHARE_URL)
+    r = requests.get(f"{GRAPH_BASE}/shares/{share_id}/driveItem", headers=headers, timeout=10)
+    print(f"[COLAB][diag] resolver por link de compartilhamento: status={r.status_code}")
+    if r.status_code == 200:
+        item = r.json()
+        file_id  = item.get("id")
+        drive_id = (item.get("parentReference") or {}).get("driveId")
+        if file_id and drive_id:
+            print(f"[COLAB][diag] resolvido pelo link: drive_id={drive_id!r} file_id={file_id!r}")
+            return drive_id, file_id
+    else:
+        print(f"[COLAB][diag] corpo do erro (link): {r.text[:300]}")
+
+    # 2) Método antigo: site/drive fixos da intranet + ID fixo do arquivo,
+    #    com busca pelo nome se o ID fixo não funcionar.
+    site_id  = _get_site_id()
+    drive_id = _get_drive_id(site_id)
+    print(f"[COLAB][diag] site_id={site_id!r} drive_id={drive_id!r}")
+
+    file_id = BASE_COLAB_FILE_ID
+    url = f"{GRAPH_BASE}/drives/{drive_id}/items/{file_id}/workbook/worksheets"
+    r = requests.get(url, headers=headers, timeout=10)
+    print(f"[COLAB][diag] 1a tentativa (ID fixo {file_id}): status={r.status_code}")
+    if r.status_code == 200:
+        return drive_id, file_id
+
+    url2 = f"{GRAPH_BASE}/sites/{site_id}/drive/root/search(q='Base de Colaboradores')"
+    r2 = requests.get(url2, headers=headers, timeout=10)
+    print(f"[COLAB][diag] busca pelo nome: status={r2.status_code}")
+    if r2.status_code != 200:
+        print(f"[COLAB] Erro ao acessar planilha: {r.status_code}")
+        return None, None
+    items = r2.json().get("value", [])
+    print(f"[COLAB][diag] itens encontrados na busca: {len(items)} -> {[it.get('name') for it in items]}")
+    if not items:
+        print("[COLAB] Erro: busca pelo nome não encontrou nenhum arquivo")
+        return None, None
+    return drive_id, items[0]["id"]
 
 
 def _get_colaboradores_raw() -> list:
@@ -20,40 +88,20 @@ def _get_colaboradores_raw() -> list:
         return _cache_colaboradores["data"]
 
     try:
-        token    = _get_token()
-        site_id  = _get_site_id()
-        drive_id = _get_drive_id(site_id)
-        headers  = {"Authorization": f"Bearer {token}"}
+        token   = _get_token()
+        headers = {"Authorization": f"Bearer {token}"}
 
-        print(f"[COLAB][diag] site_id={site_id!r} drive_id={drive_id!r}")
+        drive_id, file_id = _resolver_arquivo(headers)
+        if not drive_id or not file_id:
+            print("[COLAB] Erro: não foi possível achar o arquivo da planilha")
+            return []
 
-        # Busca o arquivo pelo ID fixo
-        file_id = BASE_COLAB_FILE_ID
         url = f"{GRAPH_BASE}/drives/{drive_id}/items/{file_id}/workbook/worksheets"
         r = requests.get(url, headers=headers, timeout=10)
-        print(f"[COLAB][diag] 1a tentativa (ID fixo {file_id}): status={r.status_code}")
-
+        print(f"[COLAB][diag] lista de abas: status={r.status_code}")
         if r.status_code != 200:
-            # ID fixo pode ter ficado desatualizado (arquivo movido/recriado
-            # no SharePoint) — tenta achar o arquivo atual pelo nome.
-            url2 = f"{GRAPH_BASE}/sites/{site_id}/drive/root/search(q='Base de Colaboradores')"
-            r2 = requests.get(url2, headers=headers, timeout=10)
-            print(f"[COLAB][diag] busca pelo nome: status={r2.status_code}")
-            if r2.status_code != 200:
-                print(f"[COLAB] Erro ao acessar planilha: {r.status_code}")
-                return []
-            items = r2.json().get("value", [])
-            print(f"[COLAB][diag] itens encontrados na busca: {len(items)} -> {[it.get('name') for it in items]}")
-            if not items:
-                print("[COLAB] Erro: busca pelo nome não encontrou nenhum arquivo")
-                return []
-            file_id = items[0]["id"]
-            url = f"{GRAPH_BASE}/drives/{drive_id}/items/{file_id}/workbook/worksheets"
-            r = requests.get(url, headers=headers, timeout=10)
-            print(f"[COLAB][diag] 2a tentativa (ID do fallback {file_id}): status={r.status_code}")
-            if r.status_code != 200:
-                print(f"[COLAB] Erro ao acessar planilha (fallback): {r.status_code}")
-                return []
+            print(f"[COLAB] Erro ao acessar planilha (fallback): {r.status_code}")
+            return []
 
         sheets = r.json().get("value", [])
         print(f"[COLAB][diag] abas encontradas: {[s.get('name') for s in sheets]}")
@@ -61,7 +109,7 @@ def _get_colaboradores_raw() -> list:
             print("[COLAB] Erro: planilha não tem nenhuma aba")
             return []
 
-        # Usa a primeira aba — mesmo file_id resolvido acima (fixo ou do fallback)
+        # Usa a primeira aba — mesmo drive_id/file_id resolvidos acima
         sheet_name = sheets[0]["name"]
         url_range = f"{GRAPH_BASE}/drives/{drive_id}/items/{file_id}/workbook/worksheets('{sheet_name}')/usedRange"
         r2 = requests.get(url_range, headers=headers, timeout=15)
