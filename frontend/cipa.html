@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Candidatura à CIPA — Rezende Energia</title>
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <script src="/js/rezende-tema.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@500;600;700;800&display=swap">
+  <link rel="stylesheet" href="/css/rezende-tema.css">
+  <link rel="stylesheet" href="/css/rezende-newrh.css">
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    body { background: var(--bg-base, var(--fundo)); color: var(--texto); font-family:var(--f-texto); margin: 0; }
+
+    .cp-hero {
+      background: linear-gradient(135deg, var(--laranja-fundo) 0%, var(--fundo) 50%, var(--fundo) 100%);
+      border-bottom: 1px solid rgba(255,106,0,.15);
+      padding: 40px 20px 32px;
+      text-align: center;
+    }
+    .cp-hero__badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,106,0,.12); border: 1px solid rgba(255,106,0,.3);
+      color: var(--laranja-texto); font-size: 12px; font-weight: 700;
+      border-radius: 20px; padding: 5px 14px; margin-bottom: 16px;
+      text-transform: uppercase; letter-spacing: 1px;
+    }
+    .cp-hero__title { font-size: clamp(24px, 5vw, 38px); font-weight: 900; margin: 0 0 10px; }
+    .cp-hero__title span { color: var(--laranja-texto); }
+    .cp-hero__desc { color: var(--texto-2); font-size: 15px; max-width: 540px; margin: 0 auto 20px; line-height: 1.7; }
+    .cp-hero__back { font-size: 13px; color: rgba(255,106,0,.7); text-decoration: none; border-bottom: 1px solid rgba(255,106,0,.3); }
+    .cp-hero__back:hover { color: var(--laranja-texto); }
+
+    .cp-container { max-width: 620px; margin: 0 auto; padding: 32px 20px 60px; }
+
+    .cp-card {
+      background: var(--ov-40); border: 1px solid var(--ov-80);
+      border-radius: 16px; overflow: hidden;
+    }
+    .cp-card__header {
+      padding: 16px 24px; border-bottom: 1px solid var(--ov-70);
+      background: rgba(255,106,0,.04);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .cp-card__title { font-size: 14px; font-weight: 700; color: var(--laranja-texto); text-transform: uppercase; letter-spacing: .5px; }
+    .cp-card__body { padding: 24px; }
+
+    .form-field { margin-bottom: 16px; }
+    .form-field__label {
+      display: block; font-size: 12px; font-weight: 600;
+      color: var(--texto-2); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px;
+    }
+    .required-mark { color: var(--laranja-texto); }
+    .form-field__input, .form-field__textarea {
+      width: 100%; box-sizing: border-box;
+      background: var(--ov-60); border: 1px solid var(--ov-100);
+      color: var(--texto); border-radius: 8px; padding: 10px 12px; font-size: 14px;
+      transition: border-color .2s; font-family: inherit;
+    }
+    .form-field__input:focus, .form-field__textarea:focus {
+      outline: none; border-color: rgba(255,106,0,.5);
+    }
+    .form-field__textarea { min-height: 120px; resize: vertical; }
+
+    .lgpd-box {
+      background: rgba(91,141,239,.06); border: 1px solid rgba(91,141,239,.2);
+      border-radius: 10px; padding: 14px 16px; margin: 4px 0 20px; font-size: 12px; color: var(--texto-2); line-height: 1.6;
+    }
+
+    .btn-submit {
+      width: 100%; padding: 14px 20px;
+      background: linear-gradient(135deg, var(--laranja), var(--rz-laranja-400));
+      color: var(--texto); font-size: 16px; font-weight: 700;
+      border: none; border-radius: 10px; cursor: pointer;
+      transition: opacity .2s, transform .1s;
+    }
+    .btn-submit:hover { opacity: .9; }
+    .btn-submit:active { transform: scale(.99); }
+    .btn-submit:disabled { opacity: .5; cursor: not-allowed; }
+
+    .alert {
+      padding: 12px 16px; border-radius: 8px; font-size: 13px;
+      margin-top: 12px; display: none;
+    }
+    .alert--error { background: rgba(255,82,82,.12); border: 1px solid rgba(255,82,82,.3); color: var(--alerta); }
+
+    .cp-success { display: none; text-align: center; padding: 60px 24px; }
+    .cp-success__icon { font-size: 60px; margin-bottom: 16px; }
+    .cp-success__title { font-size: 24px; font-weight: 800; color: var(--ok); margin: 0 0 10px; }
+    .cp-success__text { color: var(--texto-2); font-size: 15px; max-width: 480px; margin: 0 auto 24px; line-height: 1.7; }
+    .cp-success__back { display: inline-block; padding: 10px 24px; background: var(--ov-60); border: 1px solid var(--ov-120); border-radius: 8px; color: var(--texto-2); text-decoration: none; font-size: 14px; }
+    .cp-success__back:hover { background: var(--ov-100); color: var(--texto); }
+  </style>
+</head>
+<body>
+<button class="rz-tema-btn rz-tema-flutuante" type="button" data-rz-tema aria-label="Alternar modo claro/escuro" title="Modo claro/escuro"><svg class="sol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg class="lua" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg></button>
+
+<header style="background: var(--ov-20); border-bottom: 1px solid var(--ov-60); padding: 12px 24px; display:flex; align-items:center; gap:12px;">
+  <img class="logo-claro" src="/img/logo-rezende.png" alt="Rezende Energia" style="height:32px; object-fit:contain;"><img class="logo-escuro" src="/img/logo-rezende-branca.png" alt="Rezende Energia" style="height:32px; object-fit:contain;">
+  <span style="color:var(--texto-3); font-size:13px;">Portal do Colaborador</span>
+</header>
+
+<div class="cp-hero">
+  <div class="cp-hero__badge">🦺 Eleições da CIPA</div>
+  <h1 class="cp-hero__title">Candidatura à <span>CIPA</span></h1>
+  <p class="cp-hero__desc">
+    Quer ajudar a cuidar da segurança de todos na Rezende Energia? Inscreva-se para concorrer
+    a uma vaga na Comissão Interna de Prevenção de Acidentes — gestão 2027.
+  </p>
+  <a href="/portal-colaborador" class="cp-hero__back">← Voltar ao Portal do Colaborador</a>
+</div>
+
+<div class="cp-container">
+
+  <!-- Sucesso -->
+  <div class="cp-success" id="cp-success">
+    <div class="cp-success__icon">🎉</div>
+    <div class="cp-success__title">Candidatura enviada!</div>
+    <p class="cp-success__text">
+      Recebemos a sua candidatura para a CIPA — gestão 2027. O SESMT e o RH vão conferir
+      as inscrições; qualquer novidade sobre a eleição será avisada pelos canais internos.
+    </p>
+    <a href="/portal-colaborador" class="cp-success__back">← Voltar ao Portal do Colaborador</a>
+  </div>
+
+  <!-- Formulário -->
+  <div id="cp-form-wrap">
+    <form id="cp-form" novalidate>
+      <div class="cp-card">
+        <div class="cp-card__header">
+          <span style="font-size:18px;">🦺</span>
+          <span class="cp-card__title">Candidatura — Gestão 2027</span>
+        </div>
+        <div class="cp-card__body">
+
+          <div class="form-field">
+            <label class="form-field__label" for="cp-nome">Nome <strong class="required-mark">*</strong></label>
+            <input id="cp-nome" type="text" class="form-field__input" placeholder="Seu nome completo" required>
+          </div>
+
+          <div class="form-field">
+            <label class="form-field__label" for="cp-matricula">Matrícula <strong class="required-mark">*</strong></label>
+            <input id="cp-matricula" type="text" class="form-field__input" placeholder="Seu número de matrícula" required>
+          </div>
+
+          <div class="form-field">
+            <label class="form-field__label" for="cp-cargo">Cargo <strong class="required-mark">*</strong></label>
+            <input id="cp-cargo" type="text" class="form-field__input" placeholder="Seu cargo atual" required>
+          </div>
+
+          <div class="form-field">
+            <label class="form-field__label" for="cp-motivo">Por que quer participar da CIPA? <strong class="required-mark">*</strong></label>
+            <textarea id="cp-motivo" class="form-field__textarea" placeholder="Conte, em poucas linhas, por que você quer ser membro da CIPA..." required></textarea>
+          </div>
+
+          <div class="lgpd-box">
+            📋 Seus dados serão usados apenas pelo RH e pelo SESMT para organizar a eleição da CIPA — gestão 2027,
+            conforme a Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018).
+          </div>
+
+          <div class="alert alert--error" id="cp-alert"></div>
+
+          <button type="button" class="btn-submit" id="cp-submit-btn" onclick="submitForm()">
+            ✅ Enviar Candidatura
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+</div>
+
+<script>
+  function showAlert(msg) {
+    const el = document.getElementById('cp-alert');
+    el.textContent = msg;
+    el.style.display = 'block';
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function hideAlert() {
+    document.getElementById('cp-alert').style.display = 'none';
+  }
+
+  async function submitForm() {
+    hideAlert();
+    const btn = document.getElementById('cp-submit-btn');
+
+    const nome      = document.getElementById('cp-nome').value.trim();
+    const matricula = document.getElementById('cp-matricula').value.trim();
+    const cargo     = document.getElementById('cp-cargo').value.trim();
+    const motivo    = document.getElementById('cp-motivo').value.trim();
+
+    if (!nome)      return showAlert('Informe o nome.');
+    if (!matricula) return showAlert('Informe a matrícula.');
+    if (!cargo)     return showAlert('Informe o cargo.');
+    if (!motivo)    return showAlert('Conte por que quer participar da CIPA.');
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Enviando...';
+
+    try {
+      const resp = await fetch('/api/cipa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome, matricula, cargo, motivo }),
+      });
+      const data = await resp.json();
+
+      if (!resp.ok) {
+        btn.disabled = false;
+        btn.textContent = '✅ Enviar Candidatura';
+        return showAlert(data.message || 'Erro ao enviar. Tente novamente.');
+      }
+
+      document.getElementById('cp-form-wrap').style.display = 'none';
+      document.getElementById('cp-success').style.display   = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = '✅ Enviar Candidatura';
+      showAlert('Erro de conexão. Verifique sua internet e tente novamente.');
+    }
+  }
+</script>
+
+</body>
+</html>

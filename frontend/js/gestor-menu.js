@@ -21,6 +21,7 @@
     'audit': '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>',
     'solicitacoes': '<path d="M3 13h5l1.5 3h5L16 13h5"/><path d="M5.5 5h13L21 13v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-6z"/>',
     '/admissao': '<path d="M4 21V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v16M15 10h4a1 1 0 0 1 1 1v10M2 21h20M8 8h3M8 12h3M8 16h3"/>',
+    '/cipa-admin': '<path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5z"/><path d="M9.5 12.5 11 14l3.5-3.5"/>',
     '/admissoes': '<path d="M3 21h18M5 21V12a7 7 0 0 1 14 0v9M12 5V3M9 21v-5h6v5"/>',
     'banco-talentos': '<circle cx="12" cy="9" r="5.5"/><path d="m8.5 13.5-1.5 7.5 5-3 5 3-1.5-7.5"/>',
     'colaboradores-admitidos': '<path d="m2 9 10-5 10 5-10 5z"/><path d="M6 11.2V16c0 1.4 2.7 3 6 3s6-1.6 6-3v-4.8M22 9v6"/>',

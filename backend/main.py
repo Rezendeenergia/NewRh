@@ -194,7 +194,7 @@ def email_test_send():
 
     return jsonify(result)
 
-from routers import auth, jobs, candidaturas, processos, solicitacoes, menor_aprendiz, banco_talentos, folha
+from routers import auth, jobs, candidaturas, processos, solicitacoes, menor_aprendiz, banco_talentos, folha, cipa
 from colaboradores_router import bp_colab
 app.register_blueprint(auth.bp)
 
@@ -213,6 +213,7 @@ app.register_blueprint(menor_aprendiz.bp)
 app.register_blueprint(banco_talentos.bp)
 app.register_blueprint(bp_colab)
 app.register_blueprint(folha.bp)
+app.register_blueprint(cipa.bp)
 
 @app.route("/revisar-solicitacao")
 def revisar_solicitacao():
@@ -268,6 +269,24 @@ def menor_aprendiz_page():
 @app.route("/banco-de-talentos")
 def banco_talentos_page():
     return send_from_directory(FRONTEND_FOLDER, "banco-talentos.html")
+
+
+# Portal do Colaborador — acesso rápido a serviços internos (chamado de TI, CIPA, etc.)
+@app.route("/portal-colaborador")
+def portal_colaborador_page():
+    return send_from_directory(FRONTEND_FOLDER, "portal-colaborador.html")
+
+
+# Candidatura à CIPA (pública, sem login)
+@app.route("/cipa")
+def cipa_page():
+    return send_from_directory(FRONTEND_FOLDER, "cipa.html")
+
+
+# Lista de candidaturas à CIPA (gestores)
+@app.route("/cipa-admin")
+def cipa_admin_page():
+    return send_from_directory(FRONTEND_FOLDER, "cipa-admin.html")
 
 
 @app.route("/api/pasta-colaborador/estrutura")
