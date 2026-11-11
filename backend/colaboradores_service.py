@@ -25,44 +25,56 @@ def _get_colaboradores_raw() -> list:
         drive_id = _get_drive_id(site_id)
         headers  = {"Authorization": f"Bearer {token}"}
 
+        print(f"[COLAB][diag] site_id={site_id!r} drive_id={drive_id!r}")
+
         # Busca o arquivo pelo ID fixo
         file_id = BASE_COLAB_FILE_ID
         url = f"{GRAPH_BASE}/drives/{drive_id}/items/{file_id}/workbook/worksheets"
         r = requests.get(url, headers=headers, timeout=10)
+        print(f"[COLAB][diag] 1a tentativa (ID fixo {file_id}): status={r.status_code}")
 
         if r.status_code != 200:
             # ID fixo pode ter ficado desatualizado (arquivo movido/recriado
             # no SharePoint) — tenta achar o arquivo atual pelo nome.
             url2 = f"{GRAPH_BASE}/sites/{site_id}/drive/root/search(q='Base de Colaboradores')"
             r2 = requests.get(url2, headers=headers, timeout=10)
+            print(f"[COLAB][diag] busca pelo nome: status={r2.status_code}")
             if r2.status_code != 200:
                 print(f"[COLAB] Erro ao acessar planilha: {r.status_code}")
                 return []
             items = r2.json().get("value", [])
+            print(f"[COLAB][diag] itens encontrados na busca: {len(items)} -> {[it.get('name') for it in items]}")
             if not items:
+                print("[COLAB] Erro: busca pelo nome não encontrou nenhum arquivo")
                 return []
             file_id = items[0]["id"]
             url = f"{GRAPH_BASE}/drives/{drive_id}/items/{file_id}/workbook/worksheets"
             r = requests.get(url, headers=headers, timeout=10)
+            print(f"[COLAB][diag] 2a tentativa (ID do fallback {file_id}): status={r.status_code}")
             if r.status_code != 200:
                 print(f"[COLAB] Erro ao acessar planilha (fallback): {r.status_code}")
                 return []
 
         sheets = r.json().get("value", [])
+        print(f"[COLAB][diag] abas encontradas: {[s.get('name') for s in sheets]}")
         if not sheets:
+            print("[COLAB] Erro: planilha não tem nenhuma aba")
             return []
 
         # Usa a primeira aba — mesmo file_id resolvido acima (fixo ou do fallback)
         sheet_name = sheets[0]["name"]
         url_range = f"{GRAPH_BASE}/drives/{drive_id}/items/{file_id}/workbook/worksheets('{sheet_name}')/usedRange"
         r2 = requests.get(url_range, headers=headers, timeout=15)
+        print(f"[COLAB][diag] usedRange da aba {sheet_name!r}: status={r2.status_code}")
         if r2.status_code != 200:
-            print(f"[COLAB] Erro ao ler range: {r2.status_code}")
+            print(f"[COLAB] Erro ao ler range: {r2.status_code} -- corpo: {r2.text[:300]}")
             return []
 
         data = r2.json()
         values = data.get("values", [])
+        print(f"[COLAB][diag] linhas lidas (com cabeçalho): {len(values)}")
         if len(values) < 2:
+            print("[COLAB] Erro: planilha retornou sem linhas de dados (só cabeçalho ou vazia)")
             return []
 
         # Monta lista de colaboradores
@@ -91,7 +103,7 @@ def _get_colaboradores_raw() -> list:
         return colaboradores
 
     except Exception as e:
-        print(f"[COLAB] Erro: {e}")
+        print(f"[COLAB] Erro: {type(e).__name__}: {e}")
         return []
 
 
