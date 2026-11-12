@@ -1092,6 +1092,11 @@ def atualizar_interno(processo_id):
                 pass
         if "salarioObs" in data:
             p.salario_observacao = data["salarioObs"]
+        if "tipoAdmissao" in data:
+            tipo = (data["tipoAdmissao"] or "ADMISSAO_NOVA").upper()
+            if tipo not in ("ADMISSAO_NOVA", "MUDANCA_FUNCAO", "REINTEGRACAO", "MOBILIZACAO"):
+                return jsonify({"message": "Tipo de processo inválido."}), 400
+            p.tipo_admissao = tipo
 
         db.commit()
         audit.log(request.username, "NOTAS_INTERNAS", entity="processo",

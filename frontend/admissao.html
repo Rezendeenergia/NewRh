@@ -346,6 +346,22 @@ const Adm = {
           </h4>
         </div>
 
+        <!-- Tipo do processo -->
+        <div style="margin-bottom:16px;">
+          <label style="display:block;color:var(--texto-2);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">
+            🔖 Tipo do processo
+          </label>
+          <select id="tipo-admissao-${p.id}"
+                  style="width:100%;background:var(--ov-40);border:1px solid rgba(91,141,239,.25);
+                         color:var(--texto);border-radius:8px;padding:10px 12px;font-size:13px;
+                         box-sizing:border-box;">
+            <option value="ADMISSAO_NOVA"  ${p.tipoAdmissao==='ADMISSAO_NOVA'  ?'selected':''}>Admissão nova</option>
+            <option value="MUDANCA_FUNCAO" ${p.tipoAdmissao==='MUDANCA_FUNCAO' ?'selected':''}>🔄 Mudança de função</option>
+            <option value="REINTEGRACAO"   ${p.tipoAdmissao==='REINTEGRACAO'   ?'selected':''}>↩ Reintegração</option>
+            <option value="MOBILIZACAO"    ${p.tipoAdmissao==='MOBILIZACAO'    ?'selected':''}>📍 Mobilização</option>
+          </select>
+        </div>
+
         <!-- Notas internas -->
         <div style="margin-bottom:16px;">
           <label style="display:block;color:var(--texto-2);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">
@@ -1007,15 +1023,19 @@ const Adm = {
     const notas   = document.getElementById(`notas-internas-${processoId}`)?.value || '';
     const salario = document.getElementById(`salario-proposto-${processoId}`)?.value || '';
     const salObs  = document.getElementById(`salario-obs-${processoId}`)?.value || '';
+    const tipo    = document.getElementById(`tipo-admissao-${processoId}`)?.value || 'ADMISSAO_NOVA';
     const btn     = document.getElementById(`btn-interno-${processoId}`);
     const saved   = document.getElementById(`interno-saved-${processoId}`);
     if (btn) { btn.textContent = '💾 Salvando...'; btn.disabled = true; }
     try {
       await req(`/api/processos/${processoId}/interno`, {
         method: 'PATCH',
-        body: JSON.stringify({ notasInternas: notas, salarioProposto: salario || null, salarioObs: salObs }),
+        body: JSON.stringify({ notasInternas: notas, salarioProposto: salario || null, salarioObs: salObs, tipoAdmissao: tipo }),
       });
+      // Recarrega o processo pra badge do cabeçalho já aparecer sem precisar dar F5
+      delete _cache[`/api/processos/${processoId}`];
       if (saved) { saved.style.display = 'inline'; setTimeout(() => { saved.style.display='none'; }, 3000); }
+      await Adm.loadProcesso(processoId);
     } catch(e) { alert('Erro ao salvar: ' + e.message); }
     finally { if (btn) { btn.textContent = '💾 Salvar Notas e Salário'; btn.disabled = false; } }
   },
