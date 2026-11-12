@@ -36,7 +36,12 @@ def _get_token() -> str:
 
 
 # ── Envio ─────────────────────────────────────────────────────
-def send_email(to: str, subject: str, html: str, cc: list = None) -> bool:
+def send_email(to: str, subject: str, html: str, cc: list = None, attachments: list = None) -> bool:
+    """
+    attachments: lista de dicts {"name": "arquivo.pdf", "content": bytes, "content_type": "application/pdf"}
+    (anexo pequeno — Graph aceita fileAttachment em base64 direto no corpo até ~3MB,
+    o suficiente pra um comprovante de 1-2 páginas).
+    """
     if not EMAIL_ENABLED:
         print(f"[EMAIL] Desabilitado — para: {to} | assunto: {subject}")
         return False
@@ -58,6 +63,17 @@ def send_email(to: str, subject: str, html: str, cc: list = None) -> bool:
         if cc:
             message["ccRecipients"] = [
                 {"emailAddress": {"address": addr}} for addr in cc if addr
+            ]
+        if attachments:
+            import base64
+            message["attachments"] = [
+                {
+                    "@odata.type": "#microsoft.graph.fileAttachment",
+                    "name": a["name"],
+                    "contentType": a.get("content_type", "application/octet-stream"),
+                    "contentBytes": base64.b64encode(a["content"]).decode("ascii"),
+                }
+                for a in attachments
             ]
 
         payload = {

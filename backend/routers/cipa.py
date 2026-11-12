@@ -199,7 +199,9 @@ def candidatar():
 
         try:
             from email_service import send_email
+            from cipa_pdf import gerar_pdf_candidaturas
             dest = _os.getenv("RH_EMAIL", "rh@rezendeenergia.com.br")
+            pdf_buffer = gerar_pdf_candidaturas([candidatura])
             send_email(
                 dest,
                 f"[NewRH] Nova candidatura à CIPA — {candidatura.nome}",
@@ -209,7 +211,13 @@ def candidatar():
                 <p><b>Matrícula:</b> {candidatura.matricula}</p>
                 <p><b>Cargo:</b> {candidatura.cargo}</p>
                 <p><b>Por que quer participar:</b><br>{candidatura.motivo}</p>
+                <p>O comprovante desta candidatura está em anexo (PDF).</p>
                 """,
+                attachments=[{
+                    "name": f"comprovante-cipa-{candidatura.id}.pdf",
+                    "content": pdf_buffer.getvalue(),
+                    "content_type": "application/pdf",
+                }],
             )
         except Exception as e:
             print(f"[CIPA] Erro e-mail: {e}")
