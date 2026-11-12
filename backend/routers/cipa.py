@@ -17,7 +17,7 @@ Públicas (sem login):
   POST /api/cipa/votacao/votar     — voto secreto (só quando VOTACAO_ABERTA)
   GET  /api/cipa/resultado         — ranking (só depois de VOTACAO_FECHADA)
 
-Protegidas (gestores RH, require_auth / require_admin):
+Protegidas (gestão da CIPA — só ROLE_ADMIN, require_role_admin):
   GET  /api/cipa                   — lista todas as candidaturas
   GET  /api/cipa/pdf               — PDF de todas as candidaturas (auditoria)
   POST /api/cipa/gestao/fase       — avança/define a fase da gestão atual
@@ -30,7 +30,7 @@ from flask import Blueprint, request, jsonify, send_file
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timezone
 from database import get_db
-from security import require_auth, require_admin
+from security import require_role_admin
 from extensions import limiter
 import models
 import os as _os
@@ -353,7 +353,7 @@ def resultado():
 # ── Listagem (gestores) ──────────────────────────────────────────
 
 @bp.get("")
-@require_auth
+@require_role_admin
 def listar():
     db = get_db()
     try:
@@ -370,7 +370,7 @@ def listar():
 # ── PDF de todas as candidaturas (auditoria) ─────────────────────
 
 @bp.get("/pdf")
-@require_admin
+@require_role_admin
 def exportar_pdf():
     gestao_filtro = request.args.get("gestao", "").strip()
     db = get_db()
@@ -397,7 +397,7 @@ def exportar_pdf():
 # ── Administração da gestão (fase, vagas, nova gestão) ───────────
 
 @bp.post("/gestao/fase")
-@require_admin
+@require_role_admin
 def gestao_definir_fase():
     data = request.get_json() or {}
     fase = str(data.get("fase") or "").strip().upper()
@@ -415,7 +415,7 @@ def gestao_definir_fase():
 
 
 @bp.post("/gestao/vagas")
-@require_admin
+@require_role_admin
 def gestao_definir_vagas():
     data = request.get_json() or {}
     try:
@@ -436,7 +436,7 @@ def gestao_definir_vagas():
 
 
 @bp.post("/gestao/nova")
-@require_admin
+@require_role_admin
 def gestao_nova():
     data = request.get_json() or {}
     ano = str(data.get("ano") or "").strip()
@@ -462,7 +462,7 @@ def gestao_nova():
 # ── Eleitos: computar ranking e definir papéis ───────────────────
 
 @bp.post("/eleitos/computar")
-@require_admin
+@require_role_admin
 def eleitos_computar():
     db = get_db()
     try:
@@ -488,7 +488,7 @@ def eleitos_computar():
 
 
 @bp.post("/eleitos/papel")
-@require_admin
+@require_role_admin
 def eleitos_definir_papel():
     data = request.get_json() or {}
     candidatura_id = data.get("candidaturaId")

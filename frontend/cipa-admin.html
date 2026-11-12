@@ -107,7 +107,7 @@
 </head>
 <body>
 
-<div id="app-screen">
+<div id="app-screen" style="display:none;">
 
   <div class="page-header">
     <div class="page-header__brand">
@@ -184,10 +184,25 @@
   </div>
 </div>
 
+<div id="acesso-negado" style="display:none; max-width:480px; margin:80px auto; text-align:center; font-family:var(--f-texto,sans-serif); color:var(--ink-2,#555);">
+  <div style="font-size:2.4rem; margin-bottom:12px;">🔒</div>
+  <h2 style="color:var(--texto,#222); margin-bottom:8px;">Acesso restrito</h2>
+  <p>A gestão da CIPA (inscrições, votação e eleitos) é visível só para administradores.</p>
+  <p><a href="/?gestor=1">← Voltar ao menu</a></p>
+</div>
+
 <script src="js/rz-sessao.js"></script>
 <script>
 const API = '/api';
-let token = (window.RzSessao && RzSessao.ler() || {}).token || '';
+const _sessaoCipa = (window.RzSessao && RzSessao.ler()) || null;
+if (!_sessaoCipa) {
+  RzSessao.expirou();
+} else if (_sessaoCipa.role !== 'ROLE_ADMIN') {
+  document.getElementById('acesso-negado').style.display = 'block';
+} else {
+  document.getElementById('app-screen').style.display = '';
+}
+let token = (_sessaoCipa || {}).token || '';
 let candidaturas = [];
 let gestaoAtual = null;
 
@@ -390,8 +405,10 @@ function renderTable() {
   `).join('');
 }
 
-loadGestao();
-loadData();
+if (_sessaoCipa && _sessaoCipa.role === 'ROLE_ADMIN') {
+  loadGestao();
+  loadData();
+}
 </script>
 
 </body>

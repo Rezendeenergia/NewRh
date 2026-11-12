@@ -832,6 +832,10 @@ const Manager = {
     // Folha Salarial: dado financeiro sensível, só ROLE_ADMIN (administrador no Portal) vê a aba
     const abaFolha = document.querySelector('.subtab[data-subtab="folha"]');
     if (abaFolha) abaFolha.style.display = (AppState.role === 'ROLE_ADMIN') ? '' : 'none';
+
+    // CIPA: gestão (fases, vagas, eleitos) só ROLE_ADMIN vê e edita
+    const linkCipaAdmin = document.getElementById('link-cipa-admin');
+    if (linkCipaAdmin) linkCipaAdmin.style.display = (AppState.role === 'ROLE_ADMIN') ? '' : 'none';
   },
 
   logout() {
