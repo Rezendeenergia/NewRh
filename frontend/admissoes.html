@@ -319,6 +319,9 @@ function renderTable() {
     }
 
     const statusLabel = { EM_ANDAMENTO:'Em andamento', CONCLUIDO:'Concluído', CANCELADO:'Cancelado' };
+    // Tipo do processo (admissão nova não mostra nada — só os casos diferentes)
+    const tipoAdmissaoLabel = { MUDANCA_FUNCAO:'🔄 Mudança de função', REINTEGRACAO:'↩ Reintegração', MOBILIZACAO:'📍 Mobilização' };
+    const tipoLabel = tipoAdmissaoLabel[p.tipoAdmissao] || '';
 
     return `<tr onclick="window.location='/admissao?id=${p.id}'">
       <td>
@@ -341,7 +344,10 @@ function renderTable() {
         </div>
       </td>
       <td>${prazoHtml}</td>
-      <td><span class="pill pill--${p.status}">${statusLabel[p.status] || p.status}</span></td>
+      <td>
+        <span class="pill pill--${p.status}">${statusLabel[p.status] || p.status}</span>
+        ${tipoLabel ? `<span class="pill pill--${p.tipoAdmissao}" style="margin-left:4px;">${tipoLabel}</span>` : ''}
+      </td>
       <td><button class="btn-open" onclick="event.stopPropagation();window.location='/admissao?id=${p.id}'">Abrir →</button></td>
     </tr>`;
   }).join('');
