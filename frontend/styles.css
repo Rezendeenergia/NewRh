@@ -1230,6 +1230,11 @@ select, input {
 .pill--CONCLUIDO     { background:rgba(46,204,113,.1);    color:var(--ok); }
 .pill--CANCELADO     { background:rgba(255,82,82,.1);     color:var(--alerta); }
 
+/* Tipo do processo (ao lado do status — só aparece quando não é admissão nova) */
+.pill--MUDANCA_FUNCAO  { background:rgba(91,141,239,.1);  color:var(--info); border:1px solid rgba(91,141,239,.25); }
+.pill--REINTEGRACAO    { background:rgba(91,141,239,.1);  color:var(--info); border:1px solid rgba(91,141,239,.25); }
+.pill--MOBILIZACAO     { background:rgba(91,141,239,.1);  color:var(--info); border:1px solid rgba(91,141,239,.25); }
+
 .etapa-card--NAO_APLICAVEL { border-color:rgba(90,100,120,.2); opacity:.7; }
 
 /* ── Detalhe ── */

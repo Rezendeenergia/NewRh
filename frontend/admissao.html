@@ -195,6 +195,16 @@ const escJsAttr = t => String(t ?? '').replace(/\\/g,'\\\\').replace(/'/g,"\\'")
 const STATUS_ICON  = { PENDENTE:'○', EM_ANDAMENTO:'◉', APROVADO:'✅', REPROVADO:'❌', REENVIAR:'🔄' };
 const TIPO_ICON    = { APROVACAO:'🗂', DOCUMENTO:'📄', CHECKLIST:'☑', ENTREVISTA:'🎤' };
 
+// Tipo do processo de admissão (ADMISSAO_NOVA | MUDANCA_FUNCAO | REINTEGRACAO | MOBILIZACAO).
+// Admissão nova não mostra nada (é o caso comum); os outros aparecem como uma
+// badge extra ao lado do status, pra avisar quem está olhando a lista.
+const TIPO_ADMISSAO_LABEL = { MUDANCA_FUNCAO:'🔄 Mudança de função', REINTEGRACAO:'↩ Reintegração', MOBILIZACAO:'📍 Mobilização' };
+function tipoAdmissaoBadge(p) {
+  const label = TIPO_ADMISSAO_LABEL[p.tipoAdmissao];
+  if (!label) return '';
+  return `<span class="pill pill--${p.tipoAdmissao}">${label}</span>`;
+}
+
 let currentProcessoId = null;
 let currentProcesso   = null;
 
@@ -256,8 +266,9 @@ const Adm = {
             <div class="progress-mini"><div class="progress-mini__fill" style="width:${p.progresso}%"></div></div>
             <span style="font-size:.7rem;color:var(--ink-3);">${p.progresso}%</span>
           </div>
-          <div style="margin-top:6px;">
+          <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
             <span class="pill pill--${p.status}">${p.status==='EM_ANDAMENTO'?'⏳ Em andamento':p.status==='CONCLUIDO'?'✅ Concluído':'❌ Cancelado'}</span>
+            ${tipoAdmissaoBadge(p)}
           </div>
         </div>`).join('');
     } catch(e) {
@@ -306,6 +317,7 @@ const Adm = {
           <p class="detalhe-cargo">📋 ${c.cargo} · 📍 ${c.local}</p>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
             <span class="pill pill--${p.status}">${p.status==='EM_ANDAMENTO'?'⏳ Em andamento':p.status==='CONCLUIDO'?'✅ Concluído':'❌ Cancelado'}</span>
+            ${tipoAdmissaoBadge(p)}
             <span style="font-size:.8rem;color:var(--ink-3);">📧 ${c.email}</span>
             <span style="font-size:.8rem;color:var(--ink-3);">📱 ${c.phone}</span>
           </div>

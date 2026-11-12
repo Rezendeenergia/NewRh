@@ -165,6 +165,7 @@ def processo_to_dict_list(p):
     return {
         "id":            p.id,
         "status":        p.status,
+        "tipoAdmissao":  p.tipo_admissao or "ADMISSAO_NOVA",
         "etapaAtual":    p.etapa_atual,
         "sharepointUrl": p.sharepoint_url,
         "progresso":     _calc_progresso(etapas),
@@ -191,6 +192,7 @@ def processo_to_dict(p):
     return {
         "id":            p.id,
         "status":        p.status,
+        "tipoAdmissao":  p.tipo_admissao or "ADMISSAO_NOVA",
         "etapaAtual":    p.etapa_atual,
         "sharepointUrl": p.sharepoint_url,
         "createdAt":     p.created_at.isoformat() if p.created_at else None,
